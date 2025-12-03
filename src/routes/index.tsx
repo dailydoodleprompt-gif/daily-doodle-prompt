@@ -20,6 +20,9 @@ import { AdminView } from '@/views/AdminView';
 import { ArtistProfileView } from '@/views/ArtistProfileView';
 import { PaymentSuccessView } from '@/views/PaymentSuccessView';
 import { PaymentCancelView } from '@/views/PaymentCancelView';
+import { PrivacyView } from '@/views/PrivacyView';
+import { TermsView } from '@/views/TermsView';
+import { ContactView } from '@/views/ContactView';
 
 export const Route = createFileRoute('/')({
   component: App,
@@ -30,7 +33,33 @@ export const Route = createFileRoute('/')({
 // API: https://opensheet.elk.sh/1tWJQOUhUfENl-xBd-TOQEv0BmaRb5USG/Sheet1
 
 function App() {
-  const [currentView, setCurrentView] = useState('landing');
+  // Map URL pathname to initial view
+  const getInitialView = () => {
+    const path = window.location.pathname;
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionId = urlParams.get('session_id');
+    const canceled = urlParams.get('canceled');
+
+    // Handle payment routes with query params
+    if (sessionId) return 'payment-success';
+    if (canceled) return 'payment-cancel';
+
+    // Handle URL-based routes
+    if (path === '/privacy') return 'privacy';
+    if (path === '/terms') return 'terms';
+    if (path === '/contact') return 'contact';
+    if (path === '/pricing') return 'pricing';
+    if (path === '/archive') return 'archive';
+    if (path === '/bookmarks') return 'bookmarks';
+    if (path === '/profile') return 'profile';
+    if (path === '/settings') return 'settings';
+    if (path === '/admin') return 'admin';
+    if (path === '/prompt') return 'prompt';
+
+    return 'landing';
+  };
+
+  const [currentView, setCurrentView] = useState(getInitialView());
   const [previousView, setPreviousView] = useState('landing');
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
   const [authDialogDefaultTab, setAuthDialogDefaultTab] = useState<'login' | 'signup'>('login');
@@ -44,18 +73,31 @@ function App() {
   // Show username setup dialog for OAuth users who need to choose a username
   const needsUsernameSetup = isAuthenticated && user?.needs_username_setup;
 
-  // Handle payment success/cancel routes on mount
+  // Handle browser back/forward navigation
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const sessionId = urlParams.get('session_id');
-    const canceled = urlParams.get('canceled');
+    const handlePopState = () => {
+      const path = window.location.pathname;
+      const pathToViewMap: Record<string, string> = {
+        '/': 'landing',
+        '/privacy': 'privacy',
+        '/terms': 'terms',
+        '/contact': 'contact',
+        '/pricing': 'pricing',
+        '/archive': 'archive',
+        '/bookmarks': 'bookmarks',
+        '/profile': 'profile',
+        '/settings': 'settings',
+        '/admin': 'admin',
+        '/prompt': 'prompt',
+      };
+      const newView = pathToViewMap[path] || 'landing';
+      setPreviousView(currentView);
+      setCurrentView(newView);
+    };
 
-    if (sessionId) {
-      setCurrentView('payment-success');
-    } else if (canceled) {
-      setCurrentView('payment-cancel');
-    }
-  }, []);
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [currentView]);
 
   // Fetch prompts from OpenSheet API (no auth required)
   const {
@@ -71,6 +113,26 @@ function App() {
   const handleNavigate = (view: string) => {
     setPreviousView(currentView);
     setCurrentView(view);
+
+    // Update URL without reloading the page
+    const urlMap: Record<string, string> = {
+      'landing': '/',
+      'privacy': '/privacy',
+      'terms': '/terms',
+      'contact': '/contact',
+      'pricing': '/pricing',
+      'archive': '/archive',
+      'bookmarks': '/bookmarks',
+      'profile': '/profile',
+      'settings': '/settings',
+      'admin': '/admin',
+      'prompt': '/prompt',
+    };
+
+    const newPath = urlMap[view] || '/';
+    if (window.location.pathname !== newPath) {
+      window.history.pushState({}, '', newPath);
+    }
   };
 
   const handleSignUp = () => {
@@ -173,6 +235,12 @@ function App() {
         return <PaymentSuccessView onNavigate={handleNavigate} />;
       case 'payment-cancel':
         return <PaymentCancelView onNavigate={handleNavigate} />;
+      case 'privacy':
+        return <PrivacyView onBack={handleGoBack} />;
+      case 'terms':
+        return <TermsView onBack={handleGoBack} />;
+      case 'contact':
+        return <ContactView onBack={handleGoBack} />;
       default:
         return (
           <NotFoundView
@@ -200,6 +268,7 @@ function App() {
         defaultTab={authDialogDefaultTab}
         onForgotPassword={() => setForgotPasswordOpen(true)}
         onAuthSuccess={() => handleNavigate('profile')}
+        onNavigate={handleNavigate}
       />
 
       <ForgotPasswordDialog
