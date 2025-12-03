@@ -1,0 +1,190 @@
+{
+  "id": "102019ae02e30ad7486953eb603db3a3cfc",
+  "version": "102019ae02e30ad735dae31c62d5afb63cb",
+  "schema": {
+    "name": "user_badge",
+    "description": "Records of badges earned by users.",
+    "fields": [
+      {
+        "name": "id",
+        "description": "Unique identifier for each data of this entity.",
+        "type": 1,
+        "compliance": {
+          "confidentiality": 1,
+          "reason": "Public identifier"
+        }
+      },
+      {
+        "name": "data_creator",
+        "description": "id of the user who creates the record",
+        "type": 1,
+        "compliance": {
+          "confidentiality": 2,
+          "reason": "Internal audit trail"
+        }
+      },
+      {
+        "name": "data_updater",
+        "description": "id of the user who updates the record",
+        "type": 1,
+        "compliance": {
+          "confidentiality": 2,
+          "reason": "Internal audit trail"
+        }
+      },
+      {
+        "name": "create_time",
+        "description": "create time in timestamp unix",
+        "type": 1,
+        "compliance": {
+          "confidentiality": 1,
+          "reason": "Public metadata"
+        },
+        "format": "timestamp"
+      },
+      {
+        "name": "update_time",
+        "description": "update time in timestamp unix",
+        "type": 1,
+        "compliance": {
+          "confidentiality": 1,
+          "reason": "Public metadata"
+        },
+        "format": "timestamp"
+      },
+      {
+        "name": "user_id",
+        "description": "ID of the user who earned the badge.",
+        "type": 1,
+        "compliance": {
+          "confidentiality": 1,
+          "reason": "Public user profile info"
+        },
+        "taxonomy": {
+          "category": "user",
+          "subject": "identity"
+        }
+      },
+      {
+        "name": "badge_id",
+        "description": "ID of the earned badge.",
+        "type": 1,
+        "compliance": {
+          "confidentiality": 1,
+          "reason": "Public achievement info"
+        }
+      },
+      {
+        "name": "awarded_at",
+        "description": "Timestamp when the badge was awarded.",
+        "type": 1,
+        "compliance": {
+          "confidentiality": 1,
+          "reason": "Public achievement history"
+        },
+        "format": "timestamp"
+      },
+      {
+        "name": "metadata",
+        "description": "Contextual data regarding how the badge was earned (e.g. score, event id).",
+        "type": 102,
+        "compliance": {
+          "confidentiality": 1,
+          "reason": "Public context"
+        },
+        "nullable": true,
+        "inner": [
+          {
+            "name": "reference_id",
+            "description": "ID of the specific event or content that triggered the badge.",
+            "type": 1,
+            "compliance": {
+              "confidentiality": 1,
+              "reason": "Public context"
+            },
+            "nullable": true
+          },
+          {
+            "name": "score_snapshot",
+            "description": "Score at the time of earning.",
+            "type": 2,
+            "compliance": {
+              "confidentiality": 1,
+              "reason": "Public context"
+            },
+            "nullable": true
+          }
+        ]
+      }
+    ],
+    "indexes": [
+      {
+        "fields": [
+          "id"
+        ],
+        "unique": true,
+        "primary": true,
+        "order": false
+      },
+      {
+        "fields": [
+          "data_creator"
+        ],
+        "order": false
+      },
+      {
+        "fields": [
+          "data_updater"
+        ],
+        "order": false
+      },
+      {
+        "fields": [
+          "user_id"
+        ],
+        "order": false
+      },
+      {
+        "fields": [
+          "badge_id"
+        ],
+        "order": false
+      },
+      {
+        "fields": [
+          "badge_id",
+          "user_id"
+        ],
+        "unique": true,
+        "order": false
+      }
+    ],
+    "relations": [
+      {
+        "referencing_fields": [
+          "badge_id"
+        ],
+        "referenced_entity": {
+          "name": "badge"
+        },
+        "referenced_fields": [
+          "id"
+        ],
+        "cascade": true
+      }
+    ]
+  },
+  "task": {
+    "id": "692f222dd31e8fae3cb4827a",
+    "root": "692a79cd2d90b4e2983d0e3c",
+    "project": "692f994099579dee36d6ebeb",
+    "user": "18b1a360-80e1-7053-9ff9-b11b2c1a0600"
+  },
+  "namespace": {
+    "id": "01987547fc6c72ecb453bd2736bd4ea0",
+    "tenant": 2,
+    "name": "global-1",
+    "default": true
+  },
+  "revision": 1
+}
