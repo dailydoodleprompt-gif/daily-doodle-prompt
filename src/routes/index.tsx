@@ -20,6 +20,8 @@ import { AdminView } from '@/views/AdminView';
 import { ArtistProfileView } from '@/views/ArtistProfileView';
 import { PaymentSuccessView } from '@/views/PaymentSuccessView';
 import { PaymentCancelView } from '@/views/PaymentCancelView';
+import { PrivacyView } from '@/views/PrivacyView';
+import { TermsView } from '@/views/TermsView';
 
 export const Route = createFileRoute('/')({
   component: App,
