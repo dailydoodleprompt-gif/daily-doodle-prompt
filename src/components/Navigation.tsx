@@ -39,7 +39,6 @@ interface NavigationProps {
 export function Navigation({ currentView, onNavigate }: NavigationProps) {
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
   const user = useUser();
   const isAuthenticated = useIsAuthenticated();
   const isPremium = useIsPremium();
@@ -94,25 +93,8 @@ export function Navigation({ currentView, onNavigate }: NavigationProps) {
                 {item.label}
               </Button>
             ))}
-
-            {/* PRIVACY + TERMS — DESKTOP */}
-            <div className="ml-4 flex flex-col text-left">
-              <button
-                className="text-xs text-muted-foreground hover:text-foreground"
-                onClick={() => handleNavigation('privacy')}
-              >
-                Privacy Policy
-              </button>
-              <button
-                className="text-xs text-muted-foreground hover:text-foreground"
-                onClick={() => handleNavigation('terms')}
-              >
-                Terms of Service
-              </button>
-            </div>
           </nav>
 
-          {/* Right-side actions */}
           <div className="flex items-center gap-2 ml-auto">
             {isAuthenticated && <StreakBadge />}
 
@@ -126,7 +108,6 @@ export function Navigation({ currentView, onNavigate }: NavigationProps) {
                     )}
                   </Button>
                 </DropdownMenuTrigger>
-
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
@@ -143,40 +124,40 @@ export function Navigation({ currentView, onNavigate }: NavigationProps) {
                       </p>
                     </div>
                   </DropdownMenuLabel>
-
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => handleNavigation('profile')}>
-                    <User className="mr-2 h-4 w-4" /> Profile
+                    <User className="mr-2 h-4 w-4" />
+                    Profile
                   </DropdownMenuItem>
-
                   {isPremium && (
                     <DropdownMenuItem onClick={() => handleNavigation('bookmarks')}>
-                      <Bookmark className="mr-2 h-4 w-4" /> Bookmarks
+                      <Bookmark className="mr-2 h-4 w-4" />
+                      Bookmarks
                     </DropdownMenuItem>
                   )}
-
                   <DropdownMenuItem onClick={() => handleNavigation('settings')}>
-                    <Settings className="mr-2 h-4 w-4" /> Settings
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
                   </DropdownMenuItem>
-
                   {user?.is_admin && (
                     <DropdownMenuItem onClick={() => handleNavigation('admin')}>
-                      <Shield className="mr-2 h-4 w-4" /> Admin Dashboard
+                      <Shield className="mr-2 h-4 w-4" />
+                      Admin Dashboard
                     </DropdownMenuItem>
                   )}
-
                   {!isPremium && (
                     <DropdownMenuItem
                       onClick={() => handleNavigation('pricing')}
                       className="text-primary"
                     >
-                      <Crown className="mr-2 h-4 w-4" /> Upgrade to Premium
+                      <Crown className="mr-2 h-4 w-4" />
+                      Upgrade to Premium
                     </DropdownMenuItem>
                   )}
-
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" /> Log out
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Log out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -193,7 +174,11 @@ export function Navigation({ currentView, onNavigate }: NavigationProps) {
               className="md:hidden"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {mobileMenuOpen ? (
+                <X className="h-5 w-5" />
+              ) : (
+                <Menu className="h-5 w-5" />
+              )}
             </Button>
           </div>
         </div>
@@ -202,8 +187,6 @@ export function Navigation({ currentView, onNavigate }: NavigationProps) {
         {mobileMenuOpen && (
           <div className="md:hidden border-t bg-background">
             <nav className="container py-4 flex flex-col gap-2">
-
-              {/* Core nav items */}
               {navItems.map((item) => (
                 <Button
                   key={item.id}
@@ -215,23 +198,6 @@ export function Navigation({ currentView, onNavigate }: NavigationProps) {
                   {item.label}
                 </Button>
               ))}
-
-              {/* PRIVACY + TERMS — MOBILE */}
-              <div className="mt-4 flex flex-col gap-1 pl-1">
-                <button
-                  className="text-xs text-muted-foreground hover:text-foreground text-left"
-                  onClick={() => handleNavigation('privacy')}
-                >
-                  Privacy Policy
-                </button>
-                <button
-                  className="text-xs text-muted-foreground hover:text-foreground text-left"
-                  onClick={() => handleNavigation('terms')}
-                >
-                  Terms of Service
-                </button>
-              </div>
-
             </nav>
           </div>
         )}
