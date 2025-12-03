@@ -1,0 +1,607 @@
+@import "tailwindcss";
+
+@plugin "tailwindcss-animate";
+
+@custom-variant dark (&:is(.dark *));
+
+body {
+	@apply m-0;
+	font-family:
+		-apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
+		"Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+code {
+	font-family:
+		source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+}
+
+/* ============================================
+   LIGHT MODE - Warm cream theme with orange accent
+   ============================================ */
+:root {
+	--background: #fffaed;
+	--foreground: #1c1917;
+	--card: #fffaed;
+	--card-foreground: #1c1917;
+	--popover: #fffaed;
+	--popover-foreground: #1c1917;
+	--primary: #f17313;
+	--primary-foreground: #fffaed;
+	--secondary: #f5f0e6;
+	--secondary-foreground: #44403c;
+	--muted: #f5f0e6;
+	--muted-foreground: #78716c;
+	--accent: #f17313;
+	--accent-foreground: #fffaed;
+	--destructive: #dc2626;
+	--destructive-foreground: #fef2f2;
+	--border: #e7e5e4;
+	--input: #e7e5e4;
+	--ring: #f17313;
+	--chart-1: oklch(0.646 0.222 41.116);
+	--chart-2: oklch(0.6 0.118 184.704);
+	--chart-3: oklch(0.398 0.07 227.392);
+	--chart-4: oklch(0.828 0.189 84.429);
+	--chart-5: oklch(0.769 0.188 70.08);
+	--radius: 0.625rem;
+	--sidebar: #fffaed;
+	--sidebar-foreground: #1c1917;
+	--sidebar-primary: #f17313;
+	--sidebar-primary-foreground: #fffaed;
+	--sidebar-accent: #f5f0e6;
+	--sidebar-accent-foreground: #1c1917;
+	--sidebar-border: #e7e5e4;
+	--sidebar-ring: #f17313;
+}
+
+/* ============================================
+   DARK MODE - Warm Espresso/Charcoal Theme
+
+   Design Philosophy:
+   - Base: Warm espresso brown-gray (#1f1b18) - cozy, not harsh
+   - Cards: Slightly lighter warm charcoal (#2a2522) - subtle elevation
+   - Accent: Brand orange (#f17313) - used tastefully, not aggressively
+   - Text: Warm off-white (#f5f2ed) - easy on the eyes
+   - Muted: Soft warm gray (#a39e98) - readable secondary text
+
+   Color Palette Hex Values:
+   - Background Base: #1f1b18 (warm espresso)
+   - Card Surface: #2a2522 (elevated charcoal)
+   - Secondary Surface: #36302c (subtle distinction)
+   - Border: #453d38 (warm gray-brown)
+   - Input Border: #524a44 (slightly lighter for visibility)
+   - Primary Text: #f5f2ed (warm off-white)
+   - Secondary Text: #a39e98 (warm muted gray)
+   - Brand Orange: #f17313 (accent - accessibility verified)
+   - Orange Hover: #ff8a35 (lighter for hover states)
+   ============================================ */
+.dark {
+	/* Base backgrounds - warm espresso tones */
+	--background: #1f1b18;
+	--foreground: #f5f2ed;
+
+	/* Card surfaces - slightly elevated, warm charcoal */
+	--card: #2a2522;
+	--card-foreground: #f5f2ed;
+
+	/* Popovers/dialogs - same as cards for consistency */
+	--popover: #2a2522;
+	--popover-foreground: #f5f2ed;
+
+	/* Primary brand orange - accessible contrast */
+	--primary: #f17313;
+	--primary-foreground: #1f1b18;
+
+	/* Secondary surfaces - subtle warm brown */
+	--secondary: #36302c;
+	--secondary-foreground: #e8e4df;
+
+	/* Muted elements - warm gray tones */
+	--muted: #36302c;
+	--muted-foreground: #a39e98;
+
+	/* Accent - brand orange (used sparingly) */
+	--accent: #f17313;
+	--accent-foreground: #1f1b18;
+
+	/* Destructive - softened red for dark mode */
+	--destructive: #ef4444;
+	--destructive-foreground: #fef2f2;
+
+	/* Borders - warm gray-brown, subtle */
+	--border: #453d38;
+	--input: #524a44;
+
+	/* Focus ring - brand orange */
+	--ring: #f17313;
+
+	/* Chart colors - harmonious warm palette */
+	--chart-1: #f59e0b;
+	--chart-2: #34d399;
+	--chart-3: #60a5fa;
+	--chart-4: #a78bfa;
+	--chart-5: #f472b6;
+
+	/* Sidebar - consistent with base */
+	--sidebar: #1f1b18;
+	--sidebar-foreground: #f5f2ed;
+	--sidebar-primary: #f17313;
+	--sidebar-primary-foreground: #1f1b18;
+	--sidebar-accent: #36302c;
+	--sidebar-accent-foreground: #f5f2ed;
+	--sidebar-border: #453d38;
+	--sidebar-ring: #f17313;
+}
+
+@theme inline {
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--color-card: var(--card);
+	--color-card-foreground: var(--card-foreground);
+	--color-popover: var(--popover);
+	--color-popover-foreground: var(--popover-foreground);
+	--color-primary: var(--primary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-secondary: var(--secondary);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-muted: var(--muted);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-accent: var(--accent);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-destructive: var(--destructive);
+	--color-destructive-foreground: var(--destructive-foreground);
+	--color-border: var(--border);
+	--color-input: var(--input);
+	--color-ring: var(--ring);
+	--color-chart-1: var(--chart-1);
+	--color-chart-2: var(--chart-2);
+	--color-chart-3: var(--chart-3);
+	--color-chart-4: var(--chart-4);
+	--color-chart-5: var(--chart-5);
+	--radius-sm: calc(var(--radius) - 4px);
+	--radius-md: calc(var(--radius) - 2px);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) + 4px);
+	--color-sidebar: var(--sidebar);
+	--color-sidebar-foreground: var(--sidebar-foreground);
+	--color-sidebar-primary: var(--sidebar-primary);
+	--color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+	--color-sidebar-accent: var(--sidebar-accent);
+	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+	--color-sidebar-border: var(--sidebar-border);
+	--color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+	* {
+		@apply border-border outline-ring/50;
+	}
+	body {
+		@apply bg-background text-foreground;
+	}
+}
+
+/* ============================================
+   TOOLTIP STYLING - Orange background with white text
+   ============================================ */
+@layer components {
+	/* Tooltips - orange background with white text in all modes */
+	[data-radix-tooltip-content],
+	[role="tooltip"],
+	[data-slot="tooltip-content"] {
+		background-color: var(--primary);
+		color: #ffffff;
+		@apply shadow-lg;
+	}
+
+	/* All text in tooltips should be white */
+	[data-radix-tooltip-content] *,
+	[role="tooltip"] *,
+	[data-slot="tooltip-content"] * {
+		color: #ffffff;
+	}
+
+	/* Slightly transparent for secondary text */
+	[data-radix-tooltip-content] .text-muted-foreground,
+	[role="tooltip"] .text-muted-foreground,
+	[data-slot="tooltip-content"] .text-muted-foreground {
+		color: rgba(255, 255, 255, 0.85);
+	}
+
+	/* Badge detail popups - keep original styling */
+	[data-radix-popover-content] .font-medium,
+	[data-radix-popover-content] .font-semibold,
+	[data-radix-popover-content] .font-bold {
+		color: inherit;
+	}
+
+	[data-radix-popover-content] p {
+		color: inherit;
+		opacity: 0.9;
+	}
+
+	[data-radix-popover-content] .text-muted-foreground {
+		color: var(--muted-foreground);
+	}
+}
+
+/* ============================================
+   DARK MODE COMPONENT OVERRIDES
+   Ensures visual harmony across all UI elements
+   ============================================ */
+@layer utilities {
+	/* Softer shadows in dark mode - warm tint */
+	.dark .shadow-sm {
+		box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+	}
+
+	.dark .shadow {
+		box-shadow:
+			0 1px 3px 0 rgba(0, 0, 0, 0.5),
+			0 1px 2px -1px rgba(0, 0, 0, 0.5);
+	}
+
+	.dark .shadow-md {
+		box-shadow:
+			0 4px 6px -1px rgba(0, 0, 0, 0.5),
+			0 2px 4px -2px rgba(0, 0, 0, 0.5);
+	}
+
+	.dark .shadow-lg {
+		box-shadow:
+			0 10px 15px -3px rgba(0, 0, 0, 0.5),
+			0 4px 6px -4px rgba(0, 0, 0, 0.5);
+	}
+
+	/* Card and surface elevation in dark mode */
+	.dark .bg-card {
+		background-color: #2a2522;
+	}
+
+	.dark .bg-muted {
+		background-color: #36302c;
+	}
+
+	.dark .bg-muted\/50 {
+		background-color: rgba(54, 48, 44, 0.5);
+	}
+
+	/* Primary color overlays - softer in dark mode */
+	.dark .bg-primary\/10 {
+		background-color: rgba(241, 115, 19, 0.12);
+	}
+
+	.dark .bg-primary\/5 {
+		background-color: rgba(241, 115, 19, 0.06);
+	}
+
+	.dark .bg-primary\/20 {
+		background-color: rgba(241, 115, 19, 0.18);
+	}
+
+	/* Hover states - warm transitions */
+	.dark .hover\:bg-muted:hover {
+		background-color: #453d38;
+	}
+
+	.dark .hover\:bg-muted\/50:hover {
+		background-color: rgba(69, 61, 56, 0.5);
+	}
+
+	.dark .hover\:bg-accent:hover {
+		background-color: #ff8a35;
+	}
+
+	/* Focus ring - brand orange, slightly transparent */
+	.dark .ring-primary {
+		--tw-ring-color: rgba(241, 115, 19, 0.7);
+	}
+
+	.dark .focus\:ring-primary:focus {
+		--tw-ring-color: rgba(241, 115, 19, 0.7);
+	}
+
+	/* Border styling in dark mode */
+	.dark .border-border {
+		border-color: #453d38;
+	}
+
+	.dark .border-input {
+		border-color: #524a44;
+	}
+
+	/* Gradient backgrounds for premium/special cards */
+	.dark .bg-gradient-to-br.from-amber-50 {
+		--tw-gradient-from: #3d3530 var(--tw-gradient-from-position);
+	}
+
+	.dark .bg-gradient-to-br.to-yellow-50 {
+		--tw-gradient-to: #3d3530 var(--tw-gradient-to-position);
+	}
+
+	.dark .from-amber-950\/20 {
+		--tw-gradient-from: rgba(69, 53, 40, 0.25) var(--tw-gradient-from-position);
+	}
+
+	.dark .to-yellow-950\/20 {
+		--tw-gradient-to: rgba(69, 53, 40, 0.25) var(--tw-gradient-to-position);
+	}
+
+	/* Violet gradients for admin cards */
+	.dark .from-violet-500\/5 {
+		--tw-gradient-from: rgba(139, 92, 246, 0.08)
+			var(--tw-gradient-from-position);
+	}
+
+	.dark .to-violet-500\/10 {
+		--tw-gradient-to: rgba(139, 92, 246, 0.12) var(--tw-gradient-to-position);
+	}
+
+	/* Badge icon backgrounds - more visible in dark mode */
+	.dark .bg-purple-100 {
+		background-color: rgba(139, 92, 246, 0.2);
+	}
+
+	.dark .bg-blue-100 {
+		background-color: rgba(59, 130, 246, 0.2);
+	}
+
+	.dark .bg-green-100 {
+		background-color: rgba(34, 197, 94, 0.2);
+	}
+
+	.dark .bg-amber-100 {
+		background-color: rgba(245, 158, 11, 0.2);
+	}
+
+	.dark .bg-rose-100 {
+		background-color: rgba(244, 63, 94, 0.2);
+	}
+
+	.dark .bg-violet-500\/10 {
+		background-color: rgba(139, 92, 246, 0.15);
+	}
+
+	/* Text colors for colored badges in dark mode */
+	.dark .text-purple-600 {
+		color: #a78bfa;
+	}
+
+	.dark .text-blue-600 {
+		color: #60a5fa;
+	}
+
+	.dark .text-green-600 {
+		color: #4ade80;
+	}
+
+	.dark .text-amber-600 {
+		color: #fbbf24;
+	}
+
+	.dark .text-rose-600 {
+		color: #fb7185;
+	}
+
+	.dark .text-violet-600 {
+		color: #a78bfa;
+	}
+
+	/* Premium badge gradient adjustments */
+	.dark .from-yellow-400 {
+		--tw-gradient-from: #f59e0b var(--tw-gradient-from-position);
+	}
+
+	.dark .to-amber-500 {
+		--tw-gradient-to: #d97706 var(--tw-gradient-to-position);
+	}
+
+	/* Skeleton loading states */
+	.dark .bg-skeleton {
+		background-color: #36302c;
+	}
+
+	/* Alert backgrounds */
+	.dark .border-green-200 {
+		border-color: rgba(34, 197, 94, 0.3);
+	}
+
+	.dark .bg-green-50 {
+		background-color: rgba(34, 197, 94, 0.1);
+	}
+
+	.dark .text-green-600 {
+		color: #4ade80;
+	}
+
+	.dark .border-amber-200 {
+		border-color: rgba(245, 158, 11, 0.3);
+	}
+
+	.dark .border-amber-800 {
+		border-color: rgba(245, 158, 11, 0.4);
+	}
+
+	/* Scrollbar styling for dark mode */
+	.dark ::-webkit-scrollbar {
+		width: 8px;
+		height: 8px;
+	}
+
+	.dark ::-webkit-scrollbar-track {
+		background: #1f1b18;
+	}
+
+	.dark ::-webkit-scrollbar-thumb {
+		background: #453d38;
+		border-radius: 4px;
+	}
+
+	.dark ::-webkit-scrollbar-thumb:hover {
+		background: #524a44;
+	}
+
+	/* Image placeholder backgrounds */
+	.dark .bg-muted {
+		background-color: #36302c;
+	}
+
+	/* Dialog/Modal overlays */
+	.dark [data-radix-dialog-overlay] {
+		background-color: rgba(15, 12, 10, 0.85);
+	}
+
+	/* Select dropdown styling */
+	.dark [data-radix-select-content] {
+		background-color: #2a2522;
+		border-color: #453d38;
+	}
+
+	/* Dropdown menu styling */
+	.dark [data-radix-dropdown-menu-content] {
+		background-color: #2a2522;
+		border-color: #453d38;
+	}
+
+	/* Tab styling */
+	.dark [data-state="active"][data-radix-tab] {
+		background-color: #36302c;
+	}
+
+	/* Switch/Toggle styling */
+	.dark [data-state="checked"][data-radix-switch] {
+		background-color: #f17313;
+	}
+
+	.dark [data-state="unchecked"][data-radix-switch] {
+		background-color: #453d38;
+	}
+}
+
+/* ============================================
+   SPECIFIC COMPONENT DARK MODE REFINEMENTS
+   ============================================ */
+@layer components {
+	/* Navigation header in dark mode */
+	.dark header.sticky {
+		background-color: rgba(31, 27, 24, 0.95);
+		backdrop-filter: blur(8px);
+	}
+
+	/* Card hover effects in dark mode */
+	.dark .hover\:bg-card:hover {
+		background-color: #36302c;
+	}
+
+	/* Button variants in dark mode */
+	.dark .btn-outline {
+		border-color: #524a44;
+	}
+
+	.dark .btn-outline:hover {
+		background-color: #36302c;
+		border-color: #5d534c;
+	}
+
+	/* Input focus states */
+	.dark input:focus,
+	.dark textarea:focus,
+	.dark select:focus {
+		border-color: #f17313;
+		box-shadow: 0 0 0 2px rgba(241, 115, 19, 0.2);
+	}
+
+	/* Separator styling */
+	.dark [data-radix-separator] {
+		background-color: #453d38;
+	}
+
+	/* Progress bar styling */
+	.dark [role="progressbar"] {
+		background-color: #36302c;
+	}
+
+	.dark [role="progressbar"] > div {
+		background-color: #f17313;
+	}
+
+	/* Avatar fallback styling */
+	.dark .bg-primary\/10 {
+		background-color: rgba(241, 115, 19, 0.12);
+	}
+
+	/* Notification/Toast styling */
+	.dark [data-sonner-toast] {
+		background-color: #2a2522;
+		border-color: #453d38;
+		color: #f5f2ed;
+	}
+
+	/* Badge styling improvements */
+	.dark .badge-secondary {
+		background-color: #36302c;
+		color: #e8e4df;
+	}
+
+	.dark .badge-outline {
+		border-color: #524a44;
+		color: #a39e98;
+	}
+
+	/* Streak badge fire animation glow */
+	.dark .animate-pulse {
+		animation: dark-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+	}
+
+	@keyframes dark-pulse {
+		0%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0.7;
+		}
+	}
+}
+
+/* ============================================
+   ACCESSIBILITY ENHANCEMENTS
+   ============================================ */
+@layer utilities {
+	/* Ensure sufficient contrast for interactive elements */
+	.dark a:not([class]) {
+		color: #f59e0b;
+	}
+
+	.dark a:not([class]):hover {
+		color: #fbbf24;
+	}
+
+	/* Focus visible outlines */
+	.dark :focus-visible {
+		outline: 2px solid #f17313;
+		outline-offset: 2px;
+	}
+
+	/* High contrast mode support */
+	@media (prefers-contrast: high) {
+		.dark {
+			--foreground: #ffffff;
+			--muted-foreground: #d4d0cc;
+			--border: #5d534c;
+		}
+	}
+
+	/* Reduced motion support */
+	@media (prefers-reduced-motion: reduce) {
+		.dark .animate-pulse,
+		.dark .transition-all,
+		.dark .transition-colors {
+			animation: none;
+			transition: none;
+		}
+	}
+}
