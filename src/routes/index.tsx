@@ -175,6 +175,10 @@ function App() {
         return <PaymentSuccessView onNavigate={handleNavigate} />;
       case 'payment-cancel':
         return <PaymentCancelView onNavigate={handleNavigate} />;
+      case 'privacy':
+      return <PrivacyView onBack={handleGoBack} />;
+      case 'terms':
+      return <TermsView onBack={handleGoBack} />;
       default:
         return (
           <NotFoundView
