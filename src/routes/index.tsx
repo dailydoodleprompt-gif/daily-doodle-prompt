@@ -20,8 +20,6 @@ import { AdminView } from '@/views/AdminView';
 import { ArtistProfileView } from '@/views/ArtistProfileView';
 import { PaymentSuccessView } from '@/views/PaymentSuccessView';
 import { PaymentCancelView } from '@/views/PaymentCancelView';
-import { PrivacyView } from '@/views/PrivacyView';
-import { TermsView } from '@/views/TermsView';
 
 export const Route = createFileRoute('/')({
   component: App,
@@ -175,10 +173,6 @@ function App() {
         return <PaymentSuccessView onNavigate={handleNavigate} />;
       case 'payment-cancel':
         return <PaymentCancelView onNavigate={handleNavigate} />;
-      case 'privacy':
-      return <PrivacyView onBack={handleGoBack} />;
-      case 'terms':
-      return <TermsView onBack={handleGoBack} />;
       default:
         return (
           <NotFoundView
