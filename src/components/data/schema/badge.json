@@ -1,0 +1,200 @@
+{
+  "id": "102019ae02e30ad7420ac7fb0503fa66135",
+  "version": "102019ae02e30ad735dae31c62d5afb63cb",
+  "schema": {
+    "name": "badge",
+    "description": "Definitions of badges and achievements available in the system.",
+    "fields": [
+      {
+        "name": "id",
+        "description": "Unique identifier for each data of this entity.",
+        "type": 1,
+        "compliance": {
+          "confidentiality": 1,
+          "reason": "Public identifier"
+        }
+      },
+      {
+        "name": "data_creator",
+        "description": "id of the user who creates the record",
+        "type": 1,
+        "compliance": {
+          "confidentiality": 2,
+          "reason": "Internal audit trail"
+        }
+      },
+      {
+        "name": "data_updater",
+        "description": "id of the user who updates the record",
+        "type": 1,
+        "compliance": {
+          "confidentiality": 2,
+          "reason": "Internal audit trail"
+        }
+      },
+      {
+        "name": "create_time",
+        "description": "create time in timestamp unix",
+        "type": 1,
+        "compliance": {
+          "confidentiality": 1,
+          "reason": "Public metadata"
+        },
+        "format": "timestamp"
+      },
+      {
+        "name": "update_time",
+        "description": "update time in timestamp unix",
+        "type": 1,
+        "compliance": {
+          "confidentiality": 1,
+          "reason": "Public metadata"
+        },
+        "format": "timestamp"
+      },
+      {
+        "name": "name",
+        "description": "Display name of the badge.",
+        "type": 1,
+        "compliance": {
+          "confidentiality": 1,
+          "reason": "Public badge information"
+        }
+      },
+      {
+        "name": "slug",
+        "description": "Unique URL-friendly identifier for the badge.",
+        "type": 1,
+        "compliance": {
+          "confidentiality": 1,
+          "reason": "Public badge identifier"
+        },
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+      },
+      {
+        "name": "description",
+        "description": "Detailed description of how to earn the badge.",
+        "type": 1,
+        "compliance": {
+          "confidentiality": 1,
+          "reason": "Public badge information"
+        },
+        "nullable": true
+      },
+      {
+        "name": "icon_url",
+        "description": "URL to the visual icon representing the badge.",
+        "type": 1,
+        "compliance": {
+          "confidentiality": 1,
+          "reason": "Public asset"
+        },
+        "nullable": true
+      },
+      {
+        "name": "category",
+        "description": "Category or tier of the badge.",
+        "type": 100,
+        "compliance": {
+          "confidentiality": 1,
+          "reason": "Public classification"
+        },
+        "enumeration": [
+          {
+            "value": "Unspecified"
+          },
+          {
+            "number": 1,
+            "value": "Participation"
+          },
+          {
+            "number": 2,
+            "value": "Achievement"
+          },
+          {
+            "number": 3,
+            "value": "Community"
+          },
+          {
+            "number": 4,
+            "value": "SpecialEvent"
+          }
+        ]
+      },
+      {
+        "name": "point_value",
+        "description": "Gamification points awarded when this badge is earned.",
+        "type": 2,
+        "compliance": {
+          "confidentiality": 1,
+          "reason": "Public game mechanics"
+        },
+        "taxonomy": {
+          "category": "gamification",
+          "subject": "points"
+        },
+        "reference": {
+          "name": "badge"
+        },
+        "numeric": "int"
+      },
+      {
+        "name": "is_active",
+        "description": "Whether the badge is currently available to be earned.",
+        "type": 3,
+        "compliance": {
+          "confidentiality": 1,
+          "reason": "Public status"
+        }
+      }
+    ],
+    "indexes": [
+      {
+        "fields": [
+          "id"
+        ],
+        "unique": true,
+        "primary": true,
+        "order": false
+      },
+      {
+        "fields": [
+          "data_creator"
+        ],
+        "order": false
+      },
+      {
+        "fields": [
+          "data_updater"
+        ],
+        "order": false
+      },
+      {
+        "fields": [
+          "slug"
+        ],
+        "unique": true,
+        "order": false
+      },
+      {
+        "fields": [
+          "category"
+        ],
+        "order": false
+      }
+    ]
+  },
+  "task": {
+    "id": "692f222dd31e8fae3cb4827a",
+    "root": "692a79cd2d90b4e2983d0e3c",
+    "project": "692f994099579dee36d6ebeb",
+    "user": "18b1a360-80e1-7053-9ff9-b11b2c1a0600"
+  },
+  "namespace": {
+    "id": "01987547fc6c72ecb453bd2736bd4ea0",
+    "tenant": 2,
+    "name": "global-1",
+    "default": true
+  },
+  "revision": 1
+}
