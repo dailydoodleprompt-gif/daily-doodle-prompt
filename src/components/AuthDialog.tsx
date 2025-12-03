@@ -48,6 +48,7 @@ interface AuthDialogProps {
   defaultTab?: 'login' | 'signup';
   onForgotPassword?: () => void;
   onAuthSuccess?: () => void;
+  onNavigate?: (view: string) => void;
 }
 
 export function AuthDialog({
@@ -56,6 +57,7 @@ export function AuthDialog({
   defaultTab = 'login',
   onForgotPassword,
   onAuthSuccess,
+  onNavigate,
 }: AuthDialogProps) {
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>(defaultTab);
   const [isLoading, setIsLoading] = useState(false);
@@ -214,6 +216,32 @@ export function AuthDialog({
               </div>
             </div>
 
+            <p className="text-xs text-center text-muted-foreground">
+              By signing in, you agree to our{' '}
+              <button
+                type="button"
+                onClick={() => {
+                  onOpenChange(false);
+                  onNavigate?.('terms');
+                }}
+                className="text-primary hover:underline"
+              >
+                Terms of Service
+              </button>{' '}
+              and{' '}
+              <button
+                type="button"
+                onClick={() => {
+                  onOpenChange(false);
+                  onNavigate?.('privacy');
+                }}
+                className="text-primary hover:underline"
+              >
+                Privacy Policy
+              </button>
+              .
+            </p>
+
             <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="login-email">Email</Label>
@@ -351,6 +379,32 @@ export function AuthDialog({
                 <span className="bg-background px-2 text-muted-foreground">Or sign up with email</span>
               </div>
             </div>
+
+            <p className="text-xs text-center text-muted-foreground">
+              By signing up, you agree to our{' '}
+              <button
+                type="button"
+                onClick={() => {
+                  onOpenChange(false);
+                  onNavigate?.('terms');
+                }}
+                className="text-primary hover:underline"
+              >
+                Terms of Service
+              </button>{' '}
+              and{' '}
+              <button
+                type="button"
+                onClick={() => {
+                  onOpenChange(false);
+                  onNavigate?.('privacy');
+                }}
+                className="text-primary hover:underline"
+              >
+                Privacy Policy
+              </button>
+              .
+            </p>
 
             <form onSubmit={signupForm.handleSubmit(handleSignup)} className="space-y-4">
               <div className="space-y-2">

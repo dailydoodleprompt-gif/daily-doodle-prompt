@@ -29,6 +29,8 @@ import {
   Crown,
   LogOut,
   Shield,
+  FileText,
+  Mail,
 } from 'lucide-react';
 
 interface NavigationProps {
@@ -94,6 +96,36 @@ export function Navigation({ currentView, onNavigate }: NavigationProps) {
               </Button>
             ))}
           </nav>
+
+          {/* Legal Links - Desktop */}
+          <div className="hidden md:flex items-center gap-1 mr-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleNavigation('privacy')}
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              Privacy
+            </Button>
+            <span className="text-muted-foreground">·</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleNavigation('terms')}
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              Terms
+            </Button>
+            <span className="text-muted-foreground">·</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleNavigation('contact')}
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              Contact
+            </Button>
+          </div>
 
           <div className="flex items-center gap-2 ml-auto">
             {isAuthenticated && <StreakBadge />}
@@ -198,12 +230,45 @@ export function Navigation({ currentView, onNavigate }: NavigationProps) {
                   {item.label}
                 </Button>
               ))}
+
+              {/* Legal Links - Mobile */}
+              <div className="border-t pt-2 mt-2">
+                <p className="text-xs text-muted-foreground px-3 py-2">Legal & Support</p>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start gap-2"
+                  onClick={() => handleNavigation('privacy')}
+                >
+                  <Shield className="h-4 w-4" />
+                  Privacy Policy
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start gap-2"
+                  onClick={() => handleNavigation('terms')}
+                >
+                  <FileText className="h-4 w-4" />
+                  Terms of Service
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start gap-2"
+                  onClick={() => handleNavigation('contact')}
+                >
+                  <Mail className="h-4 w-4" />
+                  Contact & Support
+                </Button>
+              </div>
             </nav>
           </div>
         )}
       </header>
 
-      <AuthDialog open={authDialogOpen} onOpenChange={setAuthDialogOpen} />
+      <AuthDialog
+        open={authDialogOpen}
+        onOpenChange={setAuthDialogOpen}
+        onNavigate={onNavigate}
+      />
     </>
   );
 }
