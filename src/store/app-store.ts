@@ -2762,9 +2762,9 @@ export const useAppStore = create<AppState>()(
 
       markAllNotificationsRead: () => {
         const notifications = get().getUnreadNotifications();
-        notifications.forEach(n => {
-          get().markNotificationRead(n.id);
-        });
+        notifications.forEach((n: any) => {
+        get().markNotificationRead(n.id);
+      });
       },
 
       // Prompt Idea actions
@@ -3036,5 +3036,6 @@ seedDefaultAdmin();
 if (typeof window !== 'undefined') {
   (window as unknown as { createAdminUser: typeof createAdminUser }).createAdminUser = createAdminUser;
 }
+
 
 
