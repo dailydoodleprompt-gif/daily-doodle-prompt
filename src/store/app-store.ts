@@ -2902,7 +2902,7 @@ export const useAppStore = create<AppState>()(
       getDoodleFlags: (doodleId) => {
         const flags = SupportService.getStoredDoodleFlags();
         if (doodleId) {
-          return flags.filter(f => f.doodle_id === doodleId);
+          return flags.filter((f: any) => f.doodle_id === doodleId);
         }
         return flags;
       },
@@ -3036,6 +3036,7 @@ seedDefaultAdmin();
 if (typeof window !== 'undefined') {
   (window as unknown as { createAdminUser: typeof createAdminUser }).createAdminUser = createAdminUser;
 }
+
 
 
 
