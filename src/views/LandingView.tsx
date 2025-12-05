@@ -14,7 +14,8 @@ interface LandingViewProps {
   onGetStarted: () => void;
   onSignUp: () => void;
   onLogin: () => void;
-  onPricing?: () => void;
+  onPricing: () => void;
+  onNavigate: (view: string) => void;
 }
 
 export function LandingView({ onGetStarted, onSignUp, onLogin, onPricing }: LandingViewProps) {
