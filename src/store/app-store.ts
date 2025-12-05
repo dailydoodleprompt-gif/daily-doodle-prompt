@@ -2947,7 +2947,7 @@ export const useAppStore = create<AppState>()(
       getUserWarningCount: (userId) => {
         // Count notifications of type account_warning for this user
         const allNotifications = SupportService.getStoredNotifications();
-        return allNotifications.filter(n => n.user_id === userId && n.type === 'account_warning').length;
+        return allNotifications.filter((n: any) => n.user_id === userId && n.type === 'account_warning').length;
       },
     }),
     {
@@ -3036,6 +3036,7 @@ seedDefaultAdmin();
 if (typeof window !== 'undefined') {
   (window as unknown as { createAdminUser: typeof createAdminUser }).createAdminUser = createAdminUser;
 }
+
 
 
 
