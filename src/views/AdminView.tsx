@@ -90,6 +90,7 @@ type UpdateUsernameFormData = z.infer<typeof updateUsernameSchema>;
 
 interface AdminViewProps {
   onBack: () => void;
+  onNavigate: (view: string) => void;
 }
 
 interface UserToManage {
