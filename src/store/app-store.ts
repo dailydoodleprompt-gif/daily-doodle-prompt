@@ -2804,7 +2804,7 @@ export const useAppStore = create<AppState>()(
         if (!user?.is_admin) return;
 
         const ideas = SupportService.getStoredPromptIdeas();
-        const ideaIndex = ideas.findIndex(i => i.id === ideaId);
+        const ideaIndex = ideas.findIndex((i: any) => i.id === ideaId);
         if (ideaIndex === -1) return;
 
         ideas[ideaIndex].status = status;
@@ -3036,4 +3036,5 @@ seedDefaultAdmin();
 if (typeof window !== 'undefined') {
   (window as unknown as { createAdminUser: typeof createAdminUser }).createAdminUser = createAdminUser;
 }
+
 
