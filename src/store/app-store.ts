@@ -2651,8 +2651,8 @@ export const useAppStore = create<AppState>()(
       },
 
       getUserTickets: (userId) => {
-        const tickets = SupportService.getStoredTickets();
-        return tickets.filter(t => t.user_id === userId);
+      const tickets = SupportService.getStoredTickets();
+      return tickets.filter((t: any) => t.user_id === userId);
       },
 
       getTicket: (ticketId) => {
@@ -3036,3 +3036,4 @@ seedDefaultAdmin();
 if (typeof window !== 'undefined') {
   (window as unknown as { createAdminUser: typeof createAdminUser }).createAdminUser = createAdminUser;
 }
+
