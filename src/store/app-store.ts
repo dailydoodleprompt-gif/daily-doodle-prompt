@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import type {
   User,
   UserPreferences,
@@ -3036,6 +3036,7 @@ seedDefaultAdmin();
 if (typeof window !== 'undefined') {
   (window as unknown as { createAdminUser: typeof createAdminUser }).createAdminUser = createAdminUser;
 }
+
 
 
 
