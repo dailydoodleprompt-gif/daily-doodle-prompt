@@ -2950,8 +2950,11 @@ export const useAppStore = create<AppState>()(
         return allNotifications.filter((n: any) => n.user_id === userId && n.type === 'account_warning').length;
       },
     }),
-    {
+        {
       name: 'dailydoodle-app-store',
+      // Be explicit about using localStorage + JSON
+      storage: createJSONStorage(() => localStorage),
+      // Only persist the pieces that define a “logged-in session”
       partialize: (state) => ({
         user: state.user,
         preferences: state.preferences,
@@ -2959,6 +2962,9 @@ export const useAppStore = create<AppState>()(
         badges: state.badges,
         bookmarks: state.bookmarks,
         userStats: state.userStats,
+        // These help the UI feel consistent after refresh
+        showOnboarding: state.showOnboarding,
+        currentView: state.currentView,
       }),
     }
   )
@@ -3036,6 +3042,7 @@ seedDefaultAdmin();
 if (typeof window !== 'undefined') {
   (window as unknown as { createAdminUser: typeof createAdminUser }).createAdminUser = createAdminUser;
 }
+
 
 
 
