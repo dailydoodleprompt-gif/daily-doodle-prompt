@@ -1104,19 +1104,25 @@ export const useAppStore = create<AppState>()(
       },
 
       logout: () => {
-        // Clear session persistence on logout
-        clearSessionPersistence();
+  // Hard clear ALL persisted auth + app state
+  try {
+    localStorage.removeItem('dailydoodle-session');
+    localStorage.removeItem('dailydoodle-app-store');
+  } catch {}
 
-        set({
-          user: null,
-          preferences: null,
-          streak: null,
-          badges: [],
-          bookmarks: [],
-          showOnboarding: false,
-          currentView: 'landing',
-        });
-      },
+  set({
+    user: null,
+    preferences: null,
+    streak: null,
+    badges: [],
+    bookmarks: [],
+    userStats: null,
+    newlyEarnedBadge: null,
+    showOnboarding: false,
+    currentView: 'landing',
+    isAdmin: false,
+  });
+},
 
       // User actions
       updatePreferences: (prefs) => {
