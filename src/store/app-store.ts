@@ -1104,27 +1104,8 @@ export const useAppStore = create<AppState>()(
       },
 
       logout: () => {
-  // Clear session persistence
-  try {
-    localStorage.removeItem('dailydoodle-session');
-    localStorage.removeItem('dailydoodle-app-store');
-  } catch {}
-
-  // Fully reset ALL user state
-  set({
-    user: null,
-    preferences: null,
-    streak: null,
-    badges: [],
-    bookmarks: [],
-    userStats: null,
-    newlyEarnedBadge: null,
-    showOnboarding: false,
-    currentView: 'landing',
-    isAdmin: false,
-  });
-},
-
+        // Clear session persistence on logout
+        clearSessionPersistence();
 
         set({
           user: null,
@@ -3061,7 +3042,6 @@ seedDefaultAdmin();
 if (typeof window !== 'undefined') {
   (window as unknown as { createAdminUser: typeof createAdminUser }).createAdminUser = createAdminUser;
 }
-
 
 
 
