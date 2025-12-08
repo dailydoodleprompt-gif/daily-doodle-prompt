@@ -763,6 +763,7 @@ export const useAppStore = create<AppState>()(
       newlyEarnedBadge: null,
       showOnboarding: false,
       currentView: 'landing',
+      isAdmin: false,
 
       // Auth actions
       login: async (email: string, password: string, stayLoggedIn: boolean = false) => {
