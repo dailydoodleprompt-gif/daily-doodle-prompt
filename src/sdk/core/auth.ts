@@ -200,54 +200,56 @@ async function initializeFromStorage(
   set: (state: Partial<AuthStore>) => void,
 ): Promise<void> {
   console.log("🔵 STORAGE INIT START");
-  console.log("🧠 BEFORE STORAGE LOAD:", get());
-
-  const storedToken = localStorage.getItem("creao_auth_token");
-  console.log("🟢 STORED TOKEN FOUND:", storedToken);
 
   try {
-    if (storedToken) {
-      console.log("🟡 VALIDATING STORED TOKEN...");
-      const { validateToken } = get();
-      const isValid = await validateToken(storedToken);
+    // ✅ REAL SESSION KEY USED BY YOUR APP
+    const rawSession = localStorage.getItem("dailydoodle_oauth_session");
 
-      if (isValid) {
-        console.log("✅ STORED TOKEN IS VALID");
-        console.log("🟠 STORAGE SET CALL (AUTHENTICATED):", {
-          token: storedToken,
-          status: "authenticated",
-        });
+    console.log("🟢 STORED SESSION FOUND:", rawSession);
 
-        set({
-          token: storedToken,
-          status: "authenticated",
-        });
-      } else {
-        console.error("❌ STORED TOKEN IS INVALID — CLEARING");
-        localStorage.removeItem("creao_auth_token");
-
-        console.log("🟠 STORAGE SET CALL (INVALID):", {
-          status: "invalid_token",
-        });
-
-        set({ status: "invalid_token" });
-      }
-    } else {
-      console.warn("⚠️ NO STORED TOKEN FOUND");
-
-      console.log("🟠 STORAGE SET CALL (UNAUTHENTICATED):", {
-        status: "unauthenticated",
-      });
-
-      set({ status: "unauthenticated" });
+    if (!rawSession) {
+      console.log("⚠️ NO STORED SESSION FOUND");
+      set({ status: "unauthenticated", token: null });
+      return;
     }
-  } catch (error) {
-    console.error("💥 STORAGE INIT CRASH:", error);
-    set({ status: "unauthenticated" });
-  }
 
-  console.log("🔴 STORAGE INIT END:", get());
+    // ✅ Parse OAuth session object
+    const session = JSON.parse(rawSession);
+
+    // ✅ Normalize token from multiple possible providers
+    const restoredToken =
+      session?.token ||
+      session?.access_token ||
+      session?.id_token ||
+      null;
+
+    if (!restoredToken) {
+      console.log("⚠️ SESSION FOUND BUT NO TOKEN — clearing session");
+      localStorage.removeItem("dailydoodle_oauth_session");
+      set({ status: "unauthenticated", token: null });
+      return;
+    }
+
+    console.log("✅ TOKEN RESTORED FROM SESSION");
+
+    // ✅ Restore full authenticated state
+    set({
+      token: restoredToken,
+      status: "authenticated",
+      parentOrigin: session?.provider || "oauth",
+    });
+
+    console.log("🟢 AUTH RESTORED SUCCESSFULLY");
+
+  } catch (error) {
+    console.error("❌ STORAGE INIT FAILED:", error);
+    localStorage.removeItem("dailydoodle_oauth_session");
+    set({ status: "unauthenticated", token: null });
+  } finally {
+    console.log("🔴 STORAGE INIT END:", get());
+  }
 }
+
 
 /**
  * Initialize authentication from URL parameters
