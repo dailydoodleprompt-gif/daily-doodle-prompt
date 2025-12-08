@@ -196,50 +196,57 @@ const useAuthStore = create<AuthStore>(
  * Initialize authentication from localStorage
  */
 async function initializeFromStorage(
-	get: () => AuthStore,
-	set: (state: Partial<AuthStore>) => void,
+  get: () => AuthStore,
+  set: (state: Partial<AuthStore>) => void,
 ): Promise<void> {
-	console.log("🔵 STORAGE INIT START");
-	console.log("🧠 BEFORE STORAGE LOAD:", get());
-	const storedToken = localStorage.getItem("creao_auth_token");
-	console.log("🟢 STORED TOKEN FOUND:", storedToken);
-	if (storedToken) {
-		console.log("Found stored token, validating...");
-		const { validateToken } = get();
-		const isValid = await validateToken(storedToken);
-		if (isValid) {
-  console.log("✅ STORED TOKEN IS VALID");
-  console.log("🟠 STORAGE SET CALL (AUTHENTICATED):", {
-    token: storedToken,
-    status: "authenticated",
-  });
+  console.log("🔵 STORAGE INIT START");
+  console.log("🧠 BEFORE STORAGE LOAD:", get());
 
-  set({
-    token: storedToken,
-    status: "authenticated",
-  });
-} 
-		else {
-  console.error("❌ STORED TOKEN IS INVALID — CLEARING");
-  console.log("🟠 STORAGE SET CALL (INVALID):", {
-    status: "invalid_token",
-  });
+  const storedToken = localStorage.getItem("creao_auth_token");
+  console.log("🟢 STORED TOKEN FOUND:", storedToken);
 
-  localStorage.removeItem("creao_auth_token");
+  try {
+    if (storedToken) {
+      console.log("🟡 VALIDATING STORED TOKEN...");
+      const { validateToken } = get();
+      const isValid = await validateToken(storedToken);
 
-  set({ status: "invalid_token" });
-}
- 
-	else {
-  console.warn("⚠️ NO STORED TOKEN FOUND");
-  console.log("🟠 STORAGE SET CALL (UNAUTHENTICATED):", {
-    status: "unauthenticated",
-  });
+      if (isValid) {
+        console.log("✅ STORED TOKEN IS VALID");
+        console.log("🟠 STORAGE SET CALL (AUTHENTICATED):", {
+          token: storedToken,
+          status: "authenticated",
+        });
 
-  set({ status: "unauthenticated" });
-}
-console.log("🔴 STORAGE INIT END:", get());
+        set({
+          token: storedToken,
+          status: "authenticated",
+        });
+      } else {
+        console.error("❌ STORED TOKEN IS INVALID — CLEARING");
+        localStorage.removeItem("creao_auth_token");
 
+        console.log("🟠 STORAGE SET CALL (INVALID):", {
+          status: "invalid_token",
+        });
+
+        set({ status: "invalid_token" });
+      }
+    } else {
+      console.warn("⚠️ NO STORED TOKEN FOUND");
+
+      console.log("🟠 STORAGE SET CALL (UNAUTHENTICATED):", {
+        status: "unauthenticated",
+      });
+
+      set({ status: "unauthenticated" });
+    }
+  } catch (error) {
+    console.error("💥 STORAGE INIT CRASH:", error);
+    set({ status: "unauthenticated" });
+  }
+
+  console.log("🔴 STORAGE INIT END:", get());
 }
 
 /**
