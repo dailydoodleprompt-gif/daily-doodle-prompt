@@ -36,7 +36,11 @@ export const Route = createFileRoute('/')({
 // API: https://opensheet.elk.sh/1tWJQOUhUfENl-xBd-TOQEv0BmaRb5USG/Sheet1
 
 function App() {
-  const [currentView, setCurrentView] = useState('landing');
+  const isAuthenticated = useIsAuthenticated();
+const user = useUser();
+
+const [currentView, setCurrentView] = useState<string | null>(null);
+
   const [previousView, setPreviousView] = useState('landing');
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
   const [authDialogDefaultTab, setAuthDialogDefaultTab] = useState<'login' | 'signup'>('login');
@@ -70,6 +74,18 @@ function App() {
     }
   }, []);
 
+  // ✅ Restore correct view after auth hydration (prevents logout on refresh)
+useEffect(() => {
+  if (!currentView) {
+    if (isAuthenticated) {
+      setCurrentView('prompt'); // ✅ Resume logged-in state
+    } else {
+      setCurrentView('landing'); // ✅ True logged-out users only
+    }
+  }
+}, [isAuthenticated, currentView]);
+
+
   // Fetch prompts from OpenSheet API (no auth required)
   const {
     data: prompts = [],
@@ -82,9 +98,10 @@ function App() {
   const displayPrompts = prompts.length > 0 ? prompts : demoPrompts;
 
   const handleNavigate = (view: string) => {
-    setPreviousView(currentView);
-    setCurrentView(view);
-  };
+  if (!currentView) return; // ✅ Prevent pre-hydration navigation crash
+  setPreviousView(currentView);
+  setCurrentView(view);
+};
 
   const handleSignUp = () => {
     setAuthDialogDefaultTab('signup');
@@ -217,7 +234,10 @@ function App() {
   // Show navigation for all views except landing and payment pages
   const showNavigation = !['landing', 'payment-success', 'payment-cancel'].includes(currentView);
 
-  return (
+  if (!currentView) return null;
+
+return (
+
     <div className="min-h-screen bg-background">
       {showNavigation && (
         <Navigation currentView={currentView} onNavigate={handleNavigate} />
