@@ -340,59 +340,6 @@ async function initializeFromStorage(
     console.log("🔴 STORAGE INIT END:", get());
   }
 }
-;
-
-      return;
-    }
-  }
-}
-
-
-    console.log("🟢 STORED SESSION FOUND:", rawSession);
-
-    if (!rawSession) {
-      console.log("⚠️ NO STORED SESSION FOUND");
-      set({ status: "unauthenticated", token: null });
-      return;
-    }
-
-    // ✅ Parse OAuth session object
-    const session = JSON.parse(rawSession);
-
-    // ✅ Normalize token from multiple possible providers
-    const restoredToken =
-      session?.token ||
-      session?.access_token ||
-      session?.id_token ||
-      null;
-
-    if (!restoredToken) {
-      console.log("⚠️ SESSION FOUND BUT NO TOKEN — clearing session");
-      localStorage.removeItem("dailydoodle_oauth_session");
-      set({ status: "unauthenticated", token: null });
-      return;
-    }
-
-    console.log("✅ TOKEN RESTORED FROM SESSION");
-
-    // ✅ Restore full authenticated state
-    set({
-      token: restoredToken,
-      status: "authenticated",
-      parentOrigin: session?.provider || "oauth",
-    });
-
-    console.log("🟢 AUTH RESTORED SUCCESSFULLY");
-
-  } catch (error) {
-    console.error("❌ STORAGE INIT FAILED:", error);
-    localStorage.removeItem("dailydoodle_oauth_session");
-    set({ status: "unauthenticated", token: null });
-  } finally {
-    console.log("🔴 STORAGE INIT END:", get());
-  }
-}
-
 
 /**
  * Initialize authentication from URL parameters
