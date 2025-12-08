@@ -205,6 +205,30 @@ async function initializeFromStorage(
     // ✅ REAL SESSION KEY USED BY YOUR APP
     const rawSession = localStorage.getItem("dailydoodle_oauth_session");
 
+	// ✅ FALLBACK: If OAuth session is missing, try app persist store
+if (!rawSession) {
+  const persistRaw = localStorage.getItem("dailydoodle_session_persist");
+
+  console.log("🟡 FALLBACK PERSIST RAW:", persistRaw);
+
+  if (persistRaw) {
+    const persist = JSON.parse(persistRaw);
+
+    if (persist?.user?.token) {
+      console.log("✅ TOKEN RESTORED FROM PERSIST FALLBACK");
+
+      set({
+        token: persist.user.token,
+        status: "authenticated",
+        parentOrigin: "persist",
+      });
+
+      return;
+    }
+  }
+}
+
+
     console.log("🟢 STORED SESSION FOUND:", rawSession);
 
     if (!rawSession) {
