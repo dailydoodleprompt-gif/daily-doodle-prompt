@@ -138,6 +138,7 @@ interface AppState {
   // UI state
   showOnboarding: boolean;
   currentView: string;
+  isAdmin: boolean;
 
   // Auth actions
   login: (email: string, password: string, stayLoggedIn?: boolean) => Promise<void>;
