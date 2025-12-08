@@ -66,13 +66,23 @@ export function Navigation({ currentView, onNavigate }: NavigationProps) {
     onNavigate('landing');
   };
 
+  // ✅ FIXED: Logo navigation now respects auth state
+  const handleLogoClick = () => {
+    if (isAuthenticated) {
+      onNavigate('prompt'); // stay logged in
+    } else {
+      onNavigate('landing'); // true logged-out users only
+    }
+    setMobileMenuOpen(false);
+  };
+
   return (
     <>
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 items-center">
           <div className="flex items-center gap-2 mr-4">
             <button
-              onClick={() => handleNavigation('landing')}
+              onClick={handleLogoClick}
               className="flex items-center gap-2 font-semibold"
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
@@ -101,7 +111,6 @@ export function Navigation({ currentView, onNavigate }: NavigationProps) {
           <div className="flex items-center gap-2 ml-auto">
             {isAuthenticated && <StreakBadge />}
 
-            {/* Notifications Bell - only show for authenticated users */}
             {isAuthenticated && (
               <Button
                 variant="ghost"
@@ -148,32 +157,38 @@ export function Navigation({ currentView, onNavigate }: NavigationProps) {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
+
                   <DropdownMenuItem onClick={() => handleNavigation('profile')}>
                     <User className="mr-2 h-4 w-4" />
                     Profile
                   </DropdownMenuItem>
+
                   {isPremium && (
                     <DropdownMenuItem onClick={() => handleNavigation('bookmarks')}>
                       <Bookmark className="mr-2 h-4 w-4" />
                       Bookmarks
                     </DropdownMenuItem>
                   )}
+
                   {isPremium && (
                     <DropdownMenuItem onClick={() => handleNavigation('prompt-ideas')}>
                       <Lightbulb className="mr-2 h-4 w-4" />
                       Submit Prompt Idea
                     </DropdownMenuItem>
                   )}
+
                   <DropdownMenuItem onClick={() => handleNavigation('settings')}>
                     <Settings className="mr-2 h-4 w-4" />
                     Settings
                   </DropdownMenuItem>
+
                   {user?.is_admin && (
                     <DropdownMenuItem onClick={() => handleNavigation('admin')}>
                       <Shield className="mr-2 h-4 w-4" />
                       Admin Dashboard
                     </DropdownMenuItem>
                   )}
+
                   {!isPremium && (
                     <DropdownMenuItem
                       onClick={() => handleNavigation('pricing')}
@@ -183,7 +198,9 @@ export function Navigation({ currentView, onNavigate }: NavigationProps) {
                       Upgrade to Premium
                     </DropdownMenuItem>
                   )}
+
                   <DropdownMenuSeparator />
+
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />
                     Log out
@@ -196,23 +213,17 @@ export function Navigation({ currentView, onNavigate }: NavigationProps) {
               </Button>
             )}
 
-            {/* Mobile menu toggle */}
             <Button
               variant="ghost"
               size="icon"
               className="md:hidden"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
-              {mobileMenuOpen ? (
-                <X className="h-5 w-5" />
-              ) : (
-                <Menu className="h-5 w-5" />
-              )}
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
           </div>
         </div>
 
-        {/* Mobile Navigation */}
         {mobileMenuOpen && (
           <div className="md:hidden border-t bg-background">
             <nav className="container py-4 flex flex-col gap-2">
