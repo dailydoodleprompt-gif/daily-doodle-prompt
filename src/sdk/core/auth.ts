@@ -293,29 +293,54 @@ async function initializeFromStorage(
   get: () => AuthStore,
   set: (state: Partial<AuthStore>) => void,
 ): Promise<void> {
-  console.log("🔵 STORAGE INIT START");
+  console.log("🟢 STORAGE INIT START");
 
   try {
-    // ✅ REAL SESSION KEY USED BY YOUR APP
-    const rawSession = localStorage.getItem("dailydoodle_oauth_session");
+    // ✅ REAL production session key
+    const rawSession = localStorage.getItem("dailydoodle_session_persist");
 
-	// ✅ FALLBACK: If OAuth session is missing, try app persist store
-if (!rawSession) {
-  const persistRaw = localStorage.getItem("dailydoodle_session_persist");
+    console.log("🟢 STORED SESSION FOUND:", rawSession);
 
-  console.log("🟡 FALLBACK PERSIST RAW:", persistRaw);
+    if (!rawSession) {
+      console.log("⚠️ NO STORED SESSION FOUND");
+      set({ status: "unauthenticated", token: null });
+      return;
+    }
 
-  if (persistRaw) {
-    const persist = JSON.parse(persistRaw);
+    const session = JSON.parse(rawSession);
 
-    if (persist?.user?.token) {
-      console.log("✅ TOKEN RESTORED FROM PERSIST FALLBACK");
+    // ✅ Normalize token from real session store
+    const restoredToken =
+      session?.token ||
+      session?.accessToken ||
+      session?.authToken ||
+      null;
 
-      set({
-        token: persist.user.token,
-        status: "authenticated",
-        parentOrigin: "persist",
-      });
+    if (!restoredToken) {
+      console.log("⚠️ SESSION FOUND BUT NO TOKEN — clearing");
+      localStorage.removeItem("dailydoodle_session_persist");
+      set({ status: "unauthenticated", token: null });
+      return;
+    }
+
+    console.log("✅ TOKEN RESTORED FROM SESSION");
+
+    set({
+      token: restoredToken,
+      status: "authenticated",
+      parentOrigin: "persist",
+    });
+
+    console.log("✅ AUTH RESTORED SUCCESSFULLY");
+  } catch (error) {
+    console.error("❌ STORAGE INIT FAILED:", error);
+    localStorage.removeItem("dailydoodle_session_persist");
+    set({ status: "unauthenticated", token: null });
+  } finally {
+    console.log("🔴 STORAGE INIT END:", get());
+  }
+}
+;
 
       return;
     }
