@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useOpenSheetPrompts } from '@/hooks/use-opensheet-prompts';
 import { useAppStore, useIsAuthenticated, useUser } from '@/store/app-store';
@@ -50,7 +50,7 @@ function App() {
   // Show username setup dialog for OAuth users who need to choose a username
   const needsUsernameSetup = isAuthenticated && user?.needs_username_setup;
 
-  // Handle payment success/cancel routes on mount
+    // Handle payment success/cancel routes on mount
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const sessionId = urlParams.get('session_id');
@@ -60,6 +60,13 @@ function App() {
       setCurrentView('payment-success');
     } else if (canceled) {
       setCurrentView('payment-cancel');
+    }
+
+    // Clean the URL so we don't keep query params around
+    if (sessionId || canceled) {
+      const { protocol, host, pathname } = window.location;
+      const cleanUrl = `${protocol}//${host}${pathname}`;
+      window.history.replaceState({}, '', cleanUrl);
     }
   }, []);
 
