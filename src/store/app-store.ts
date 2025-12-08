@@ -1106,10 +1106,11 @@ export const useAppStore = create<AppState>()(
       },
 
       logout: () => {
-  // Hard clear ALL persisted auth + app state
+  // ✅ ONLY clear the logical session — NOT the Zustand persist key
   try {
     localStorage.removeItem('dailydoodle-session');
-    localStorage.removeItem('dailydoodle-app-store');
+    localStorage.removeItem('dailydoodle_oauth_session');
+    localStorage.removeItem('dailydoodle_session_persist');
   } catch {}
 
   set({
@@ -1125,6 +1126,7 @@ export const useAppStore = create<AppState>()(
     isAdmin: false,
   });
 },
+
 
       // User actions
       updatePreferences: (prefs) => {
