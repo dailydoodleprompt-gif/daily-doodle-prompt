@@ -163,21 +163,26 @@ const useAuthStore = create<AuthStore>(
 				// Setup message listener
 				setupMessageListener(get);
 
-				// If still loading after initialization, set to unauthenticated
-				const currentStatus = get().status;
-const token = get().token;
+				    // Decide final auth status after initialization
+    const currentStatus = get().status;
+    const existingToken = get().token;
 
-// ✅ Only force unauthenticated if BOTH:
-// - status is still loading
-// - AND there is truly NO token
-if (currentStatus === "loading" && !token) {
-  console.log(
-    "Auth initialization complete - no token found, setting to unauthenticated",
-  );
-  set({ status: "unauthenticated" });
-} else {
-  console.log("Auth initialization complete - status:", currentStatus);
-}
+    if (currentStatus === "loading") {
+      if (existingToken) {
+        console.log(
+          "Auth initialization complete – token found, setting to authenticated"
+        );
+        set({ status: "authenticated" });
+      } else {
+        console.log(
+          "Auth initialization complete – no token, setting to unauthenticated"
+        );
+        set({ status: "unauthenticated" });
+      }
+    } else {
+      console.log("Auth initialization complete – status:", currentStatus);
+    }
+
 
 			} catch (error) {
 				console.error("Auth initialization failed:", error);
