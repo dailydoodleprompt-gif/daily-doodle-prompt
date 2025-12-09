@@ -1,10 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { TermsOfServiceView } from '@/views/TermsOfServiceView';
 
-export const Route = createFileRoute('/terms' as any)({
-  component: TermsPage,
+export const Route = createFileRoute('/terms')({
+  component: () => <TermsOfServiceView onBack={() => window.history.back()} />,
 });
-
-function TermsPage() {
-  return <TermsOfServiceView onBack={() => window.history.back()} />;
-}
