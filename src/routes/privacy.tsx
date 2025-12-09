@@ -1,10 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { PrivacyPolicyView } from '@/views/PrivacyPolicyView';
 
-export const Route = createFileRoute('/privacy' as any)({
-  component: PrivacyPage,
+export const Route = createFileRoute('/privacy')({
+  component: () => <PrivacyPolicyView onBack={() => window.history.back()} />,
 });
-
-function PrivacyPage() {
-  return <PrivacyPolicyView onBack={() => window.history.back()} />;
-}
