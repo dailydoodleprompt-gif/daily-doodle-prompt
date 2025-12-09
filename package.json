@@ -9,9 +9,9 @@
   "scripts": {
     "dev": "vite --port 3000",
     "start": "vite --port 3000",
-    "build": "npm run check:safe && vite build && cp index.html dist/index.html",
-    "build:prod": "NODE_ENV=production vite build && cp index.html dist/index.html",
-    "build:nocheck": "vite build && cp index.html dist/index.html",
+    "build": "npm run check:safe && vite build",
+    "build:prod": "NODE_ENV=production vite build",
+    "build:nocheck": "vite build",
     "serve": "vite preview",
     "preview": "vite preview --port 4173",
     "test": "vitest run",
