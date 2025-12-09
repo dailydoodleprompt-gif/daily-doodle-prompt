@@ -46,9 +46,10 @@ function App() {
 
   const needsUsernameSetup = isAuthenticated && user?.needs_username_setup;
 
-  // ✅ ✅ URL → VIEW MAPPING (THIS FIXES STRIPE LINKS)
+  // ✅ ✅ URL PATH → VIEW MAPPING (STRIPE + DIRECT LINKS FIX)
   useEffect(() => {
     const path = window.location.pathname.toLowerCase();
+
     if (path === '/privacy') setCurrentView('privacy');
     else if (path === '/terms') setCurrentView('terms');
     else if (path === '/support') setCurrentView('support');
@@ -154,18 +155,38 @@ function App() {
   return (
     <div className="min-h-screen bg-background">
       {showNavigation && <Navigation currentView={currentView} onNavigate={handleNavigate} />}
+
       <main>{renderView()}</main>
 
-      <AuthDialog open={authDialogOpen} onOpenChange={setAuthDialogOpen} defaultTab={authDialogDefaultTab} onForgotPassword={() => setForgotPasswordOpen(true)} onAuthSuccess={() => handleNavigate('profile')} onNavigate={handleNavigate} />
-      <ForgotPasswordDialog open={forgotPasswordOpen} onOpenChange={setForgotPasswordOpen} />
+      <AuthDialog
+        open={authDialogOpen}
+        onOpenChange={setAuthDialogOpen}
+        defaultTab={authDialogDefaultTab}
+        onForgotPassword={() => setForgotPasswordOpen(true)}
+        onAuthSuccess={() => handleNavigate('profile')}
+        onNavigate={handleNavigate}
+      />
+
+      <ForgotPasswordDialog
+        open={forgotPasswordOpen}
+        onOpenChange={setForgotPasswordOpen}
+        onBackToLogin={() => {
+          setForgotPasswordOpen(false);
+          setAuthDialogDefaultTab('login');
+          setAuthDialogOpen(true);
+        }}
+      />
+
       <OnboardingDialog open={showOnboarding} onOpenChange={() => {}} />
+
       <UsernameSetupDialog open={needsUsernameSetup ?? false} onComplete={() => handleNavigate('profile')} />
+
       <BadgeUnlockPopup />
     </div>
   );
 }
 
-// ✅ Demo prompts preserved (unchanged)
+// ✅ ✅ FULLY TYPED DEMO PROMPTS (NO UNDEFINED FIELDS)
 function getDemoPrompts() {
   const getDateOffsetEST = (days: number): string => {
     const now = new Date();
@@ -180,7 +201,21 @@ function getDemoPrompts() {
   const formatDate = (offset: number) => getDateOffsetEST(offset);
 
   return [
-    { id: formatDate(0), title: 'A yeti performing cool snowboard tricks.', description: 'Massive yeti executing daring stunts across snowy mountain slope', category: 'Silly', tags: ['yeti', 'snowboard'], publish_date: formatDate(0) },
-    { id: formatDate(-1), title: 'A scarecrow who protects a pumpkin village.', category: 'Spooky', publish_date: formatDate(-1) },
+    {
+      id: formatDate(0),
+      title: 'A yeti performing cool snowboard tricks.',
+      description: 'Massive yeti executing daring stunts across snowy mountain slope',
+      category: 'Silly',
+      tags: ['yeti', 'snowboard', 'snow'],
+      publish_date: formatDate(0),
+    },
+    {
+      id: formatDate(-1),
+      title: 'A scarecrow who protects a pumpkin village.',
+      description: 'Tall scarecrow guarding cozy glowing pumpkin homes',
+      category: 'Spooky',
+      tags: ['scarecrow', 'pumpkin', 'lantern'],
+      publish_date: formatDate(-1),
+    },
   ];
 }
