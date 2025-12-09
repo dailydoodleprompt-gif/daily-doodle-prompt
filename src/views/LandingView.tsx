@@ -147,32 +147,44 @@ export function LandingView({ onGetStarted, onSignUp, onLogin, onPricing }: Land
       </section>
 
       {/* Footer */}
-      <footer className="py-8 border-t">
-        <div className="container px-4 mx-auto">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                <Pencil className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <span className="font-semibold">DailyDoodlePrompt</span>
-            </div>
-            <div className="flex gap-6 text-sm text-muted-foreground">
-              <button className="hover:text-foreground transition-colors">
-                Privacy Policy
-              </button>
-              <button className="hover:text-foreground transition-colors">
-                Terms of Service
-              </button>
-              <button className="hover:text-foreground transition-colors">
-                Support
-              </button>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} DailyDoodlePrompt
-            </p>
-          </div>
+<footer className="py-8 border-t">
+  <div className="container px-4 mx-auto">
+    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="flex items-center gap-2">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+          <Pencil className="h-4 w-4 text-primary-foreground" />
         </div>
-      </footer>
+        <span className="font-semibold">DailyDoodlePrompt</span>
+      </div>
+
+      <div className="flex gap-6 text-sm text-muted-foreground">
+        <a
+          href="/privacy"
+          className="hover:text-foreground transition-colors"
+        >
+          Privacy Policy
+        </a>
+        <a
+          href="/terms"
+          className="hover:text-foreground transition-colors"
+        >
+          Terms of Service
+        </a>
+        <a
+          href="/support"
+          className="hover:text-foreground transition-colors"
+        >
+          Support
+        </a>
+      </div>
+
+      <p className="text-sm text-muted-foreground">
+        &copy; {new Date().getFullYear()} DailyDoodlePrompt
+      </p>
+    </div>
+  </div>
+</footer>
+
     </div>
   );
 }
