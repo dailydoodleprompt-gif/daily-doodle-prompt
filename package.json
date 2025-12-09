@@ -9,15 +9,9 @@
   "scripts": {
     "dev": "vite --port 3000",
     "start": "vite --port 3000",
-
-    /* --------------------------------------- */
-    /* FIXED BUILD SCRIPT — NOW COPIES index.html INTO dist */
-    /* --------------------------------------- */
     "build": "npm run check:safe && vite build && cp index.html dist/index.html",
     "build:prod": "NODE_ENV=production vite build && cp index.html dist/index.html",
     "build:nocheck": "vite build && cp index.html dist/index.html",
-    /* --------------------------------------- */
-
     "serve": "vite preview",
     "preview": "vite preview --port 4173",
     "test": "vitest run",
