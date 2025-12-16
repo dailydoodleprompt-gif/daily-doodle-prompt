@@ -82,14 +82,17 @@ export function Navigation({ currentView, onNavigate }: NavigationProps) {
         <div className="container flex h-14 items-center">
           <div className="flex items-center gap-2 mr-4">
             <button
-              onClick={handleLogoClick}
-              className="flex items-center gap-2 font-semibold"
-            >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                <Pencil className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <span className="hidden sm:inline-block">DailyDoodlePrompt</span>
-            </button>
+  onClick={handleLogoClick}
+  className="flex items-center gap-2 font-semibold"
+>
+  <img
+    src="/public/logo.svg"
+    alt="Daily Doodle Prompt"
+    className="h-8 w-auto"
+  />
+  <span className="hidden sm:inline-block">DailyDoodlePrompt</span>
+</button>
+
           </div>
 
           {/* Desktop Navigation */}
@@ -247,3 +250,4 @@ export function Navigation({ currentView, onNavigate }: NavigationProps) {
     </>
   );
 }
+
