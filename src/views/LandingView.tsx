@@ -46,9 +46,12 @@ export function LandingView({ onGetStarted, onSignUp, onLogin, onPricing }: Land
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 items-center justify-between px-4 mx-auto">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <Pencil className="h-4 w-4 text-primary-foreground" />
-            </div>
+            <img
+  src="/logo.svg"
+  alt="Daily Doodle Prompt"
+  className="h-8 w-auto"
+/>
+
             <span className="font-semibold text-lg">DailyDoodlePrompt</span>
           </div>
           <div className="flex items-center gap-2">
