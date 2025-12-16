@@ -86,7 +86,7 @@ export function Navigation({ currentView, onNavigate }: NavigationProps) {
   className="flex items-center gap-2 font-semibold"
 >
   <img
-    src="/public/logo.svg"
+    src="/logo.svg"
     alt="Daily Doodle Prompt"
     className="h-8 w-auto"
   />
@@ -250,4 +250,5 @@ export function Navigation({ currentView, onNavigate }: NavigationProps) {
     </>
   );
 }
+
 
