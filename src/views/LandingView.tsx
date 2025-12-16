@@ -152,41 +152,43 @@ export function LandingView({ onGetStarted, onSignUp, onLogin, onPricing }: Land
       {/* Footer */}
 <footer className="py-8 border-t">
   <div className="container px-4 mx-auto">
-    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-      <div className="flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-          <Pencil className="h-4 w-4 text-primary-foreground" />
-        </div>
-        <span className="font-semibold">DailyDoodlePrompt</span>
-      </div>
+    <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm">
 
-      <div className="flex gap-6 text-sm text-muted-foreground">
-        <a
-          href="/privacy"
-          className="hover:text-foreground transition-colors"
-        >
-          Privacy Policy
+      {/* Brand */}
+      <a
+        href="/"
+        className="flex items-center gap-2 font-semibold hover:opacity-80 transition"
+      >
+        <img
+          src="/logo.svg"
+          alt="Daily Doodle Prompt"
+          className="h-8 w-auto"
+        />
+        <span>DailyDoodlePrompt</span>
+      </a>
+
+      {/* Utility links */}
+      <div className="flex gap-6 text-muted-foreground">
+        <a href="/privacy" className="hover:text-foreground transition-colors">
+          Privacy
         </a>
-        <a
-          href="/terms"
-          className="hover:text-foreground transition-colors"
-        >
-          Terms of Service
+        <a href="/terms" className="hover:text-foreground transition-colors">
+          Terms
         </a>
-        <a
-          href="/support"
-          className="hover:text-foreground transition-colors"
-        >
+        <a href="/support" className="hover:text-foreground transition-colors">
           Support
         </a>
       </div>
 
-      <p className="text-sm text-muted-foreground">
-        &copy; {new Date().getFullYear()} DailyDoodlePrompt
-      </p>
+      {/* Copyright */}
+      <div className="text-muted-foreground">
+        © {new Date().getFullYear()} Daily Doodle Prompt
+      </div>
+
     </div>
   </div>
 </footer>
+
 
     </div>
   );
