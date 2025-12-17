@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UtilityHeader } from '@/components/UtilityHeader';
 
 interface PrivacyPolicyViewProps {
-  onBack: () => void;
+  onBack?: () => void;
 }
 
 export function PrivacyPolicyView({ onBack }: PrivacyPolicyViewProps) {
