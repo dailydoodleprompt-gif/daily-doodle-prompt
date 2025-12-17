@@ -7,32 +7,23 @@ interface UtilityHeaderProps {
 
 export function UtilityHeader({ onBack }: UtilityHeaderProps) {
   return (
-    <header className="border-b bg-background">
-      <div className="container flex h-14 items-center gap-4">
+    <header className="sticky top-0 z-30 w-full border-b bg-background">
+      <div className="container flex h-14 items-center gap-2 px-4">
         {onBack && (
           <Button
             variant="ghost"
-            size="icon"
+            size="sm"
             onClick={onBack}
-            aria-label="Go back"
+            className="gap-2"
           >
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="h-4 w-4" />
+            Back
           </Button>
         )}
 
-        <button
-          onClick={() => {
-            window.location.href = '/';
-          }}
-          className="flex items-center gap-2 font-semibold"
-        >
-          <img
-            src="/logo.svg"
-            alt="Daily Doodle Prompt"
-            className="h-7 w-auto"
-          />
-          <span className="hidden sm:inline">Daily Doodle Prompt</span>
-        </button>
+        <span className="text-sm font-medium text-muted-foreground">
+          DailyDoodlePrompt
+        </span>
       </div>
     </header>
   );
