@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { UtilityHeader } from '@/components/UtilityHeader';
 
-export const Route = createFileRoute('/support')({
+export const Route = createFileRoute('/support' as const)({
   component: SupportRoute,
 });
 
