@@ -22,6 +22,7 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, CheckCircle2, HelpCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { UtilityHeader } from '@/components/UtilityHeader';
 
 interface SupportViewProps {
   onBack?: () => void;

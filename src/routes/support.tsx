@@ -1,17 +1,18 @@
-// src/routes/support.tsx
 import { createFileRoute } from '@tanstack/react-router';
 import { SupportView } from '@/views/SupportView';
-import { UtilityHeader } from '@/components/UtilityHeader';
+import { useNavigate } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/support')({
+export const Route = createFileRoute('/')({
   component: SupportRoute,
 });
 
 function SupportRoute() {
+  const navigate = useNavigate();
+
   return (
-    <>
-      <UtilityHeader />
-      <SupportView />
-    </>
+    <SupportView
+      onBack={() => navigate({ to: '/' })}
+      onLogin={() => navigate({ to: '/' })}
+    />
   );
 }
