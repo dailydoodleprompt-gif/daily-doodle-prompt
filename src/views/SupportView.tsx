@@ -94,7 +94,7 @@ export function SupportView({ onBack, onLogin }: SupportViewProps) {
       <div className="min-h-screen bg-background">
         <UtilityHeader onBack={onBack} />
 
-        <main className="container max-w-2xl py-16">
+        <main className="mx-auto w-full max-w-2xl px-4 py-16">
           <Card>
             <CardHeader className="text-center">
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
@@ -124,7 +124,7 @@ export function SupportView({ onBack, onLogin }: SupportViewProps) {
     <div className="min-h-screen bg-background">
       <UtilityHeader onBack={onBack} />
 
-      <main className="container max-w-2xl py-8">
+      <main className="mx-auto w-full max-w-2xl px-4 py-8">
         <h1 className="text-3xl font-bold mb-2">Contact Support</h1>
         <p className="text-muted-foreground mb-6">
           Submit a support request and we’ll get back to you.

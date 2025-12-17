@@ -1,4 +1,4 @@
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface UtilityHeaderProps {
@@ -7,8 +7,8 @@ interface UtilityHeaderProps {
 
 export function UtilityHeader({ onBack }: UtilityHeaderProps) {
   return (
-    <header className="sticky top-0 z-30 w-full border-b bg-background">
-      <div className="container flex h-14 items-center gap-2 px-4">
+    <header className="sticky top-0 z-30 w-full border-b bg-background/95 backdrop-blur">
+      <div className="mx-auto flex h-14 max-w-5xl items-center gap-3 px-4">
         {onBack && (
           <Button
             variant="ghost"
@@ -21,9 +21,10 @@ export function UtilityHeader({ onBack }: UtilityHeaderProps) {
           </Button>
         )}
 
-        <span className="text-sm font-medium text-muted-foreground">
+        <div className="ml-auto flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <Pencil className="h-4 w-4" />
           DailyDoodlePrompt
-        </span>
+        </div>
       </div>
     </header>
   );
