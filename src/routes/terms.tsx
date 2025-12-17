@@ -1,5 +1,6 @@
 // FILE: src/routes/terms.tsx
 import { createFileRoute } from '@tanstack/react-router';
+import { UtilityHeader } from '@/components/UtilityHeader';
 
 export const Route = createFileRoute('/')({
   component: TermsPage,

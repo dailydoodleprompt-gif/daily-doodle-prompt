@@ -1,5 +1,6 @@
 // FILE: src/routes/privacy.tsx
 import { createFileRoute } from '@tanstack/react-router';
+import { UtilityHeader } from '@/components/UtilityHeader';
 
 export const Route = createFileRoute('/')({
   component: PrivacyPage,
