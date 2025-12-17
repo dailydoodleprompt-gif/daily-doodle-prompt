@@ -21,4 +21,19 @@ export function UtilityHeader({ onBack }: UtilityHeaderProps) {
         )}
 
         <button
-          onClick={() => (window.location.href = '/')}
+          onClick={() => {
+            window.location.href = '/';
+          }}
+          className="flex items-center gap-2 font-semibold"
+        >
+          <img
+            src="/logo.svg"
+            alt="Daily Doodle Prompt"
+            className="h-7 w-auto"
+          />
+          <span className="hidden sm:inline">Daily Doodle Prompt</span>
+        </button>
+      </div>
+    </header>
+  );
+}
