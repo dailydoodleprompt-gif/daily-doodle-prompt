@@ -138,7 +138,7 @@ export function PaymentSuccessView({ onNavigate }: PaymentSuccessViewProps) {
 
           <div className="flex flex-col gap-2">
             <Button
-              onClick={() => onNavigate('home')}
+              onClick={() => onNavigate('prompt')}
               className="w-full bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-500 hover:to-amber-600 text-white"
             >
               Start Exploring
