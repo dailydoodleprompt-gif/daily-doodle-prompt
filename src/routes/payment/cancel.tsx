@@ -2,7 +2,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { PaymentCancelView } from '@/views/PaymentCancelView';
 
-export const Route = createFileRoute('/')({
+export const Route = createFileRoute('/payment/cancel')({
   component: PaymentCancelRoute,
 });
 
@@ -11,8 +11,12 @@ function PaymentCancelRoute() {
     <PaymentCancelView
       onNavigate={(view) => {
         if (view === 'pricing') {
-          window.location.href = '/';
+          window.location.href = '/pricing';
+          return;
         }
+
+        // Safe fallback
+        window.location.href = '/';
       }}
     />
   );
