@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UtilityHeader } from '@/components/UtilityHeader';
 
 interface TermsOfServiceViewProps {
-  onBack: () => void;
+  onBack?: () => void;
 }
 
 export function TermsOfServiceView({ onBack }: TermsOfServiceViewProps) {
@@ -31,9 +31,9 @@ export function TermsOfServiceView({ onBack }: TermsOfServiceViewProps) {
               <section>
                 <h2>Acceptance of Terms</h2>
                 <p>
-                  By creating an account or using DailyDoodlePrompt, you agree
-                  to be bound by these Terms of Service. If you do not agree,
-                  please do not use the service.
+                  By creating an account or using DailyDoodlePrompt, you agree to
+                  be bound by these Terms of Service. If you do not agree, please
+                  do not use the service.
                 </p>
               </section>
 
