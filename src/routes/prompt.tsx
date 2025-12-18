@@ -1,11 +1,12 @@
 // FILE: src/routes/prompt.tsx
 import { createFileRoute } from '@tanstack/react-router';
-import { PromptView } from '@/views/PromptView';
 
-export const Route = createFileRoute('/')({
-  component: PromptRoute,
+export const Route = createFileRoute('/prompt')({
+  component: PromptRedirect,
 });
 
-function PromptRoute() {
-  return <PromptView />;
+function PromptRedirect() {
+  // Redirect to root; App will set currentView = 'prompt'
+  window.location.replace('/');
+  return null;
 }
