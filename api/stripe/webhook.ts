@@ -1,117 +1,68 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
 import { kv } from '../lib/kv';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-11-17.clover',
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2024-04-10',
 });
 
-// Disable body parsing — Stripe requires raw body for signature verification
 export const config = {
   api: {
-    bodyParser: false,
+    bodyParser: false, // 🚨 REQUIRED for Stripe
   },
 };
 
-// Helper: read raw request body
-async function getRawBody(req: VercelRequest): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = [];
-    req.on('data', (chunk) => chunks.push(chunk));
-    req.on('end', () => resolve(Buffer.concat(chunks)));
-    req.on('error', reject);
-  });
+async function getRawBody(req: Request): Promise<Buffer> {
+  const arrayBuffer = await req.arrayBuffer();
+  return Buffer.from(arrayBuffer);
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: Request): Promise<Response> {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return new Response('Method Not Allowed', { status: 405 });
   }
 
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-  if (!webhookSecret) {
-    console.error('❌ STRIPE_WEBHOOK_SECRET not configured');
-    return res.status(500).json({ error: 'Webhook secret not configured' });
+  const sig = req.headers.get('stripe-signature');
+  if (!sig) {
+    return new Response('Missing Stripe signature', { status: 400 });
   }
 
   let event: Stripe.Event;
 
   try {
     const rawBody = await getRawBody(req);
-    const signature = req.headers['stripe-signature'];
-
-    if (!signature) {
-      return res.status(400).json({ error: 'Missing Stripe signature' });
-    }
 
     event = stripe.webhooks.constructEvent(
       rawBody,
-      signature as string,
-      webhookSecret
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET!
     );
-  } catch (err) {
-    console.error('❌ Webhook signature verification failed:', err);
-    return res.status(400).json({ error: 'Invalid webhook signature' });
+  } catch (err: any) {
+    console.error('❌ Signature verification failed:', err.message);
+    return new Response('Invalid signature', { status: 400 });
   }
 
   try {
-    switch (event.type) {
-      case 'checkout.session.completed': {
-        const session = event.data.object as Stripe.Checkout.Session;
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object as Stripe.Checkout.Session;
 
-        const userId =
-          session.client_reference_id || session.metadata?.userId;
+      const userId = session.metadata?.userId;
+      const email = session.metadata?.userEmail;
 
-        if (!userId) {
-          console.error('❌ checkout.session.completed without userId');
-          return res.status(400).json({ error: 'Missing userId in session' });
-        }
-
-        const subscriptionRecord = {
-          status: 'active',
-          stripeSessionId: session.id,
-          stripeCustomerId: session.customer,
-          stripePaymentIntent: session.payment_intent,
-          amount: session.amount_total,
-          currency: session.currency,
-          purchasedAt: new Date().toISOString(),
-        };
-
-        // ✅ Authoritative persistence
-        await kv.set(
-          `user:${userId}:subscription`,
-          subscriptionRecord
-        );
-
-        console.log('✅ Subscription activated for user:', userId);
-        break;
+      if (!userId) {
+        throw new Error('Missing userId in session metadata');
       }
 
-      case 'payment_intent.succeeded': {
-        const intent = event.data.object as Stripe.PaymentIntent;
-        console.log('ℹ️ PaymentIntent succeeded:', intent.id);
-        break;
-      }
-
-      case 'payment_intent.payment_failed': {
-        const intent = event.data.object as Stripe.PaymentIntent;
-        console.error('⚠️ PaymentIntent failed:', intent.id);
-        break;
-      }
-
-      default:
-        console.log(`ℹ️ Unhandled Stripe event: ${event.type}`);
+      await kv.set(`user:${userId}:premium`, {
+        email,
+        stripeSessionId: session.id,
+        paymentIntent: session.payment_intent,
+        purchasedAt: new Date().toISOString(),
+      });
     }
 
-    // Stripe requires a 200 to acknowledge receipt
-    return res.status(200).json({ received: true });
-  } catch (error) {
-    console.error('❌ Webhook processing error:', error);
-    return res.status(500).json({
-      error: 'Webhook handler failed',
-      message:
-        error instanceof Error ? error.message : 'Unknown webhook error',
-    });
+    return new Response('OK', { status: 200 });
+  } catch (err) {
+    console.error('❌ Webhook handler error:', err);
+    return new Response('Webhook handler failed', { status: 500 });
   }
 }
