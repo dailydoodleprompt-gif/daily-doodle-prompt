@@ -13,281 +13,276 @@
 import { create } from "zustand";
 
 interface AuthMessage {
-	type: "CREAO_AUTH_TOKEN";
-	token: string;
-	origin: string;
+  type: "CREAO_AUTH_TOKEN";
+  token: string;
+  origin: string;
 }
 
-type AuthStatus =
-	| "authenticated"
-	| "unauthenticated"
-	| "invalid_token"
-	| "loading";
+type AuthStatus = "authenticated" | "unauthenticated" | "invalid_token" | "loading";
 
 interface AuthState {
-	token: string | null;
-	status: AuthStatus;
-	parentOrigin: string | null;
+  token: string | null;
+  status: AuthStatus;
+  parentOrigin: string | null;
 }
 
 interface AuthStore extends AuthState {
-	// Internal state
-	initializationPromise: Promise<void> | null;
-	validationPromise: Promise<boolean> | null;
+  // Internal state
+  initializationPromise: Promise<void> | null;
+  validationPromise: Promise<boolean> | null;
 
-	// Actions
-	setToken: (token: string, origin?: string) => Promise<void>;
-	setStatus: (status: AuthStatus) => void;
-	setState: (state: Partial<AuthState>) => void;
-	clearAuth: () => Promise<void>;
-	refreshAuth: () => Promise<boolean>;
-	initialize: () => Promise<void>;
-	validateToken: (token: string) => Promise<boolean>;
+  // Actions
+  setToken: (token: string, origin?: string | null) => Promise<void>;
+  setStatus: (status: AuthStatus) => void;
+  setState: (state: Partial<AuthState>) => void;
+  clearAuth: () => Promise<void>;
+  refreshAuth: () => Promise<boolean>;
+  initialize: () => Promise<void>;
+  validateToken: (token: string) => Promise<boolean>;
 }
 
 // Configuration for token validation
-const API_BASE_URL = import.meta.env.VITE_API_BASE_PATH;
+const RAW_API_BASE_URL =
+  import.meta.env.VITE_API_BASE_PATH ||
+  import.meta.env.VITE_MCP_API_BASE_PATH ||
+  "/api";
+
+function normalizeBaseUrl(base: string): string {
+  // Remove trailing slash so `${base}/me` is clean
+  return base.replace(/\/+$/, "");
+}
+
+const API_BASE_URL = normalizeBaseUrl(RAW_API_BASE_URL);
 
 /**
  * Zustand store for authentication state management
  */
-const useAuthStore = create<AuthStore>(
-	(set, get): AuthStore => ({
-		// Initial state
-		token: null,
-		status: "loading",
-		parentOrigin: null,
-		initializationPromise: null,
-		validationPromise: null,
+const useAuthStore = create<AuthStore>((set, get): AuthStore => ({
+  // Initial state
+  token: null,
+  status: "loading",
+  parentOrigin: null,
+  initializationPromise: null,
+  validationPromise: null,
 
-		// Set status
-		setStatus: (status: AuthStatus) => {
-			set({ status });
-		},
+  // Set status
+  setStatus: (status: AuthStatus) => {
+    set({ status });
+  },
 
-		// Set partial state
-		setState: (newState: Partial<AuthState>) => {
-			set(newState);
-		},
+  // Set partial state
+  setState: (newState: Partial<AuthState>) => {
+    set(newState);
+  },
 
-		// Validate token by making a request to the /me endpoint
-		validateToken: async (token: string): Promise<boolean> => {
-			console.log("Validating token...", { API_BASE_URL });
+  // Validate token by making a request to the /me endpoint
+  validateToken: async (token: string): Promise<boolean> => {
+    console.log("Validating token...", { API_BASE_URL });
 
-			if (!API_BASE_URL) {
-				console.error("API_BASE_URL is not set");
-				return false;
-			}
-
-			try {
-				const response = await fetch(`${API_BASE_URL}/me`, {
-					method: "GET",
-					headers: {
-						Authorization: `Bearer ${token}`,
-						"Content-Type": "application/json",
-					},
-				});
-
-				console.log("Token validation response:", response.status, response.ok);
-				return response.ok;
-			} catch (error) {
-				console.warn("Token validation failed:", error);
-				return false;
-			}
-		},
-
-		        // Set the authentication token (async to validate)
-        setToken: async (
-          token: string,
-          origin?: string | null
-        ): Promise<void> => {
-          const { validateToken } = get();
-
-          try {
-            const isValid = await validateToken(token);
-
-            if (isValid) {
-              const parentOrigin = origin || get().parentOrigin;
-
-              // Update in-memory auth state
-              set({
-                token,
-                status: "authenticated",
-                parentOrigin,
-              });
-
-              // 🔁 Legacy key for Creao (keep for backwards-compat)
-              try {
-                localStorage.setItem("creao_auth_token", token);
-              } catch (error) {
-                console.error(
-                  "[auth] Failed to persist legacy auth token",
-                  error
-                );
-              }
-
-              // ✅ New DailyDoodle OAuth session key expected by the tests
-              try {
-                const session = {
-                  token,
-                  provider: "oauth",
-                  // We don’t currently track expiry; tests only care that the token is there
-                  expiresAt: null as number | null,
-                };
-
-                localStorage.setItem(
-                  "dailydoodle_oauth_session",
-                  JSON.stringify(session)
-                );
-              } catch (error) {
-                console.error(
-                  "[auth] Failed to persist dailydoodle OAuth session",
-                  error
-                );
-              }
-            } else {
-              // Invalid token: fail closed and clear everything
-              set({
-                token: null,
-                status: "unauthenticated",
-                parentOrigin: null,
-              });
-
-              try {
-                localStorage.removeItem("creao_auth_token");
-              } catch (error) {
-                console.error(
-                  "[auth] Failed to clear legacy auth token",
-                  error
-                );
-              }
-
-              try {
-                localStorage.removeItem("dailydoodle_oauth_session");
-              } catch (error) {
-                console.error(
-                  "[auth] Failed to clear dailydoodle OAuth session",
-                  error
-                );
-              }
-            }
-          } catch (error) {
-            console.error("[auth] Error while setting token", error);
-
-            // Hard reset on error
-            set({
-              token: null,
-              status: "unauthenticated",
-              parentOrigin: null,
-            });
-
-            try {
-              localStorage.removeItem("creao_auth_token");
-            } catch {
-              // ignore
-            }
-
-            try {
-              localStorage.removeItem("dailydoodle_oauth_session");
-            } catch {
-              // ignore
-            }
-          }
-        },
-
-        // Clear authentication
-        clearAuth: async (): Promise<void> => {
-          // Clear in-memory state
-          set({
-            token: null,
-            status: "unauthenticated",
-            parentOrigin: null,
-          });
-
-          // Clear both legacy + new storage keys
-          try {
-            localStorage.removeItem("creao_auth_token");
-          } catch (error) {
-            console.error(
-              "[auth] Failed to clear legacy auth token",
-              error
-            );
-          }
-
-          try {
-            localStorage.removeItem("dailydoodle_oauth_session");
-          } catch (error) {
-            console.error(
-              "[auth] Failed to clear dailydoodle OAuth session",
-              error
-            );
-          }
-        },
-
-
-		// Refresh authentication state by re-validating the current token
-		refreshAuth: async (): Promise<boolean> => {
-			const { token, validateToken } = get();
-
-			if (!token) {
-				return false;
-			}
-
-			const isValid = await validateToken(token);
-			if (!isValid) {
-				set({ status: "invalid_token" });
-				localStorage.removeItem("creao_auth_token");
-				return false;
-			}
-
-			set({ status: "authenticated" });
-			return true;
-		},
-
-		// Initialize the authentication system
-		initialize: async (): Promise<void> => {
-			console.log("Auth initialization started");
-			try {
-				// Initialize from storage
-				await initializeFromStorage(get, set);
-
-				// Initialize from URL
-				await initializeFromUrl(get);
-
-				// Setup message listener
-				setupMessageListener(get);
-
-				    // Decide final auth status after initialization
-    const currentStatus = get().status;
-    const existingToken = get().token;
-
-    if (currentStatus === "loading") {
-      if (existingToken) {
-        console.log(
-          "Auth initialization complete – token found, setting to authenticated"
-        );
-        set({ status: "authenticated" });
-      } else {
-        console.log(
-          "Auth initialization complete – no token, setting to unauthenticated"
-        );
-        set({ status: "unauthenticated" });
-      }
-    } else {
-      console.log("Auth initialization complete – status:", currentStatus);
+    if (!API_BASE_URL) {
+      console.error("API_BASE_URL is not set");
+      return false;
     }
 
+    try {
+      const response = await fetch(`${API_BASE_URL}/me`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
-			} catch (error) {
-				console.error("Auth initialization failed:", error);
-				set({ status: "unauthenticated" });
-			}
-		},
-	}),
-);
+      console.log("Token validation response:", response.status, response.ok);
+      return response.ok;
+    } catch (error) {
+      console.warn("Token validation failed:", error);
+      return false;
+    }
+  },
+
+  // Set the authentication token (async to validate)
+  setToken: async (token: string, origin?: string | null): Promise<void> => {
+    const { validateToken } = get();
+
+    try {
+      const isValid = await validateToken(token);
+
+      if (isValid) {
+        const parentOrigin = origin || get().parentOrigin;
+
+        // Update in-memory auth state
+        set({
+          token,
+          status: "authenticated",
+          parentOrigin,
+        });
+
+        // 🔁 Legacy key for Creao (keep for backwards-compat)
+        try {
+          localStorage.setItem("creao_auth_token", token);
+        } catch (error) {
+          console.error("[auth] Failed to persist legacy auth token", error);
+        }
+
+        // ✅ New DailyDoodle OAuth session key expected by some flows/tests
+        try {
+          const session = {
+            token,
+            provider: "oauth",
+            expiresAt: null as number | null,
+          };
+          localStorage.setItem("dailydoodle_oauth_session", JSON.stringify(session));
+        } catch (error) {
+          console.error("[auth] Failed to persist dailydoodle OAuth session", error);
+        }
+
+        // ✅ Canonical session key used by initializeFromStorage()
+        try {
+          const persist = { token };
+          localStorage.setItem("dailydoodle_session_persist", JSON.stringify(persist));
+        } catch (error) {
+          console.error("[auth] Failed to persist dailydoodle_session_persist", error);
+        }
+      } else {
+        // Invalid token: fail closed and clear everything
+        set({
+          token: null,
+          status: "unauthenticated",
+          parentOrigin: null,
+        });
+
+        try {
+          localStorage.removeItem("creao_auth_token");
+        } catch (error) {
+          console.error("[auth] Failed to clear legacy auth token", error);
+        }
+
+        try {
+          localStorage.removeItem("dailydoodle_oauth_session");
+        } catch (error) {
+          console.error("[auth] Failed to clear dailydoodle OAuth session", error);
+        }
+
+        try {
+          localStorage.removeItem("dailydoodle_session_persist");
+        } catch (error) {
+          console.error("[auth] Failed to clear dailydoodle_session_persist", error);
+        }
+      }
+    } catch (error) {
+      console.error("[auth] Error while setting token", error);
+
+      // Hard reset on error
+      set({
+        token: null,
+        status: "unauthenticated",
+        parentOrigin: null,
+      });
+
+      try {
+        localStorage.removeItem("creao_auth_token");
+      } catch {
+        // ignore
+      }
+
+      try {
+        localStorage.removeItem("dailydoodle_oauth_session");
+      } catch {
+        // ignore
+      }
+
+      try {
+        localStorage.removeItem("dailydoodle_session_persist");
+      } catch {
+        // ignore
+      }
+    }
+  },
+
+  // Clear authentication
+  clearAuth: async (): Promise<void> => {
+    // Clear in-memory state
+    set({
+      token: null,
+      status: "unauthenticated",
+      parentOrigin: null,
+    });
+
+    // Clear all storage keys we might have used
+    try {
+      localStorage.removeItem("creao_auth_token");
+    } catch (error) {
+      console.error("[auth] Failed to clear legacy auth token", error);
+    }
+
+    try {
+      localStorage.removeItem("dailydoodle_oauth_session");
+    } catch (error) {
+      console.error("[auth] Failed to clear dailydoodle OAuth session", error);
+    }
+
+    try {
+      localStorage.removeItem("dailydoodle_session_persist");
+    } catch (error) {
+      console.error("[auth] Failed to clear dailydoodle_session_persist", error);
+    }
+  },
+
+  // Refresh authentication state by re-validating the current token
+  refreshAuth: async (): Promise<boolean> => {
+    const { token, validateToken, clearAuth } = get();
+
+    if (!token) return false;
+
+    const isValid = await validateToken(token);
+    if (!isValid) {
+      set({ status: "invalid_token" });
+      await clearAuth();
+      return false;
+    }
+
+    set({ status: "authenticated" });
+    return true;
+  },
+
+  // Initialize the authentication system
+  initialize: async (): Promise<void> => {
+    console.log("Auth initialization started");
+    try {
+      // Initialize from storage (validated)
+      await initializeFromStorage(get, set);
+
+      // Initialize from URL
+      await initializeFromUrl(get);
+
+      // Setup message listener
+      setupMessageListener(get);
+
+      // Decide final auth status after initialization
+      const currentStatus = get().status;
+      const existingToken = get().token;
+
+      if (currentStatus === "loading") {
+        if (existingToken) {
+          console.log("Auth initialization complete – token found, setting to authenticated");
+          set({ status: "authenticated" });
+        } else {
+          console.log("Auth initialization complete – no token, setting to unauthenticated");
+          set({ status: "unauthenticated" });
+        }
+      } else {
+        console.log("Auth initialization complete – status:", currentStatus);
+      }
+    } catch (error) {
+      console.error("Auth initialization failed:", error);
+      set({ status: "unauthenticated" });
+    }
+  },
+}));
 
 /**
- * Initialize authentication from localStorage
+ * Initialize authentication from localStorage (VALIDATE before trusting)
  */
 async function initializeFromStorage(
   get: () => AuthStore,
@@ -296,9 +291,7 @@ async function initializeFromStorage(
   console.log("🟢 STORAGE INIT START");
 
   try {
-    // ✅ REAL production session key
     const rawSession = localStorage.getItem("dailydoodle_session_persist");
-
     console.log("🟢 STORED SESSION FOUND:", rawSession);
 
     if (!rawSession) {
@@ -309,7 +302,6 @@ async function initializeFromStorage(
 
     const session = JSON.parse(rawSession);
 
-    // ✅ Normalize token from real session store
     const restoredToken =
       session?.token ||
       session?.accessToken ||
@@ -323,7 +315,16 @@ async function initializeFromStorage(
       return;
     }
 
-    console.log("✅ TOKEN RESTORED FROM SESSION");
+    // ✅ Validate token before trusting it
+    const isValid = await get().validateToken(restoredToken);
+    if (!isValid) {
+      console.log("⚠️ STORED TOKEN INVALID — clearing");
+      localStorage.removeItem("dailydoodle_session_persist");
+      set({ status: "unauthenticated", token: null });
+      return;
+    }
+
+    console.log("✅ TOKEN RESTORED + VALIDATED FROM SESSION");
 
     set({
       token: restoredToken,
@@ -345,238 +346,166 @@ async function initializeFromStorage(
  * Initialize authentication from URL parameters
  */
 async function initializeFromUrl(get: () => AuthStore): Promise<void> {
-	const urlParams = new URLSearchParams(window.location.search);
-	const authToken = urlParams.get("auth_token");
+  const urlParams = new URLSearchParams(window.location.search);
+  const authToken = urlParams.get("auth_token");
 
-	if (authToken) {
-		const { setToken } = get();
-		await setToken(authToken);
-		// Clean up URL to remove token
-		cleanupUrl();
-	}
+  if (authToken) {
+    const { setToken } = get();
+    await setToken(authToken);
+    cleanupUrl();
+  }
 }
 
 /**
  * Setup listener for postMessage from parent window
  */
 function setupMessageListener(get: () => AuthStore): void {
-	window.addEventListener("message", async (event: MessageEvent) => {
-		try {
-			const data = event.data as AuthMessage;
+  window.addEventListener("message", async (event: MessageEvent) => {
+    try {
+      const data = event.data as AuthMessage;
 
-			if (data?.type === "CREAO_AUTH_TOKEN" && data.token) {
-				const { setToken } = get();
-				await setToken(data.token, event.origin);
-			}
-		} catch (error) {
-			console.warn("Error processing auth message:", error);
-		}
-	});
+      if (data?.type === "CREAO_AUTH_TOKEN" && data.token) {
+        const { setToken } = get();
+        await setToken(data.token, event.origin);
+      }
+    } catch (error) {
+      console.warn("Error processing auth message:", error);
+    }
+  });
 }
 
 /**
  * Clean up URL parameters
  */
 function cleanupUrl(): void {
-	const url = new URL(window.location.href);
-	url.searchParams.delete("auth_token");
-	window.history.replaceState({}, document.title, url.toString());
+  const url = new URL(window.location.href);
+  url.searchParams.delete("auth_token");
+  window.history.replaceState({}, document.title, url.toString());
 }
 
 // Initialize on module load
 const initPromise = (async () => {
-	const { initialize } = useAuthStore.getState();
-	await initialize();
+  const { initialize } = useAuthStore.getState();
+  await initialize();
 })();
 
-/**
- * Ensure initialization is complete
- */
 async function ensureInitialized(): Promise<void> {
-	await initPromise;
+  await initPromise;
 }
 
 /**
  * React hook for using authentication state
- * @returns Authentication state and helper methods
  */
 export function useCreaoAuth() {
-	const token = useAuthStore((state) => state.token);
-	const status = useAuthStore((state) => state.status);
-	const parentOrigin = useAuthStore((state) => state.parentOrigin);
-	const clearAuth = useAuthStore((state) => state.clearAuth);
-	const refreshAuth = useAuthStore((state) => state.refreshAuth);
+  const token = useAuthStore((state) => state.token);
+  const status = useAuthStore((state) => state.status);
+  const parentOrigin = useAuthStore((state) => state.parentOrigin);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
+  const refreshAuth = useAuthStore((state) => state.refreshAuth);
 
-	return {
-		token,
-		status,
-		parentOrigin,
-		isAuthenticated: status === "authenticated" && !!token,
-		isLoading: status === "loading",
-		hasInvalidToken: status === "invalid_token",
-		hasNoToken: status === "unauthenticated",
-		clearAuth,
-		refreshAuth,
-	};
+  return {
+    token,
+    status,
+    parentOrigin,
+    isAuthenticated: status === "authenticated" && !!token,
+    isLoading: status === "loading",
+    hasInvalidToken: status === "invalid_token",
+    hasNoToken: status === "unauthenticated",
+    clearAuth,
+    refreshAuth,
+  };
 }
 
-/**
- * Initialize authentication integration for built pages
- * Call this when your built application starts
- */
 export async function initializeAuthIntegration(): Promise<void> {
-	await ensureInitialized();
-	console.log("Auth integration initialized");
+  await ensureInitialized();
+  console.log("Auth integration initialized");
 }
 
-/**
- * Get the current authentication token
- */
 export function getAuthToken(): string | null {
-	return useAuthStore.getState().token;
+  return useAuthStore.getState().token;
 }
 
-/**
- * Get the current authentication token (async - ensures initialization)
- */
 export async function getAuthTokenAsync(): Promise<string | null> {
-	await ensureInitialized();
-	return useAuthStore.getState().token;
+  await ensureInitialized();
+  return useAuthStore.getState().token;
 }
 
-/**
- * Check if user is authenticated (async - validates token)
- */
 export async function isAuthenticated(): Promise<boolean> {
-	await ensureInitialized();
+  await ensureInitialized();
 
-	const { token, status, validateToken, clearAuth } = useAuthStore.getState();
+  const { token, status, validateToken, clearAuth } = useAuthStore.getState();
 
-	// If we already know we're not authenticated, return false
-	if (!token) {
-		return false;
-	}
+  if (!token) return false;
+  if (status === "authenticated") return true;
 
-	// If we think we're authenticated, return true
-	if (status === "authenticated") {
-		return true;
-	}
+  const isValid = await validateToken(token);
+  if (isValid) {
+    useAuthStore.setState({ status: "authenticated" });
+    return true;
+  }
 
-	// If we have a token but haven't validated it, validate now
-	if (token) {
-		const isValid = await validateToken(token);
-
-		if (isValid) {
-			useAuthStore.setState({ status: "authenticated" });
-			return true;
-		}
-		// Clear invalid token
-		await clearAuth();
-		return false;
-	}
-
-	// Default case - if we get here, return false
-	return false;
+  await clearAuth();
+  return false;
 }
 
-/**
- * Check if user is authenticated (sync - returns current state without validation)
- */
 export function isAuthenticatedSync(): boolean {
-	const { status, token } = useAuthStore.getState();
-	return status === "authenticated" && !!token;
+  const { status, token } = useAuthStore.getState();
+  return status === "authenticated" && !!token;
 }
 
-/**
- * Get the current auth status
- */
 export function getAuthStatus(): AuthStatus {
-	return useAuthStore.getState().status;
+  return useAuthStore.getState().status;
 }
 
-/**
- * Get the current auth status (async - ensures initialization)
- */
 export async function getAuthStatusAsync(): Promise<AuthStatus> {
-	await ensureInitialized();
-	return useAuthStore.getState().status;
+  await ensureInitialized();
+  return useAuthStore.getState().status;
 }
 
-/**
- * Check if token is invalid
- */
 export function hasInvalidToken(): boolean {
-	return useAuthStore.getState().status === "invalid_token";
+  return useAuthStore.getState().status === "invalid_token";
 }
 
-/**
- * Check if token is invalid (async - ensures initialization)
- */
 export async function hasInvalidTokenAsync(): Promise<boolean> {
-	await ensureInitialized();
-	return useAuthStore.getState().status === "invalid_token";
+  await ensureInitialized();
+  return useAuthStore.getState().status === "invalid_token";
 }
 
-/**
- * Check if no token is provided
- */
 export function hasNoToken(): boolean {
-	return useAuthStore.getState().status === "unauthenticated";
+  return useAuthStore.getState().status === "unauthenticated";
 }
 
-/**
- * Check if no token is provided (async - ensures initialization)
- */
 export async function hasNoTokenAsync(): Promise<boolean> {
-	await ensureInitialized();
-	return useAuthStore.getState().status === "unauthenticated";
+  await ensureInitialized();
+  return useAuthStore.getState().status === "unauthenticated";
 }
 
-/**
- * Check if auth is still loading
- */
 export function isAuthenticating(): boolean {
-	return useAuthStore.getState().status === "loading";
+  return useAuthStore.getState().status === "loading";
 }
 
-/**
- * Get the current auth state
- */
 export function getAuthState(): AuthState {
-	const { token, status, parentOrigin } = useAuthStore.getState();
-	return { token, status, parentOrigin };
+  const { token, status, parentOrigin } = useAuthStore.getState();
+  return { token, status, parentOrigin };
 }
 
-/**
- * Add a listener for auth state changes
- */
 export function addAuthStateListener(
-	listener: (state: AuthState) => void,
+  listener: (state: AuthState) => void,
 ): () => void {
-	// Immediately notify with current state
-	const currentState = getAuthState();
-	listener(currentState);
+  listener(getAuthState());
 
-	// Subscribe to store changes
-	const unsubscribe = useAuthStore.subscribe((state) => {
-		const { token, status, parentOrigin } = state;
-		listener({ token, status, parentOrigin });
-	});
+  const unsubscribe = useAuthStore.subscribe((state) => {
+    const { token, status, parentOrigin } = state;
+    listener({ token, status, parentOrigin });
+  });
 
-	// Return cleanup function
-	return unsubscribe;
+  return unsubscribe;
 }
 
-/**
- * Clear authentication
- */
 export async function clearAuth(): Promise<void> {
-	return useAuthStore.getState().clearAuth();
+  return useAuthStore.getState().clearAuth();
 }
 
-/**
- * Refresh authentication state by re-validating the current token
- */
 export async function refreshAuth(): Promise<boolean> {
-	return useAuthStore.getState().refreshAuth();
+  return useAuthStore.getState().refreshAuth();
 }
