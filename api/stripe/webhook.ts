@@ -1,44 +1,51 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
-import { kv } from '../lib/kv';
+import { kv } from '../../src/lib/kv';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-11-17.clover',
 });
 
 export const config = {
   api: {
-    bodyParser: false, // 🚨 REQUIRED for Stripe
+    bodyParser: false, // REQUIRED for Stripe
   },
 };
 
-async function getRawBody(req: Request): Promise<Buffer> {
-  const arrayBuffer = await req.arrayBuffer();
-  return Buffer.from(arrayBuffer);
+function getRawBody(req: VercelRequest): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    req.on('data', (chunk) => chunks.push(chunk));
+    req.on('end', () => resolve(Buffer.concat(chunks)));
+    req.on('error', reject);
+  });
 }
 
-export default async function handler(req: Request): Promise<Response> {
+export default async function handler(
+  req: VercelRequest,
+  res: VercelResponse
+) {
   if (req.method !== 'POST') {
-    return new Response('Method Not Allowed', { status: 405 });
+    return res.status(405).send('Method Not Allowed');
   }
 
-  const sig = req.headers.get('stripe-signature');
+  const sig = req.headers['stripe-signature'];
   if (!sig) {
-    return new Response('Missing Stripe signature', { status: 400 });
+    return res.status(400).send('Missing Stripe signature');
   }
 
   let event: Stripe.Event;
 
   try {
     const rawBody = await getRawBody(req);
-
     event = stripe.webhooks.constructEvent(
       rawBody,
       sig,
       process.env.STRIPE_WEBHOOK_SECRET!
     );
   } catch (err: any) {
-    console.error('❌ Signature verification failed:', err.message);
-    return new Response('Invalid signature', { status: 400 });
+    console.error('❌ Stripe signature verification failed:', err.message);
+    return res.status(400).send('Invalid signature');
   }
 
   try {
@@ -58,11 +65,13 @@ export default async function handler(req: Request): Promise<Response> {
         paymentIntent: session.payment_intent,
         purchasedAt: new Date().toISOString(),
       });
+
+      console.log('✅ Premium unlocked for user:', userId);
     }
 
-    return new Response('OK', { status: 200 });
+    return res.status(200).json({ received: true });
   } catch (err) {
     console.error('❌ Webhook handler error:', err);
-    return new Response('Webhook handler failed', { status: 500 });
+    return res.status(500).send('Webhook handler failed');
   }
 }
