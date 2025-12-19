@@ -14,6 +14,9 @@ export const config = {
   api: { bodyParser: false },
 };
 
+// Idempotency TTL (Stripe retries can span time; 14d is a safe window)
+const DEDUPE_TTL_SECONDS = 60 * 60 * 24 * 14;
+
 function getRawBody(req: VercelRequest): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
@@ -21,6 +24,15 @@ function getRawBody(req: VercelRequest): Promise<Buffer> {
     req.on('end', () => resolve(Buffer.concat(chunks)));
     req.on('error', reject);
   });
+}
+
+/**
+ * Attempts to "claim" a key once using Redis SET NX (atomic).
+ * Returns true if this is the first time, false if already claimed.
+ */
+async function claimOnce(key: string): Promise<boolean> {
+  const result = await kv.set(key, '1', { nx: true, ex: DEDUPE_TTL_SECONDS });
+  return result === 'OK';
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -54,27 +66,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Invalid signature' });
   }
 
-  // NEVER throw for unhandled events — always return 200
+  // ✅ Idempotency guard #1: event-level de-dupe
+  // If Stripe retries the SAME event.id, we instantly ACK it.
+  try {
+    const eventKey = `stripe:event:${event.id}`;
+    const firstTimeForEvent = await claimOnce(eventKey);
+
+    if (!firstTimeForEvent) {
+      console.log(`↩️ Duplicate Stripe event ignored: ${event.id} (${event.type})`);
+      return res.status(200).json({ received: true, duplicate: true });
+    }
+  } catch (err: any) {
+    // If we cannot de-dupe (KV outage), we should 500 so Stripe retries later
+    console.error('❌ Failed to claim idempotency event key:', err?.message || err, {
+      eventType: event.type,
+      eventId: event.id,
+    });
+    return res.status(500).json({ error: 'Idempotency claim failed' });
+  }
+
+  // NEVER throw for unhandled events — always return 200 (unless our persistence fails)
   try {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
 
         // Prefer client_reference_id, fall back to metadata
-        const userId =
-          session.client_reference_id ||
-          session.metadata?.userId ||
-          null;
+        const userId = session.client_reference_id || session.metadata?.userId || null;
 
-        const userEmail =
-          session.customer_email ||
-          session.metadata?.userEmail ||
-          null;
+        const userEmail = session.customer_email || session.metadata?.userEmail || null;
 
         if (!userId) {
           // Don't 500 Stripe for missing metadata — log and ack
           console.warn('⚠️ checkout.session.completed missing userId. session:', session.id);
           return res.status(200).json({ received: true, warning: 'missing_userId' });
+        }
+
+        // ✅ Idempotency guard #2: session-level de-dupe
+        // Covers rare scenarios where session completion might be replayed via a different event id.
+        const sessionProcessedKey = `stripe:session:${session.id}:processed`;
+        const firstTimeForSession = await claimOnce(sessionProcessedKey);
+
+        if (!firstTimeForSession) {
+          console.log(`↩️ Duplicate checkout session ignored: ${session.id} (user ${userId})`);
+          return res.status(200).json({ received: true, duplicateSession: true });
         }
 
         const record = {
@@ -89,6 +124,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           sourceEvent: event.id,
         };
 
+        // ✅ Durable writes (source of truth + session audit trail)
         await kv.set(`user:${userId}:premium`, record);
         await kv.set(`stripe:session:${session.id}`, record);
 
@@ -112,7 +148,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(200).json({ received: true });
   } catch (err: any) {
-    console.error('❌ Webhook handler crashed:', err?.message || err, { eventType: event.type, eventId: event.id });
+    console.error('❌ Webhook handler crashed:', err?.message || err, {
+      eventType: event.type,
+      eventId: event.id,
+    });
+
+    // Important: returning 500 means Stripe will retry the event
+    // (which is what we want if persistence failed mid-flight).
     return res.status(500).json({ error: 'Webhook handler failed' });
   }
 }
