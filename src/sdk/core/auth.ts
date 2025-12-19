@@ -18,7 +18,11 @@ interface AuthMessage {
   origin: string;
 }
 
-type AuthStatus = "authenticated" | "unauthenticated" | "invalid_token" | "loading";
+type AuthStatus =
+  | "authenticated"
+  | "unauthenticated"
+  | "invalid_token"
+  | "loading";
 
 interface AuthState {
   token: string | null;
@@ -27,7 +31,7 @@ interface AuthState {
 }
 
 interface AuthStore extends AuthState {
-  // Internal state
+  // Internal state (kept for compatibility)
   initializationPromise: Promise<void> | null;
   validationPromise: Promise<boolean> | null;
 
@@ -41,7 +45,10 @@ interface AuthStore extends AuthState {
   validateToken: (token: string) => Promise<boolean>;
 }
 
-// Configuration for token validation
+// -----------------------------
+// Config
+// -----------------------------
+
 const RAW_API_BASE_URL =
   import.meta.env.VITE_API_BASE_PATH ||
   import.meta.env.VITE_MCP_API_BASE_PATH ||
@@ -54,9 +61,10 @@ function normalizeBaseUrl(base: string): string {
 
 const API_BASE_URL = normalizeBaseUrl(RAW_API_BASE_URL);
 
-/**
- * Zustand store for authentication state management
- */
+// -----------------------------
+// Zustand store
+// -----------------------------
+
 const useAuthStore = create<AuthStore>((set, get): AuthStore => ({
   // Initial state
   token: null,
@@ -65,12 +73,10 @@ const useAuthStore = create<AuthStore>((set, get): AuthStore => ({
   initializationPromise: null,
   validationPromise: null,
 
-  // Set status
   setStatus: (status: AuthStatus) => {
     set({ status });
   },
 
-  // Set partial state
   setState: (newState: Partial<AuthState>) => {
     set(newState);
   },
@@ -118,32 +124,8 @@ const useAuthStore = create<AuthStore>((set, get): AuthStore => ({
           parentOrigin,
         });
 
-        // 🔁 Legacy key for Creao (keep for backwards-compat)
-        try {
-          localStorage.setItem("creao_auth_token", token);
-        } catch (error) {
-          console.error("[auth] Failed to persist legacy auth token", error);
-        }
-
-        // ✅ New DailyDoodle OAuth session key expected by some flows/tests
-        try {
-          const session = {
-            token,
-            provider: "oauth",
-            expiresAt: null as number | null,
-          };
-          localStorage.setItem("dailydoodle_oauth_session", JSON.stringify(session));
-        } catch (error) {
-          console.error("[auth] Failed to persist dailydoodle OAuth session", error);
-        }
-
-        // ✅ Canonical session key used by initializeFromStorage()
-        try {
-          const persist = { token };
-          localStorage.setItem("dailydoodle_session_persist", JSON.stringify(persist));
-        } catch (error) {
-          console.error("[auth] Failed to persist dailydoodle_session_persist", error);
-        }
+        // Persist in all known keys so whichever flow reads will work
+        persistTokenEverywhere(token);
       } else {
         // Invalid token: fail closed and clear everything
         set({
@@ -154,26 +136,19 @@ const useAuthStore = create<AuthStore>((set, get): AuthStore => ({
 
         try {
           localStorage.removeItem("creao_auth_token");
-        } catch (error) {
-          console.error("[auth] Failed to clear legacy auth token", error);
-        }
+        } catch {}
 
         try {
           localStorage.removeItem("dailydoodle_oauth_session");
-        } catch (error) {
-          console.error("[auth] Failed to clear dailydoodle OAuth session", error);
-        }
+        } catch {}
 
         try {
           localStorage.removeItem("dailydoodle_session_persist");
-        } catch (error) {
-          console.error("[auth] Failed to clear dailydoodle_session_persist", error);
-        }
+        } catch {}
       }
     } catch (error) {
       console.error("[auth] Error while setting token", error);
 
-      // Hard reset on error
       set({
         token: null,
         status: "unauthenticated",
@@ -182,54 +157,36 @@ const useAuthStore = create<AuthStore>((set, get): AuthStore => ({
 
       try {
         localStorage.removeItem("creao_auth_token");
-      } catch {
-        // ignore
-      }
-
+      } catch {}
       try {
         localStorage.removeItem("dailydoodle_oauth_session");
-      } catch {
-        // ignore
-      }
-
+      } catch {}
       try {
         localStorage.removeItem("dailydoodle_session_persist");
-      } catch {
-        // ignore
-      }
+      } catch {}
     }
   },
 
-  // Clear authentication
   clearAuth: async (): Promise<void> => {
-    // Clear in-memory state
     set({
       token: null,
       status: "unauthenticated",
       parentOrigin: null,
     });
 
-    // Clear all storage keys we might have used
     try {
       localStorage.removeItem("creao_auth_token");
-    } catch (error) {
-      console.error("[auth] Failed to clear legacy auth token", error);
-    }
+    } catch {}
 
     try {
       localStorage.removeItem("dailydoodle_oauth_session");
-    } catch (error) {
-      console.error("[auth] Failed to clear dailydoodle OAuth session", error);
-    }
+    } catch {}
 
     try {
       localStorage.removeItem("dailydoodle_session_persist");
-    } catch (error) {
-      console.error("[auth] Failed to clear dailydoodle_session_persist", error);
-    }
+    } catch {}
   },
 
-  // Refresh authentication state by re-validating the current token
   refreshAuth: async (): Promise<boolean> => {
     const { token, validateToken, clearAuth } = get();
 
@@ -246,17 +203,11 @@ const useAuthStore = create<AuthStore>((set, get): AuthStore => ({
     return true;
   },
 
-  // Initialize the authentication system
   initialize: async (): Promise<void> => {
     console.log("Auth initialization started");
     try {
-      // Initialize from storage (validated)
       await initializeFromStorage(get, set);
-
-      // Initialize from URL
       await initializeFromUrl(get);
-
-      // Setup message listener
       setupMessageListener(get);
 
       // Decide final auth status after initialization
@@ -265,10 +216,14 @@ const useAuthStore = create<AuthStore>((set, get): AuthStore => ({
 
       if (currentStatus === "loading") {
         if (existingToken) {
-          console.log("Auth initialization complete – token found, setting to authenticated");
+          console.log(
+            "Auth initialization complete – token found, setting to authenticated",
+          );
           set({ status: "authenticated" });
         } else {
-          console.log("Auth initialization complete – no token, setting to unauthenticated");
+          console.log(
+            "Auth initialization complete – no token, setting to unauthenticated",
+          );
           set({ status: "unauthenticated" });
         }
       } else {
@@ -281,8 +236,15 @@ const useAuthStore = create<AuthStore>((set, get): AuthStore => ({
   },
 }));
 
+// -----------------------------
+// Storage init (with Supabase import fallback)
+// -----------------------------
+
 /**
  * Initialize authentication from localStorage (VALIDATE before trusting)
+ * - Prefers canonical key: dailydoodle_session_persist
+ * - Falls back to Supabase key: sb-<projectRef>-auth-token (derived from VITE_SUPABASE_URL)
+ * - If Supabase token exists + validates, we persist it into canonical keys
  */
 async function initializeFromStorage(
   get: () => AuthStore,
@@ -291,60 +253,145 @@ async function initializeFromStorage(
   console.log("🟢 STORAGE INIT START");
 
   try {
+    // 1) Prefer canonical key
     const rawSession = localStorage.getItem("dailydoodle_session_persist");
-    console.log("🟢 STORED SESSION FOUND:", rawSession);
+    console.log("🟢 CANONICAL SESSION:", rawSession);
 
-    if (!rawSession) {
-      console.log("⚠️ NO STORED SESSION FOUND");
+    if (rawSession) {
+      const session = JSON.parse(rawSession);
+      const restoredToken =
+        session?.token || session?.accessToken || session?.authToken || null;
+
+      if (!restoredToken) {
+        console.log("⚠️ CANONICAL SESSION FOUND BUT NO TOKEN — clearing");
+        localStorage.removeItem("dailydoodle_session_persist");
+        set({ status: "unauthenticated", token: null });
+        return;
+      }
+
+      const isValid = await get().validateToken(restoredToken);
+      if (!isValid) {
+        console.log("⚠️ CANONICAL TOKEN INVALID — clearing");
+        localStorage.removeItem("dailydoodle_session_persist");
+        set({ status: "unauthenticated", token: null });
+        return;
+      }
+
+      set({
+        token: restoredToken,
+        status: "authenticated",
+        parentOrigin: "persist",
+      });
+
+      console.log("✅ AUTH RESTORED (canonical)");
+      return;
+    }
+
+    // 2) Fallback: try importing from Supabase storage
+    const supaToken = readSupabaseAccessTokenFromStorage();
+    console.log("🟡 SUPABASE IMPORT TOKEN PRESENT:", !!supaToken);
+
+    if (!supaToken) {
+      console.log("⚠️ NO STORED SESSION FOUND (canonical or supabase)");
       set({ status: "unauthenticated", token: null });
       return;
     }
 
-    const session = JSON.parse(rawSession);
-
-    const restoredToken =
-      session?.token ||
-      session?.accessToken ||
-      session?.authToken ||
-      null;
-
-    if (!restoredToken) {
-      console.log("⚠️ SESSION FOUND BUT NO TOKEN — clearing");
-      localStorage.removeItem("dailydoodle_session_persist");
-      set({ status: "unauthenticated", token: null });
-      return;
-    }
-
-    // ✅ Validate token before trusting it
-    const isValid = await get().validateToken(restoredToken);
+    const isValid = await get().validateToken(supaToken);
     if (!isValid) {
-      console.log("⚠️ STORED TOKEN INVALID — clearing");
-      localStorage.removeItem("dailydoodle_session_persist");
+      console.log("⚠️ SUPABASE TOKEN INVALID — NOT IMPORTING");
       set({ status: "unauthenticated", token: null });
       return;
     }
 
-    console.log("✅ TOKEN RESTORED + VALIDATED FROM SESSION");
+    // Persist into canonical + legacy keys so future loads are consistent
+    persistTokenEverywhere(supaToken);
 
     set({
-      token: restoredToken,
+      token: supaToken,
       status: "authenticated",
-      parentOrigin: "persist",
+      parentOrigin: "supabase-import",
     });
 
-    console.log("✅ AUTH RESTORED SUCCESSFULLY");
+    console.log("✅ AUTH RESTORED (imported from supabase storage)");
   } catch (error) {
     console.error("❌ STORAGE INIT FAILED:", error);
-    localStorage.removeItem("dailydoodle_session_persist");
+    try {
+      localStorage.removeItem("dailydoodle_session_persist");
+    } catch {}
     set({ status: "unauthenticated", token: null });
   } finally {
-    console.log("🔴 STORAGE INIT END:", get());
+    console.log("🔴 STORAGE INIT END");
   }
 }
 
-/**
- * Initialize authentication from URL parameters
- */
+function getSupabaseProjectRefFromUrl(): string | null {
+  const url = import.meta.env.VITE_SUPABASE_URL;
+  if (!url) return null;
+
+  try {
+    const host = new URL(url).hostname; // <ref>.supabase.co
+    const ref = host.split(".")[0];
+    return ref || null;
+  } catch {
+    return null;
+  }
+}
+
+function readSupabaseAccessTokenFromStorage(): string | null {
+  const ref = getSupabaseProjectRefFromUrl();
+  if (!ref) return null;
+
+  const key = `sb-${ref}-auth-token`;
+  const raw = localStorage.getItem(key);
+  if (!raw) return null;
+
+  try {
+    const data = JSON.parse(raw);
+    return (
+      data?.access_token ||
+      data?.currentSession?.access_token ||
+      data?.session?.access_token ||
+      null
+    );
+  } catch {
+    return null;
+  }
+}
+
+function persistTokenEverywhere(token: string) {
+  // Canonical key used by this app
+  try {
+    localStorage.setItem(
+      "dailydoodle_session_persist",
+      JSON.stringify({ token }),
+    );
+  } catch (error) {
+    console.error("[auth] Failed to persist dailydoodle_session_persist", error);
+  }
+
+  // Legacy key for Creao (backwards compat)
+  try {
+    localStorage.setItem("creao_auth_token", token);
+  } catch (error) {
+    console.error("[auth] Failed to persist legacy auth token", error);
+  }
+
+  // Secondary key used by some flows/tests
+  try {
+    localStorage.setItem(
+      "dailydoodle_oauth_session",
+      JSON.stringify({ token, provider: "oauth", expiresAt: null }),
+    );
+  } catch (error) {
+    console.error("[auth] Failed to persist dailydoodle OAuth session", error);
+  }
+}
+
+// -----------------------------
+// URL init + postMessage listener
+// -----------------------------
+
 async function initializeFromUrl(get: () => AuthStore): Promise<void> {
   const urlParams = new URLSearchParams(window.location.search);
   const authToken = urlParams.get("auth_token");
@@ -356,9 +403,6 @@ async function initializeFromUrl(get: () => AuthStore): Promise<void> {
   }
 }
 
-/**
- * Setup listener for postMessage from parent window
- */
 function setupMessageListener(get: () => AuthStore): void {
   window.addEventListener("message", async (event: MessageEvent) => {
     try {
@@ -374,9 +418,6 @@ function setupMessageListener(get: () => AuthStore): void {
   });
 }
 
-/**
- * Clean up URL parameters
- */
 function cleanupUrl(): void {
   const url = new URL(window.location.href);
   url.searchParams.delete("auth_token");
@@ -393,9 +434,10 @@ async function ensureInitialized(): Promise<void> {
   await initPromise;
 }
 
-/**
- * React hook for using authentication state
- */
+// -----------------------------
+// Public API
+// -----------------------------
+
 export function useCreaoAuth() {
   const token = useAuthStore((state) => state.token);
   const status = useAuthStore((state) => state.status);
