@@ -1,8 +1,8 @@
 import Stripe from 'stripe';
 import { kv } from '../lib/kv';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-04-10',
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+  apiVersion: '2025-11-17.clover',
 });
 
 export const config = {
