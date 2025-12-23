@@ -123,7 +123,7 @@ export function LandingView({ onGetStarted, onSignUp }: LandingViewProps) {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm">
             {/* Brand */}
             
-              href="/"
+              <a href="/"
               className="flex items-center gap-2 font-semibold hover:opacity-80 transition"
             >
               <img
