@@ -15,10 +15,10 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useAppStore } from '@/store/app-store';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Loader2, Pencil, Eye, EyeOff } from 'lucide-react';
-import type { OAuthProvider } from '@/types';
+import { supabase } from '@/sdk/core/supabase';
+import { signInWithEmail, signInWithGoogle, signInWithApple } from '@/sdk/core/authHelpers';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -61,13 +61,12 @@ export function AuthDialog({
 }: AuthDialogProps) {
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>(defaultTab);
   const [isLoading, setIsLoading] = useState(false);
-  const [oauthLoading, setOauthLoading] = useState<OAuthProvider | null>(null);
+  const [oauthLoading, setOauthLoading] = useState<'google' | 'apple' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showSignupPassword, setShowSignupPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [stayLoggedIn, setStayLoggedIn] = useState(false);
-  const { login, signup, loginWithOAuth } = useAppStore();
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -90,8 +89,15 @@ export function AuthDialog({
   const handleLogin = async (data: LoginFormData) => {
     setIsLoading(true);
     setError(null);
+
     try {
-      await login(data.email, data.password, stayLoggedIn);
+      const { error: signInError } = await signInWithEmail(data.email, data.password);
+      
+      if (signInError) {
+        setError(signInError.message);
+        return;
+      }
+
       onOpenChange(false);
       loginForm.reset();
       onAuthSuccess?.();
@@ -105,8 +111,28 @@ export function AuthDialog({
   const handleSignup = async (data: SignupFormData) => {
     setIsLoading(true);
     setError(null);
+
     try {
-      await signup(data.email, data.password, data.username);
+      // Sign up with Supabase
+      const { error: signUpError } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          data: {
+            username: data.username,
+          },
+        },
+      });
+
+      if (signUpError) {
+        setError(signUpError.message);
+        return;
+      }
+
+      // Show success message
+      setError(null);
+      alert('Account created! Please check your email to confirm your account.');
+      
       onOpenChange(false);
       signupForm.reset();
       onAuthSuccess?.();
@@ -122,16 +148,40 @@ export function AuthDialog({
     setError(null);
   };
 
-  const handleOAuthLogin = async (provider: OAuthProvider) => {
-    setOauthLoading(provider);
+  const handleGoogleLogin = async () => {
+    setOauthLoading('google');
     setError(null);
+
     try {
-      await loginWithOAuth(provider, stayLoggedIn);
-      onOpenChange(false);
-      onAuthSuccess?.();
+      const { error: signInError } = await signInWithGoogle();
+      
+      if (signInError) {
+        setError(signInError.message);
+        return;
+      }
+
+      // OAuth will redirect, so we don't need to do anything else here
     } catch (err) {
-      setError(err instanceof Error ? err.message : `${provider} login failed`);
-    } finally {
+      setError(err instanceof Error ? err.message : 'Google login failed');
+      setOauthLoading(null);
+    }
+  };
+
+  const handleAppleLogin = async () => {
+    setOauthLoading('apple');
+    setError(null);
+
+    try {
+      const { error: signInError } = await signInWithApple();
+      
+      if (signInError) {
+        setError(signInError.message);
+        return;
+      }
+
+      // OAuth will redirect, so we don't need to do anything else here
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Apple login failed');
       setOauthLoading(null);
     }
   };
@@ -173,7 +223,7 @@ export function AuthDialog({
                 type="button"
                 variant="outline"
                 className="w-full"
-                onClick={() => handleOAuthLogin('apple')}
+                onClick={handleAppleLogin}
                 disabled={isAnyLoading}
               >
                 {oauthLoading === 'apple' ? (
@@ -190,7 +240,7 @@ export function AuthDialog({
                 type="button"
                 variant="outline"
                 className="w-full"
-                onClick={() => handleOAuthLogin('google')}
+                onClick={handleGoogleLogin}
                 disabled={isAnyLoading}
               >
                 {oauthLoading === 'google' ? (
@@ -311,7 +361,7 @@ export function AuthDialog({
                 type="button"
                 variant="outline"
                 className="w-full"
-                onClick={() => handleOAuthLogin('apple')}
+                onClick={handleAppleLogin}
                 disabled={isAnyLoading}
               >
                 {oauthLoading === 'apple' ? (
@@ -328,7 +378,7 @@ export function AuthDialog({
                 type="button"
                 variant="outline"
                 className="w-full"
-                onClick={() => handleOAuthLogin('google')}
+                onClick={handleGoogleLogin}
                 disabled={isAnyLoading}
               >
                 {oauthLoading === 'google' ? (
