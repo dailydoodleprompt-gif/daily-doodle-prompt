@@ -1,11 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import {
-  useAppStore,
-  useUser,
-  useIsAuthenticated,
-  useIsPremium,
-} from '@/store/app-store';
 import { StreakBadge } from '@/components/StreakBadge';
 import { AuthDialog } from '@/components/AuthDialog';
 import { UserAvatar } from '@/components/UserAvatar';
@@ -32,20 +26,65 @@ import {
   Bell,
   Lightbulb,
 } from 'lucide-react';
+import { useCreaoAuth } from '@/sdk/core/auth';
+import { signOut } from '@/sdk/core/authHelpers';
 
 interface NavigationProps {
   currentView: string;
   onNavigate: (view: string) => void;
 }
 
+interface UserProfile {
+  id: string;
+  email: string | null;
+  username?: string;
+  is_admin?: boolean;
+  is_premium?: boolean;
+}
+
 export function Navigation({ currentView, onNavigate }: NavigationProps) {
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const user = useUser();
-  const isAuthenticated = useIsAuthenticated();
-  const isPremium = useIsPremium();
-  const logout = useAppStore((state) => state.logout);
-  const unreadNotificationsCount = useAppStore((state) => state.getUnreadCount());
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
+  
+  const { isAuthenticated, isLoading, token } = useCreaoAuth();
+
+  // Fetch user profile when authenticated
+  useEffect(() => {
+    async function fetchUserProfile() {
+      if (!isAuthenticated || !token) {
+        setUser(null);
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/me', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setUser({
+            id: data.id,
+            email: data.email,
+            username: data.username || data.email?.split('@')[0] || 'User',
+            is_admin: data.is_admin || false,
+            is_premium: data.is_premium || false,
+          });
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('Failed to fetch user profile:', error);
+        setUser(null);
+      }
+    }
+
+    fetchUserProfile();
+  }, [isAuthenticated, token]);
+
+  const isPremium = user?.is_premium || false;
 
   const navItems = [
     { id: 'prompt', label: "Today's Prompt", icon: Pencil },
@@ -61,20 +100,44 @@ export function Navigation({ currentView, onNavigate }: NavigationProps) {
     setMobileMenuOpen(false);
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await signOut();
+    setUser(null);
     onNavigate('landing');
   };
 
-  // ✅ FIXED: Logo navigation now respects auth state
   const handleLogoClick = () => {
     if (isAuthenticated) {
-      onNavigate('prompt'); // stay logged in
+      onNavigate('prompt');
     } else {
-      onNavigate('landing'); // true logged-out users only
+      onNavigate('landing');
     }
     setMobileMenuOpen(false);
   };
+
+  // Don't render user dropdown while loading auth state
+  if (isLoading) {
+    return (
+      <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-14 items-center px-4">
+          <div className="flex items-center gap-2 mr-4">
+            <button
+              onClick={handleLogoClick}
+              className="flex items-center gap-2 font-semibold"
+            >
+              <img
+                src="/logo.svg"
+                alt="Daily Doodle Prompt"
+                className="h-8 w-auto"
+              />
+              <span className="hidden sm:inline-block">DailyDoodlePrompt</span>
+            </button>
+          </div>
+          <div className="ml-auto">Loading...</div>
+        </div>
+      </header>
+    );
+  }
 
   return (
     <>
@@ -82,17 +145,16 @@ export function Navigation({ currentView, onNavigate }: NavigationProps) {
         <div className="container flex h-14 items-center px-4">
           <div className="flex items-center gap-2 mr-4">
             <button
-  onClick={handleLogoClick}
-  className="flex items-center gap-2 font-semibold"
->
-  <img
-    src="/logo.svg"
-    alt="Daily Doodle Prompt"
-    className="h-8 w-auto"
-  />
-  <span className="hidden sm:inline-block">DailyDoodlePrompt</span>
-</button>
-
+              onClick={handleLogoClick}
+              className="flex items-center gap-2 font-semibold"
+            >
+              <img
+                src="/logo.svg"
+                alt="Daily Doodle Prompt"
+                className="h-8 w-auto"
+              />
+              <span className="hidden sm:inline-block">DailyDoodlePrompt</span>
+            </button>
           </div>
 
           {/* Desktop Navigation */}
@@ -147,7 +209,7 @@ export function Navigation({ currentView, onNavigate }: NavigationProps) {
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-medium leading-none">
-                        {user?.username}
+                        {user?.username || 'User'}
                         {isPremium && (
                           <Badge variant="secondary" className="ml-2 text-xs">
                             Premium
@@ -212,7 +274,7 @@ export function Navigation({ currentView, onNavigate }: NavigationProps) {
               </DropdownMenu>
             ) : (
               <Button onClick={() => setAuthDialogOpen(true)} size="sm">
-                Sign In
+                Log In
               </Button>
             )}
 
@@ -250,6 +312,3 @@ export function Navigation({ currentView, onNavigate }: NavigationProps) {
     </>
   );
 }
-
-
-
