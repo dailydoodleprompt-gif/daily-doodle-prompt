@@ -32,3 +32,5 @@ The following pages MUST have:
 - Change route paths casually
 - Remove pathname checks in index.tsx
 - Assume TanStack routes alone handle rendering
+
+Use this space for notes and redeployments
