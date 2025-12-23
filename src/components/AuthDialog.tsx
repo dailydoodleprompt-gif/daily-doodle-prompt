@@ -18,7 +18,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Loader2, Pencil, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/sdk/core/supabase';
-import { signInWithEmail, signInWithGoogle, signInWithApple } from '@/sdk/core/authHelpers';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -91,10 +90,18 @@ export function AuthDialog({
     setError(null);
 
     try {
-      const result = await signInWithEmail(data.email, data.password);
+      const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
       
-      if (result.error) {
-        setError(result.error.message);
+      if (signInError) {
+        setError(signInError.message);
+        return;
+      }
+
+      if (!authData.session) {
+        setError('Failed to create session');
         return;
       }
 
@@ -113,7 +120,6 @@ export function AuthDialog({
     setError(null);
 
     try {
-      // Sign up with Supabase
       const { error: signUpError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -129,7 +135,6 @@ export function AuthDialog({
         return;
       }
 
-      // Show success message
       setError(null);
       alert('Account created! Please check your email to confirm your account.');
       
@@ -153,14 +158,18 @@ export function AuthDialog({
     setError(null);
 
     try {
-      const result = await signInWithGoogle();
+      const { error: signInError } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
       
-      if (result.error) {
-        setError(result.error.message);
-        return;
+      if (signInError) {
+        setError(signInError.message);
+        setOauthLoading(null);
       }
-
-      // OAuth will redirect, so we don't need to do anything else here
+      // OAuth will redirect, so we don't reset loading state on success
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Google login failed');
       setOauthLoading(null);
@@ -172,14 +181,18 @@ export function AuthDialog({
     setError(null);
 
     try {
-      const result = await signInWithApple();
+      const { error: signInError } = await supabase.auth.signInWithOAuth({
+        provider: 'apple',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
       
-      if (result.error) {
-        setError(result.error.message);
-        return;
+      if (signInError) {
+        setError(signInError.message);
+        setOauthLoading(null);
       }
-
-      // OAuth will redirect, so we don't need to do anything else here
+      // OAuth will redirect, so we don't reset loading state on success
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Apple login failed');
       setOauthLoading(null);
