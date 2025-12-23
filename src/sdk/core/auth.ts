@@ -10,6 +10,7 @@
  * 4. Or use the useCreaoAuth() hook in React components
  */
 
+import { supabase } from "./supabase";
 import { create } from "zustand";
 
 interface AuthMessage {
@@ -253,7 +254,26 @@ async function initializeFromStorage(
   console.log("🟢 STORAGE INIT START");
 
   try {
-    // 1) Prefer canonical key
+    // First, try to get session from Supabase directly
+    const { data: { session }, error } = await supabase.auth.getSession();
+    
+    if (session?.access_token && !error) {
+      console.log("🟢 SUPABASE SESSION FOUND");
+      const isValid = await get().validateToken(session.access_token);
+      
+      if (isValid) {
+        persistTokenEverywhere(session.access_token);
+        set({
+          token: session.access_token,
+          status: "authenticated",
+          parentOrigin: "supabase",
+        });
+        console.log("✅ AUTH RESTORED (supabase session)");
+        return;
+      }
+    }
+
+    // Fallback to existing logic (canonical key)
     const rawSession = localStorage.getItem("dailydoodle_session_persist");
     console.log("🟢 CANONICAL SESSION:", rawSession);
 
@@ -287,7 +307,7 @@ async function initializeFromStorage(
       return;
     }
 
-    // 2) Fallback: try importing from Supabase storage
+    // Last fallback: try importing from Supabase storage
     const supaToken = readSupabaseAccessTokenFromStorage();
     console.log("🟡 SUPABASE IMPORT TOKEN PRESENT:", !!supaToken);
 
@@ -304,7 +324,6 @@ async function initializeFromStorage(
       return;
     }
 
-    // Persist into canonical + legacy keys so future loads are consistent
     persistTokenEverywhere(supaToken);
 
     set({
