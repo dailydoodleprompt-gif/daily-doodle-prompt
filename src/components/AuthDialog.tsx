@@ -91,10 +91,10 @@ export function AuthDialog({
     setError(null);
 
     try {
-      const { error: signInError } = await signInWithEmail(data.email, data.password);
+      const result = await signInWithEmail(data.email, data.password);
       
-      if (signInError) {
-        setError(signInError.message);
+      if (result.error) {
+        setError(result.error.message);
         return;
       }
 
@@ -153,10 +153,10 @@ export function AuthDialog({
     setError(null);
 
     try {
-      const { error: signInError } = await signInWithGoogle();
+      const result = await signInWithGoogle();
       
-      if (signInError) {
-        setError(signInError.message);
+      if (result.error) {
+        setError(result.error.message);
         return;
       }
 
@@ -172,10 +172,10 @@ export function AuthDialog({
     setError(null);
 
     try {
-      const { error: signInError } = await signInWithApple();
+      const result = await signInWithApple();
       
-      if (signInError) {
-        setError(signInError.message);
+      if (result.error) {
+        setError(result.error.message);
         return;
       }
 
