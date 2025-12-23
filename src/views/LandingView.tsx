@@ -1,13 +1,11 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
-  Pencil,
   Flame,
   Trophy,
   Target,
   ChevronRight,
   Sparkles,
-  Crown,
 } from 'lucide-react';
 
 interface LandingViewProps {
@@ -18,7 +16,7 @@ interface LandingViewProps {
   onNavigate: (view: string) => void;
 }
 
-export function LandingView({ onGetStarted, onSignUp, onLogin, onPricing }: LandingViewProps) {
+export function LandingView({ onGetStarted, onSignUp }: LandingViewProps) {
   const features = [
     {
       icon: Flame,
@@ -42,36 +40,6 @@ export function LandingView({ onGetStarted, onSignUp, onLogin, onPricing }: Land
 
   return (
     <div className="min-h-screen">
-      {/* Header with Logo and Login */}
-      <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 items-center justify-between px-4 mx-auto">
-          <div className="flex items-center gap-2">
-            <img
-  src="/logo.svg"
-  alt="Daily Doodle Prompt"
-  className="h-8 w-auto"
-/>
-
-            <span className="font-semibold text-lg">DailyDoodlePrompt</span>
-          </div>
-          <div className="flex items-center gap-2">
-            {onPricing && (
-              <Button
-                variant="outline"
-                onClick={onPricing}
-                className="gap-1 bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-500 hover:to-amber-600 text-white border-0"
-              >
-                <Crown className="w-4 h-4" />
-                Unlock Lifetime
-              </Button>
-            )}
-            <Button variant="ghost" onClick={onLogin}>
-              Log In
-            </Button>
-          </div>
-        </div>
-      </header>
-
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 via-background to-background py-12 md:py-20">
         <div className="container px-4 mx-auto text-center">
@@ -150,46 +118,42 @@ export function LandingView({ onGetStarted, onSignUp, onLogin, onPricing }: Land
       </section>
 
       {/* Footer */}
-<footer className="py-8 border-t">
-  <div className="container px-4 mx-auto">
-    <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm">
+      <footer className="py-8 border-t">
+        <div className="container px-4 mx-auto">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm">
+            {/* Brand */}
+            
+              href="/"
+              className="flex items-center gap-2 font-semibold hover:opacity-80 transition"
+            >
+              <img
+                src="/logo.svg"
+                alt="Daily Doodle Prompt"
+                className="h-8 w-auto"
+              />
+              <span>DailyDoodlePrompt</span>
+            </a>
 
-      {/* Brand */}
-      <a
-        href="/"
-        className="flex items-center gap-2 font-semibold hover:opacity-80 transition"
-      >
-        <img
-          src="/logo.svg"
-          alt="Daily Doodle Prompt"
-          className="h-8 w-auto"
-        />
-        <span>DailyDoodlePrompt</span>
-      </a>
+            {/* Utility links */}
+            <div className="flex gap-6 text-muted-foreground">
+              <a href="/privacy" className="hover:text-foreground transition-colors">
+                Privacy
+              </a>
+              <a href="/terms" className="hover:text-foreground transition-colors">
+                Terms
+              </a>
+              <a href="/support" className="hover:text-foreground transition-colors">
+                Support
+              </a>
+            </div>
 
-      {/* Utility links */}
-      <div className="flex gap-6 text-muted-foreground">
-        <a href="/privacy" className="hover:text-foreground transition-colors">
-          Privacy
-        </a>
-        <a href="/terms" className="hover:text-foreground transition-colors">
-          Terms
-        </a>
-        <a href="/support" className="hover:text-foreground transition-colors">
-          Support
-        </a>
-      </div>
-
-      {/* Copyright */}
-      <div className="text-muted-foreground">
-        © {new Date().getFullYear()} Daily Doodle Prompt
-      </div>
-
-    </div>
-  </div>
-</footer>
-
-
+            {/* Copyright */}
+            <div className="text-muted-foreground">
+              © {new Date().getFullYear()} Daily Doodle Prompt
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -246,9 +246,7 @@ function App() {
     }
   };
 
-  const showNavigation =
-    currentView !== null &&
-    !['landing', 'payment-success', 'payment-cancel'].includes(currentView);
+  const showNavigation = currentView !== null && !['payment-success', 'payment-cancel'].includes(currentView);
 
   const showFooter =
     currentView !== null &&
