@@ -266,10 +266,3 @@ function AuthTestSection() {
     </div>
   );
 }
-```
-
----
-
-## **COMMIT COMMENT:**
-```
-Add temporary Supabase auth test section to Privacy page
