@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useOpenSheetPrompts } from '@/hooks/use-opensheet-prompts';
 import { useAppStore, useIsAuthenticated, useUser } from '@/store/app-store';
-import { Navigation } from '@/components/Navigation';
+import { SimpleHeader } from '@/components/SimpleHeader';
 import { Footer } from '@/components/Footer';
 import { AuthDialog } from '@/components/AuthDialog';
 import { OnboardingDialog } from '@/components/OnboardingDialog';
@@ -259,7 +259,7 @@ function App() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {showNavigation && (
-        <Navigation currentView={currentView} onNavigate={handleNavigate} />
+        <SimpleHeader currentView={currentView} onNavigate={handleNavigate} />
       )}
 
       <main className="flex-1">{renderView()}</main>
