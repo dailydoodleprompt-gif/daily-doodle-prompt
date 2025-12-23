@@ -26,8 +26,7 @@ import {
   Bell,
   Lightbulb,
 } from 'lucide-react';
-import { getAuthState, addAuthStateListener } from '@/sdk/core/auth';
-import { signOut } from '@/sdk/core/authHelpers';
+import { supabase } from '@/sdk/core/supabase';
 
 interface NavigationProps {
   currentView: string;
@@ -47,57 +46,62 @@ export function Navigation({ currentView, onNavigate }: NavigationProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
-  const [authState, setAuthState] = useState(() => getAuthState());
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const isAuthenticated = authState.status === 'authenticated' && !!authState.token;
-  const isLoading = authState.status === 'loading';
-
-  // Listen for auth state changes
+  // Check auth status and fetch user profile
   useEffect(() => {
-    const unsubscribe = addAuthStateListener((newState) => {
-      console.log('[Navigation] Auth state changed:', newState);
-      setAuthState(newState);
-    });
-
-    return unsubscribe;
-  }, []);
-
-  // Fetch user profile when authenticated
-  useEffect(() => {
-    async function fetchUserProfile() {
-      if (!isAuthenticated || !authState.token) {
-        setUser(null);
-        return;
-      }
-
+    async function checkAuth() {
       try {
-        console.log('[Navigation] Fetching user profile...');
-        const response = await fetch('/api/me', {
-          headers: { Authorization: `Bearer ${authState.token}` },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          console.log('[Navigation] User profile loaded:', data);
-          setUser({
-            id: data.id,
-            email: data.email,
-            username: data.username || data.email?.split('@')[0] || 'User',
-            is_admin: data.is_admin || false,
-            is_premium: data.is_premium || false,
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.access_token) {
+          setIsAuthenticated(true);
+          
+          // Fetch user profile
+          const response = await fetch('/api/me', {
+            headers: { Authorization: `Bearer ${session.access_token}` },
           });
+
+          if (response.ok) {
+            const data = await response.json();
+            setUser({
+              id: data.id,
+              email: data.email,
+              username: data.username || data.email?.split('@')[0] || 'User',
+              is_admin: data.is_admin || false,
+              is_premium: data.is_premium || false,
+            });
+          }
         } else {
-          console.error('[Navigation] Failed to fetch user profile:', response.status);
+          setIsAuthenticated(false);
           setUser(null);
         }
       } catch (error) {
-        console.error('[Navigation] Error fetching user profile:', error);
+        console.error('[Navigation] Auth check failed:', error);
+        setIsAuthenticated(false);
         setUser(null);
+      } finally {
+        setIsLoading(false);
       }
     }
 
-    fetchUserProfile();
-  }, [isAuthenticated, authState.token]);
+    checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('[Navigation] Auth state changed:', _event);
+      if (session?.access_token) {
+        setIsAuthenticated(true);
+        checkAuth(); // Refetch user profile
+      } else {
+        setIsAuthenticated(false);
+        setUser(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const isPremium = user?.is_premium || false;
 
@@ -116,8 +120,9 @@ export function Navigation({ currentView, onNavigate }: NavigationProps) {
   };
 
   const handleLogout = async () => {
-    await signOut();
+    await supabase.auth.signOut();
     setUser(null);
+    setIsAuthenticated(false);
     onNavigate('landing');
   };
 
@@ -130,7 +135,7 @@ export function Navigation({ currentView, onNavigate }: NavigationProps) {
     setMobileMenuOpen(false);
   };
 
-  // Show loading state while auth initializes
+  // Show loading state while checking auth
   if (isLoading) {
     return (
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
