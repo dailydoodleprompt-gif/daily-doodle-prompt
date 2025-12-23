@@ -423,6 +423,14 @@ async function initializeFromUrl(get: () => AuthStore): Promise<void> {
 }
 
 function setupMessageListener(get: () => AuthStore): void {
+  // Only listen for Creao auth messages if we're NOT forcing real auth
+  const useRealAuth = import.meta.env.VITE_USE_REAL_AUTH === 'true';
+  
+  if (useRealAuth) {
+    console.log("🔒 Real auth mode enabled - ignoring Creao demo auth");
+    return;
+  }
+
   window.addEventListener("message", async (event: MessageEvent) => {
     try {
       const data = event.data as AuthMessage;
