@@ -257,7 +257,7 @@ function App() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {showNavigation && (
-        <SimpleHeader currentView={currentView} onNavigate={handleNavigate} />
+        <SimpleHeader currentView={currentView} onNavigate={handleNavigate} onLoginClick={handleLogin} />
       )}
 
       <main className="flex-1">{renderView()}</main>
