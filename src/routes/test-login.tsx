@@ -1,7 +1,8 @@
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/sdk/core/supabase";
 
-export default function TestLogin() {
+function TestLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
@@ -107,3 +108,7 @@ export default function TestLogin() {
     </div>
   );
 }
+
+export const Route = createFileRoute("/test-login")({
+  component: TestLogin,
+});
