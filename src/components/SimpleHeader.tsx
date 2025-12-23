@@ -20,6 +20,7 @@ import {
   User as UserIcon,
 } from 'lucide-react';
 import { supabase } from '@/sdk/core/supabase';
+import { useAppStore } from '@/store/app-store';
 
 interface SimpleHeaderProps {
   currentView: string;
@@ -27,18 +28,15 @@ interface SimpleHeaderProps {
   onLoginClick: () => void;
 }
 
-interface User {
-  id: string;
-  email: string | null;
-  username?: string;
-  is_premium?: boolean;
-  is_admin?: boolean;
-}
-
 export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHeaderProps) {
-  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  // Get user from app store
+  const user = useAppStore((state) => state.user);
+  const setUser = useAppStore((state) => state.setUser);
+  const loadUserData = useAppStore((state) => state.loadUserData);
+  const clearUserData = useAppStore((state) => state.clearUserData);
 
   // Check auth status on mount and listen for changes
   useEffect(() => {
@@ -47,9 +45,6 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
     async function loadUser() {
       try {
         console.log('[SimpleHeader] Loading user...');
-        
-        // Wait a bit for Supabase to fully initialize
-        await new Promise(resolve => setTimeout(resolve, 100));
         
         const { data: { session }, error } = await supabase.auth.getSession();
         
@@ -70,23 +65,39 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
           if (response.ok) {
             const data = await response.json();
             console.log('[SimpleHeader] User loaded:', data.email);
+            
             if (mounted) {
+              // Set user in app store
               setUser({
                 id: data.id,
                 email: data.email,
                 username: data.username || data.email?.split('@')[0] || 'User',
                 is_premium: data.is_premium || false,
                 is_admin: data.is_admin || false,
+                created_at: data.created_at || new Date().toISOString(),
+                updated_at: data.updated_at || new Date().toISOString(),
               });
+              
+              // Load user's badges, stats, etc.
+              loadUserData(data.id);
             }
           } else {
             console.error('[SimpleHeader] Failed to fetch user:', response.status);
+            if (mounted) {
+              clearUserData();
+            }
           }
         } else {
           console.log('[SimpleHeader] No session found');
+          if (mounted) {
+            clearUserData();
+          }
         }
       } catch (error) {
         console.error('[SimpleHeader] Error loading user:', error);
+        if (mounted) {
+          clearUserData();
+        }
       } finally {
         if (mounted) {
           setIsLoading(false);
@@ -101,7 +112,11 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('[SimpleHeader] Auth state changed:', event, !!session);
       if (mounted) {
-        loadUser();
+        if (event === 'SIGNED_OUT') {
+          clearUserData();
+        } else {
+          loadUser();
+        }
       }
     });
 
@@ -109,7 +124,7 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [setUser, loadUserData, clearUserData]);
 
   const isAuthenticated = !!user;
   const isPremium = user?.is_premium || false;
@@ -117,7 +132,7 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
   const handleLogout = async () => {
     console.log('[SimpleHeader] Logging out...');
     await supabase.auth.signOut();
-    setUser(null);
+    clearUserData();
     onNavigate('landing');
   };
 
