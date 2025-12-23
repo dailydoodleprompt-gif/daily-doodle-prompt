@@ -24,6 +24,7 @@ import { supabase } from '@/sdk/core/supabase';
 interface SimpleHeaderProps {
   currentView: string;
   onNavigate: (view: string) => void;
+  onLoginClick: () => void;
 }
 
 interface User {
@@ -34,11 +35,10 @@ interface User {
   is_admin?: boolean;
 }
 
-export function SimpleHeader({ currentView, onNavigate }: SimpleHeaderProps) {
+export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHeaderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [showAuthDialog, setShowAuthDialog] = useState(false);
 
   // Check auth status on mount and listen for changes
   useEffect(() => {
@@ -138,154 +138,156 @@ export function SimpleHeader({ currentView, onNavigate }: SimpleHeaderProps) {
   ];
 
   return (
-    <>
-      <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 items-center px-4">
-          {/* Logo */}
-          <div className="flex items-center gap-2 mr-4">
-            <button
-              onClick={handleLogoClick}
-              className="flex items-center gap-2 font-semibold hover:opacity-80 transition-opacity"
-            >
-              <img
-                src="/logo.svg"
-                alt="Daily Doodle Prompt"
-                className="h-8 w-auto"
-              />
-              <span className="hidden sm:inline-block">DailyDoodlePrompt</span>
-            </button>
-          </div>
+    <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-14 items-center px-4">
+        {/* Logo */}
+        <div className="flex items-center gap-2 mr-4">
+          <button
+            onClick={handleLogoClick}
+            className="flex items-center gap-2 font-semibold hover:opacity-80 transition-opacity"
+          >
+            <img
+              src="/logo.svg"
+              alt="Daily Doodle Prompt"
+              className="h-8 w-auto"
+            />
+            <span className="hidden sm:inline-block">DailyDoodlePrompt</span>
+          </button>
+        </div>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-1 flex-1">
+        {/* Desktop Navigation */}
+        <nav className="hidden md:flex items-center gap-1 flex-1">
+          {navItems.map((item) => (
+            <Button
+              key={item.id}
+              variant={currentView === item.id ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => handleNav(item.id)}
+              className="gap-2"
+            >
+              <item.icon className="h-4 w-4" />
+              {item.label}
+            </Button>
+          ))}
+        </nav>
+
+        {/* Right Side */}
+        <div className="flex items-center gap-2 ml-auto">
+          {isLoading ? (
+            <div className="text-sm text-muted-foreground">Loading...</div>
+          ) : (
+            <>
+              {/* Show Unlock Lifetime button for non-premium users */}
+              {!isPremium && (
+                <Button
+                  variant="outline"
+                  onClick={() => handleNav('pricing')}
+                  className="gap-1 bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-500 hover:to-amber-600 text-white border-0"
+                >
+                  <Crown className="w-4 h-4" />
+                  Unlock Lifetime
+                </Button>
+              )}
+
+              {/* Auth state */}
+              {isAuthenticated ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
+                      <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
+                        <span className="text-sm font-medium">
+                          {user?.username?.[0]?.toUpperCase() || 'U'}
+                        </span>
+                      </div>
+                      {isPremium && (
+                        <Crown className="absolute -top-1 -right-1 h-4 w-4 text-yellow-500 fill-yellow-500" />
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">
+                          {user?.username}
+                          {isPremium && (
+                            <Badge variant="secondary" className="ml-2 text-xs">
+                              Premium
+                            </Badge>
+                          )}
+                        </p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {user?.email}
+                        </p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+
+                    <DropdownMenuItem onClick={() => handleNav('profile')}>
+                      <UserIcon className="mr-2 h-4 w-4" />
+                      Profile
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem onClick={() => handleNav('settings')}>
+                      <Settings className="mr-2 h-4 w-4" />
+                      Settings
+                    </DropdownMenuItem>
+
+                    {!isPremium && (
+                      <DropdownMenuItem
+                        onClick={() => handleNav('pricing')}
+                        className="text-primary"
+                      >
+                        <Crown className="mr-2 h-4 w-4" />
+                        Upgrade to Premium
+                      </DropdownMenuItem>
+                    )}
+
+                    <DropdownMenuSeparator />
+
+                    <DropdownMenuItem onClick={handleLogout}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Log out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Button onClick={onLoginClick} size="sm" variant="ghost">
+                  Log In
+                </Button>
+              )}
+            </>
+          )}
+
+          {/* Mobile Menu Toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
+        </div>
+      </div>
+
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden border-t bg-background">
+          <nav className="container py-4 flex flex-col gap-2">
             {navItems.map((item) => (
               <Button
                 key={item.id}
                 variant={currentView === item.id ? 'secondary' : 'ghost'}
-                size="sm"
+                className="w-full justify-start gap-2"
                 onClick={() => handleNav(item.id)}
-                className="gap-2"
               >
                 <item.icon className="h-4 w-4" />
                 {item.label}
               </Button>
             ))}
           </nav>
-
-          {/* Right Side */}
-          <div className="flex items-center gap-2 ml-auto">
-            {isLoading ? (
-              <div className="text-sm text-muted-foreground">Loading...</div>
-            ) : isAuthenticated ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
-                    <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
-                      <span className="text-sm font-medium">
-                        {user?.username?.[0]?.toUpperCase() || 'U'}
-                      </span>
-                    </div>
-                    {isPremium && (
-                      <Crown className="absolute -top-1 -right-1 h-4 w-4 text-yellow-500 fill-yellow-500" />
-                    )}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">
-                        {user?.username}
-                        {isPremium && (
-                          <Badge variant="secondary" className="ml-2 text-xs">
-                            Premium
-                          </Badge>
-                        )}
-                      </p>
-                      <p className="text-xs leading-none text-muted-foreground">
-                        {user?.email}
-                      </p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-
-                  <DropdownMenuItem onClick={() => handleNav('profile')}>
-                    <UserIcon className="mr-2 h-4 w-4" />
-                    Profile
-                  </DropdownMenuItem>
-
-                  <DropdownMenuItem onClick={() => handleNav('settings')}>
-                    <Settings className="mr-2 h-4 w-4" />
-                    Settings
-                  </DropdownMenuItem>
-
-                  {!isPremium && (
-                    <DropdownMenuItem
-                      onClick={() => handleNav('pricing')}
-                      className="text-primary"
-                    >
-                      <Crown className="mr-2 h-4 w-4" />
-                      Upgrade to Premium
-                    </DropdownMenuItem>
-                  )}
-
-                  <DropdownMenuSeparator />
-
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Log out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Button onClick={() => setShowAuthDialog(true)} size="sm">
-                Log In
-              </Button>
-            )}
-
-            {/* Mobile Menu Toggle */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </Button>
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden border-t bg-background">
-            <nav className="container py-4 flex flex-col gap-2">
-              {navItems.map((item) => (
-                <Button
-                  key={item.id}
-                  variant={currentView === item.id ? 'secondary' : 'ghost'}
-                  className="w-full justify-start gap-2"
-                  onClick={() => handleNav(item.id)}
-                >
-                  <item.icon className="h-4 w-4" />
-                  {item.label}
-                </Button>
-              ))}
-            </nav>
-          </div>
-        )}
-      </header>
-
-      {/* Temporary: Show auth dialog state for now */}
-      {showAuthDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-background p-6 rounded-lg max-w-sm">
-            <h3 className="text-lg font-semibold mb-4">Sign In</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Use the test auth on the Privacy page for now. We'll connect the real auth dialog next.
-            </p>
-            <Button onClick={() => setShowAuthDialog(false)}>Close</Button>
-          </div>
         </div>
       )}
-    </>
+    </header>
   );
 }
