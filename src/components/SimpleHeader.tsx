@@ -42,47 +42,80 @@ export function SimpleHeader({ currentView, onNavigate }: SimpleHeaderProps) {
 
   // Check auth status on mount and listen for changes
   useEffect(() => {
+    let mounted = true;
+
     async function loadUser() {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        console.log('[SimpleHeader] Loading user...');
+        
+        // Wait a bit for Supabase to fully initialize
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        console.log('[SimpleHeader] Session check:', {
+          hasSession: !!session,
+          hasToken: !!session?.access_token,
+          error: error?.message
+        });
+        
+        if (!mounted) return;
         
         if (session?.access_token) {
+          console.log('[SimpleHeader] Fetching user profile...');
           const response = await fetch('/api/me', {
             headers: { Authorization: `Bearer ${session.access_token}` },
           });
 
           if (response.ok) {
             const data = await response.json();
-            setUser({
-              id: data.id,
-              email: data.email,
-              username: data.username || data.email?.split('@')[0] || 'User',
-              is_premium: data.is_premium || false,
-              is_admin: data.is_admin || false,
-            });
+            console.log('[SimpleHeader] User loaded:', data.email);
+            if (mounted) {
+              setUser({
+                id: data.id,
+                email: data.email,
+                username: data.username || data.email?.split('@')[0] || 'User',
+                is_premium: data.is_premium || false,
+                is_admin: data.is_admin || false,
+              });
+            }
+          } else {
+            console.error('[SimpleHeader] Failed to fetch user:', response.status);
           }
+        } else {
+          console.log('[SimpleHeader] No session found');
         }
       } catch (error) {
-        console.error('Failed to load user:', error);
+        console.error('[SimpleHeader] Error loading user:', error);
       } finally {
-        setIsLoading(false);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     }
 
+    // Initial load
     loadUser();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      loadUser();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('[SimpleHeader] Auth state changed:', event, !!session);
+      if (mounted) {
+        loadUser();
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const isAuthenticated = !!user;
   const isPremium = user?.is_premium || false;
 
   const handleLogout = async () => {
+    console.log('[SimpleHeader] Logging out...');
     await supabase.auth.signOut();
     setUser(null);
     onNavigate('landing');
