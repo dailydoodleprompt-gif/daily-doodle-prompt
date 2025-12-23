@@ -26,7 +26,7 @@ import {
   Bell,
   Lightbulb,
 } from 'lucide-react';
-import { useCreaoAuth } from '@/sdk/core/auth';
+import { getAuthState, addAuthStateListener } from '@/sdk/core/auth';
 import { signOut } from '@/sdk/core/authHelpers';
 
 interface NavigationProps {
@@ -47,24 +47,38 @@ export function Navigation({ currentView, onNavigate }: NavigationProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
-  
-  const { isAuthenticated, isLoading, token } = useCreaoAuth();
+  const [authState, setAuthState] = useState(() => getAuthState());
+
+  const isAuthenticated = authState.status === 'authenticated' && !!authState.token;
+  const isLoading = authState.status === 'loading';
+
+  // Listen for auth state changes
+  useEffect(() => {
+    const unsubscribe = addAuthStateListener((newState) => {
+      console.log('[Navigation] Auth state changed:', newState);
+      setAuthState(newState);
+    });
+
+    return unsubscribe;
+  }, []);
 
   // Fetch user profile when authenticated
   useEffect(() => {
     async function fetchUserProfile() {
-      if (!isAuthenticated || !token) {
+      if (!isAuthenticated || !authState.token) {
         setUser(null);
         return;
       }
 
       try {
+        console.log('[Navigation] Fetching user profile...');
         const response = await fetch('/api/me', {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${authState.token}` },
         });
 
         if (response.ok) {
           const data = await response.json();
+          console.log('[Navigation] User profile loaded:', data);
           setUser({
             id: data.id,
             email: data.email,
@@ -73,16 +87,17 @@ export function Navigation({ currentView, onNavigate }: NavigationProps) {
             is_premium: data.is_premium || false,
           });
         } else {
+          console.error('[Navigation] Failed to fetch user profile:', response.status);
           setUser(null);
         }
       } catch (error) {
-        console.error('Failed to fetch user profile:', error);
+        console.error('[Navigation] Error fetching user profile:', error);
         setUser(null);
       }
     }
 
     fetchUserProfile();
-  }, [isAuthenticated, token]);
+  }, [isAuthenticated, authState.token]);
 
   const isPremium = user?.is_premium || false;
 
@@ -115,7 +130,7 @@ export function Navigation({ currentView, onNavigate }: NavigationProps) {
     setMobileMenuOpen(false);
   };
 
-  // Don't render user dropdown while loading auth state
+  // Show loading state while auth initializes
   if (isLoading) {
     return (
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -133,7 +148,7 @@ export function Navigation({ currentView, onNavigate }: NavigationProps) {
               <span className="hidden sm:inline-block">DailyDoodlePrompt</span>
             </button>
           </div>
-          <div className="ml-auto">Loading...</div>
+          <div className="ml-auto text-sm text-muted-foreground">Loading...</div>
         </div>
       </header>
     );
