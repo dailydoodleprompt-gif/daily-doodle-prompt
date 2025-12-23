@@ -111,4 +111,6 @@ function TestLogin() {
 
 export const Route = createFileRoute("/test-login")({
   component: TestLogin,
+}) as any;
+  component: TestLogin,
 });
