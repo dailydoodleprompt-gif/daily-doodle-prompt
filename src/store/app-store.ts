@@ -411,14 +411,29 @@ export const useAppStore = create<AppState>()(
       setUser: (user) => set({ user }),
       
       loadUserData: (userId: string) => {
-        const userStats = getOrCreateUserStats(userId);
-        const badges = loadUserBadges(userId);
-        
-        set({
-          userStats,
-          badges,
-        });
-      },
+  const userStats = getOrCreateUserStats(userId);
+  const badges = loadUserBadges(userId);
+  
+  // Initialize default preferences if they don't exist
+  const { preferences, user } = get();
+  const defaultPreferences: UserPreferences = {
+    id: userId,
+    user_id: userId,
+    push_notifications_enabled: true,
+    push_notification_time: '09:00',
+    email_notifications_enabled: true,
+    theme_mode: 'system',
+    has_completed_onboarding: false,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+  
+  set({
+    userStats,
+    badges,
+    preferences: preferences || defaultPreferences,
+  });
+},
 
       clearUserData: () => {
         set({
