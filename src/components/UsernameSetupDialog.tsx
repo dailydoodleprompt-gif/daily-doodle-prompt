@@ -13,9 +13,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useAppStore, useUser } from '@/store/app-store';
+import { useUser } from '@/store/app-store';
 import { AlertCircle, Loader2, User, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/sdk/core/supabase';
 
 const usernameSchema = z.object({
   username: z
@@ -37,7 +38,6 @@ interface UsernameSetupDialogProps {
 
 export function UsernameSetupDialog({ open, onComplete }: UsernameSetupDialogProps) {
   const user = useUser();
-  const completeUsernameSetup = useAppStore((state) => state.completeUsernameSetup);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -60,7 +60,41 @@ export function UsernameSetupDialog({ open, onComplete }: UsernameSetupDialogPro
     setError(null);
 
     try {
-      await completeUsernameSetup(data.username);
+      if (!user) {
+        throw new Error('Not logged in');
+      }
+
+      // Update username in Supabase user metadata
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: {
+          username: data.username,
+        },
+      });
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      // Update username in profiles table via API
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        throw new Error('No active session');
+      }
+
+      const response = await fetch('/api/me', {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${sessionData.session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username: data.username }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update username');
+      }
+
       onComplete?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to set username');

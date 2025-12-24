@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/store/app-store';
 import { Crown, Check, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/sdk/core/supabase';
 
 interface PaymentSuccessViewProps {
   onNavigate: (view: string) => void;
@@ -13,7 +14,8 @@ export function PaymentSuccessView({ onNavigate }: PaymentSuccessViewProps) {
   const [isVerifying, setIsVerifying] = useState(true);
   const [verified, setVerified] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const completePremiumPurchase = useAppStore((state) => state.completePremiumPurchase);
+  
+  const purchaseLifetimeAccess = useAppStore((state) => state.purchaseLifetimeAccess);
   const user = useAppStore((state) => state.user);
 
   useEffect(() => {
@@ -39,11 +41,33 @@ export function PaymentSuccessView({ onNavigate }: PaymentSuccessViewProps) {
         const data = await response.json();
 
         if (data.paid) {
-          // Update user premium status
-          completePremiumPurchase(
-            data.stripeCustomerId as string | undefined,
-            data.sessionId as string | undefined
-          );
+          // Update user premium status in app store
+          purchaseLifetimeAccess();
+          
+          // Also update in Supabase via API if user is logged in
+          if (user) {
+            try {
+              const { data: sessionData } = await supabase.auth.getSession();
+              if (sessionData.session) {
+                await fetch('/api/me', {
+                  method: 'PATCH',
+                  headers: {
+                    'Authorization': `Bearer ${sessionData.session.access_token}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ 
+                    is_premium: true,
+                    stripe_customer_id: data.stripeCustomerId,
+                    stripe_session_id: data.sessionId,
+                  }),
+                });
+              }
+            } catch (err) {
+              console.error('Failed to update premium status in database:', err);
+              // Don't fail the whole flow if this fails
+            }
+          }
+
           setVerified(true);
           toast.success('Payment verified! Premium features unlocked.');
         } else {
@@ -59,7 +83,7 @@ export function PaymentSuccessView({ onNavigate }: PaymentSuccessViewProps) {
     };
 
     verifyPayment();
-  }, [completePremiumPurchase]);
+  }, [purchaseLifetimeAccess, user]);
 
   if (isVerifying) {
     return (
@@ -113,6 +137,7 @@ export function PaymentSuccessView({ onNavigate }: PaymentSuccessViewProps) {
             Your lifetime access has been unlocked
           </CardDescription>
         </CardHeader>
+
         <CardContent className="space-y-6">
           <div className="bg-muted/50 rounded-lg p-4 space-y-3">
             <p className="text-sm font-medium">Premium features now unlocked:</p>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -16,10 +16,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useAppStore, usePreferences, useIsPremium, useUser } from '@/store/app-store';
+import { useAppStore, usePreferences, useUser } from '@/store/app-store';
 import { TitleSelector } from '@/components/TitleSelector';
-import { Bell, Sun, Mail, HelpCircle, FileText, Shield, ArrowLeft, Key, Loader2, CheckCircle2, AlertCircle, User, Fingerprint, Smartphone } from 'lucide-react';
+import { Bell, Sun, Mail, HelpCircle, FileText, Shield, ArrowLeft, Key, Loader2, CheckCircle2, AlertCircle, User } from 'lucide-react';
 import { type UserPreferences } from '@/types';
+import { supabase } from '@/sdk/core/supabase';
 
 const passwordChangeSchema = z.object({
   currentPassword: z.string().min(1, 'Current password is required'),
@@ -58,15 +59,8 @@ interface SettingsViewProps {
 export function SettingsView({ onBack, onForgotPassword, onUpgrade }: SettingsViewProps) {
   const preferences = usePreferences();
   const user = useUser();
-  const isPremium = useIsPremium();
   const updatePreferences = useAppStore((state) => state.updatePreferences);
-  const changePassword = useAppStore((state) => state.changePassword);
-  const changeUsername = useAppStore((state) => state.changeUsername);
-  const changeUsernameOAuth = useAppStore((state) => state.changeUsernameOAuth);
-  const logout = useAppStore((state) => state.logout);
-  const isBiometricAvailable = useAppStore((state) => state.isBiometricAvailable);
-  const enableBiometric = useAppStore((state) => state.enableBiometric);
-  const disableBiometric = useAppStore((state) => state.disableBiometric);
+  const clearUserData = useAppStore((state) => state.clearUserData);
 
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
@@ -75,19 +69,6 @@ export function SettingsView({ onBack, onForgotPassword, onUpgrade }: SettingsVi
   const [isChangingUsername, setIsChangingUsername] = useState(false);
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [usernameSuccess, setUsernameSuccess] = useState(false);
-
-  const [biometricAvailable, setBiometricAvailable] = useState(false);
-  const [isEnablingBiometric, setIsEnablingBiometric] = useState(false);
-  const [biometricError, setBiometricError] = useState<string | null>(null);
-
-  // Check biometric availability on mount
-  useEffect(() => {
-    const checkBiometric = async () => {
-      const available = await isBiometricAvailable();
-      setBiometricAvailable(available);
-    };
-    checkBiometric();
-  }, [isBiometricAvailable]);
 
   const passwordForm = useForm<PasswordChangeFormData>({
     resolver: zodResolver(passwordChangeSchema),
@@ -113,10 +94,7 @@ export function SettingsView({ onBack, onForgotPassword, onUpgrade }: SettingsVi
     },
   });
 
-  // Handle case where preferences aren't loaded yet
-  // This can happen when OAuth users log back in
   if (!preferences) {
-    // Show a loading state instead of blank page
     return (
       <div className="container px-4 py-8 mx-auto max-w-2xl">
         <div className="flex items-center gap-4 mb-6">
@@ -135,7 +113,6 @@ export function SettingsView({ onBack, onForgotPassword, onUpgrade }: SettingsVi
     );
   }
 
-  // Check if user can change password (not OAuth-only)
   const canChangePassword = user && !user.oauth_provider;
   const isOAuthUser = user?.oauth_provider != null;
 
@@ -157,7 +134,15 @@ export function SettingsView({ onBack, onForgotPassword, onUpgrade }: SettingsVi
     setPasswordSuccess(false);
 
     try {
-      await changePassword(data.currentPassword, data.newPassword);
+      // Use Supabase to update password
+      const { error } = await supabase.auth.updateUser({
+        password: data.newPassword
+      });
+
+      if (error) {
+        throw error;
+      }
+
       setPasswordSuccess(true);
       passwordForm.reset();
     } catch (err) {
@@ -173,7 +158,42 @@ export function SettingsView({ onBack, onForgotPassword, onUpgrade }: SettingsVi
     setUsernameSuccess(false);
 
     try {
-      await changeUsername(data.username, data.password);
+      if (!user) throw new Error('Not logged in');
+
+      // Verify password first
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: data.password,
+      });
+
+      if (signInError) {
+        throw new Error('Incorrect password');
+      }
+
+      // Update username in Supabase user metadata
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: { username: data.username },
+      });
+
+      if (updateError) throw updateError;
+
+      // Update in profiles table
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData.session) {
+        const response = await fetch('/api/me', {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${sessionData.session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ username: data.username }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to update username');
+        }
+      }
+
       setUsernameSuccess(true);
       usernameForm.reset({ username: data.username, password: '' });
     } catch (err) {
@@ -189,7 +209,30 @@ export function SettingsView({ onBack, onForgotPassword, onUpgrade }: SettingsVi
     setUsernameSuccess(false);
 
     try {
-      await changeUsernameOAuth(data.username);
+      // Update username in Supabase user metadata
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: { username: data.username },
+      });
+
+      if (updateError) throw updateError;
+
+      // Update in profiles table
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData.session) {
+        const response = await fetch('/api/me', {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${sessionData.session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ username: data.username }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to update username');
+        }
+      }
+
       setUsernameSuccess(true);
       usernameOAuthForm.reset({ username: data.username });
     } catch (err) {
@@ -199,20 +242,10 @@ export function SettingsView({ onBack, onForgotPassword, onUpgrade }: SettingsVi
     }
   };
 
-  const handleBiometricToggle = async () => {
-    setBiometricError(null);
-
-    if (user?.biometric_enabled) {
-      disableBiometric();
-    } else {
-      setIsEnablingBiometric(true);
-      const result = await enableBiometric();
-      setIsEnablingBiometric(false);
-
-      if (!result.success && result.error) {
-        setBiometricError(result.error);
-      }
-    }
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    clearUserData();
+    onBack();
   };
 
   return (
@@ -547,59 +580,6 @@ export function SettingsView({ onBack, onForgotPassword, onUpgrade }: SettingsVi
         </Card>
       )}
 
-      {/* Biometric Login */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Fingerprint className="h-5 w-5" />
-            Biometric Login
-          </CardTitle>
-          <CardDescription>
-            Use Face ID, Touch ID, or Windows Hello to sign in quickly
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {biometricError && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{biometricError}</AlertDescription>
-            </Alert>
-          )}
-
-          {biometricAvailable ? (
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="biometric-toggle" className="flex items-center gap-2">
-                  <Smartphone className="h-4 w-4" />
-                  Enable on this device
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  {user?.biometric_enabled
-                    ? 'Biometric login is enabled'
-                    : 'Sign in faster using your device biometrics'}
-                </p>
-              </div>
-              <Switch
-                id="biometric-toggle"
-                checked={user?.biometric_enabled ?? false}
-                onCheckedChange={handleBiometricToggle}
-                disabled={isEnablingBiometric}
-              />
-            </div>
-          ) : (
-            <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
-              <Fingerprint className="h-8 w-8 text-muted-foreground" />
-              <div>
-                <p className="font-medium text-muted-foreground">Not Available</p>
-                <p className="text-sm text-muted-foreground">
-                  Biometric login is not supported on this device or browser.
-                </p>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
       {/* Support & Legal */}
       <Card className="mb-6">
         <CardHeader>
@@ -633,10 +613,7 @@ export function SettingsView({ onBack, onForgotPassword, onUpgrade }: SettingsVi
           <Button
             variant="destructive"
             className="w-full"
-            onClick={() => {
-              logout();
-              onBack();
-            }}
+            onClick={handleLogout}
           >
             Sign Out
           </Button>
