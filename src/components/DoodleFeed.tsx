@@ -1,6 +1,5 @@
 // @ts-nocheck
 import { useState } from 'react';
-// ... rest of file
 import { useAppStore, useUser, useIsAdmin } from '@/store/app-store';
 import { type Doodle } from '@/types';
 import { type Prompt } from '@/hooks/use-google-sheets';

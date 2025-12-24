@@ -1,7 +1,5 @@
 // @ts-nocheck
 import { useState, useEffect } from 'react';
-// ... rest of fileimport { useState, useEffect } from 'react';
-import { useAppStore } from '@/store/app-store';
 import { type SupportTicket, type SupportTicketNote, type SupportTicketStatus, type SupportTicketCategory, type Doodle } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
