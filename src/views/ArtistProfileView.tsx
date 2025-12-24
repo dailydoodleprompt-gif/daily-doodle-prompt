@@ -1,5 +1,4 @@
-// @ts-nocheck
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,11 +18,13 @@ import {
   UserMinus,
   Crown,
   Shield,
+  Loader2,
 } from 'lucide-react';
 import { type Doodle, type User } from '@/types';
 import { getTitleDisplayName } from '@/types';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { supabase } from '@/sdk/core/supabase';
 
 interface ArtistProfileViewProps {
   artistId: string;
@@ -34,7 +35,6 @@ interface ArtistProfileViewProps {
 export function ArtistProfileView({ artistId, onBack, onPromptClick }: ArtistProfileViewProps) {
   const currentUser = useUser();
   const isAuthenticated = useIsAuthenticated();
-  const getUserById = useAppStore((state) => state.getUserById);
   const getDoodles = useAppStore((state) => state.getDoodles);
   const getFollowerCount = useAppStore((state) => state.getFollowerCount);
   const getFollowingCount = useAppStore((state) => state.getFollowingCount);
@@ -42,8 +42,73 @@ export function ArtistProfileView({ artistId, onBack, onPromptClick }: ArtistPro
   const followUser = useAppStore((state) => state.followUser);
   const unfollowUser = useAppStore((state) => state.unfollowUser);
 
-  const artist = getUserById(artistId) as User | undefined;
-  const [following, setFollowing] = useState(isFollowing(artistId));
+  const [artist, setArtist] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [following, setFollowing] = useState(false);
+
+  // Fetch artist from Supabase
+  useEffect(() => {
+    async function fetchArtist() {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', artistId)
+          .single();
+
+        if (error || !data) {
+          setArtist(null);
+        } else {
+          setArtist({
+            id: data.id,
+            email: data.email,
+            username: data.username || 'Anonymous',
+            is_premium: data.is_premium || false,
+            is_admin: data.is_admin || false,
+            avatar_type: data.avatar_type || 'initial',
+            avatar_icon: data.avatar_icon,
+            current_title: data.current_title,
+            unlocked_titles: data.unlocked_titles || [],
+            newly_unlocked_titles: data.newly_unlocked_titles || [],
+            oauth_provider: data.oauth_provider,
+            created_at: data.created_at,
+            updated_at: data.updated_at,
+          } as User);
+        }
+      } catch (err) {
+        console.error('Failed to fetch artist:', err);
+        setArtist(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchArtist();
+  }, [artistId]);
+
+  // Update following state when artist loads
+  useEffect(() => {
+    if (artist) {
+      setFollowing(isFollowing(artistId));
+    }
+  }, [artist, artistId, isFollowing]);
+
+  if (loading) {
+    return (
+      <div className="container px-4 py-8 mx-auto max-w-4xl">
+        <Button variant="ghost" onClick={onBack} className="mb-4 gap-2">
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <Loader2 className="w-12 h-12 mx-auto mb-4 text-muted-foreground animate-spin" />
+            <p className="text-muted-foreground">Loading artist profile...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (!artist) {
     return (
