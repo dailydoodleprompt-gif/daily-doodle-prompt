@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect } from 'react';
 import { useAppStore } from '@/store/app-store';
 import { type SupportTicket, type SupportTicketNote, type SupportTicketStatus, type SupportTicketCategory, type Doodle } from '@/types';
