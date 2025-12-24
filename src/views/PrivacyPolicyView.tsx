@@ -1,7 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UtilityHeader } from '@/components/UtilityHeader';
-import { useState } from 'react';
-import { supabase } from '@/sdk/core/supabase';
 
 interface PrivacyPolicyViewProps {
   onBack?: () => void;
@@ -101,7 +99,6 @@ export function PrivacyPolicyView({ onBack }: PrivacyPolicyViewProps) {
                 <h2>Third-Party Services</h2>
                 <ul>
                   <li>Google OAuth</li>
-                  <li>Apple Sign In</li>
                   <li>Stripe</li>
                   <li>Google Sheets (public prompt data)</li>
                 </ul>
@@ -148,121 +145,8 @@ export function PrivacyPolicyView({ onBack }: PrivacyPolicyViewProps) {
               </div>
             </CardContent>
           </Card>
-
-          {/* TEMPORARY AUTH TEST - DELETE AFTER TESTING */}
-          <Card className="border-orange-500">
-            <CardHeader>
-              <CardTitle className="text-xl text-orange-600">
-                🔧 Auth Test (Temporary)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <AuthTestSection />
-            </CardContent>
-          </Card>
         </div>
       </main>
-    </div>
-  );
-}
-
-function AuthTestSection() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  async function handleSignUp() {
-    setLoading(true);
-    setMessage("");
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-      
-      if (error) {
-        setMessage(`Error: ${error.message}`);
-      } else {
-        setMessage(`Success! Check ${email} for confirmation`);
-      }
-    } catch (err: any) {
-      setMessage(`Error: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleSignIn() {
-    setLoading(true);
-    setMessage("");
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      
-      if (error) {
-        setMessage(`Error: ${error.message}`);
-      } else {
-        setMessage(`✅ Logged in! Email: ${data.user?.email}`);
-        setTimeout(() => window.location.href = "/", 2000);
-      }
-    } catch (err: any) {
-      setMessage(`Error: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <div className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium mb-1">Email:</label>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full px-3 py-2 border rounded"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium mb-1">Password:</label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full px-3 py-2 border rounded"
-        />
-      </div>
-
-      <div className="flex gap-2">
-        <button 
-          onClick={handleSignUp} 
-          disabled={loading}
-          className="flex-1 px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50"
-        >
-          Sign Up
-        </button>
-        <button 
-          onClick={handleSignIn} 
-          disabled={loading}
-          className="flex-1 px-4 py-2 bg-green-500 text-white rounded disabled:opacity-50"
-        >
-          Sign In
-        </button>
-      </div>
-
-      {message && (
-        <div className={`p-3 rounded ${
-          message.includes("Error") 
-            ? "bg-red-100 text-red-700 border border-red-300" 
-            : "bg-green-100 text-green-700 border border-green-300"
-        }`}>
-          {message}
-        </div>
-      )}
     </div>
   );
 }
