@@ -52,9 +52,9 @@ const badgeIcons: Record<BadgeType, typeof Flame> = {
   'grand_gatherer': Gem,
   // Sharing - nature progression
   'planter_of_seeds': Sprout,
-  'gardener_of_growth': Trees,
+  'gardener_of_growth': Shrub,
   'cultivator_of_influence': Trees,
-  'harvester_of_inspiration': Wheat,
+  'harvester_of_inspiration': Flower,
   // Creative - art progression
   'first_doodle': Pencil,
   'doodle_diary': BookOpen,

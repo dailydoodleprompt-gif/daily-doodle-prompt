@@ -316,19 +316,19 @@ export const BADGE_INFO: Record<BadgeType, Omit<BadgeInfo, 'type'>> = {
   'gardener_of_growth': {
     name: 'Gardener of Growth',
     description: 'Shared 10 prompts',
-    icon: 'leaf',
+    icon: 'shrub',
     category: 'sharing',
   },
   'cultivator_of_influence': {
     name: 'Cultivator of Influence',
     description: 'Shared 25 prompts',
-    icon: 'tree-deciduous',
+    icon: 'trees',
     category: 'sharing',
   },
   'harvester_of_inspiration': {
     name: 'Harvester of Inspiration',
     description: 'Shared 50 prompts',
-    icon: 'wheat',
+    icon: 'flower',
     category: 'sharing',
   },
   
