@@ -339,66 +339,70 @@ export function BadgeCabinet({ className, compact = false }: BadgeCabinetProps) 
       </Card>
 
       {/* Badge Detail Dialog */}
-      {selectedBadge && selectedBadgeInfo && selectedBadgeIcon && selectedBadgeColors && (
-        <Dialog open={!!selectedBadge} onOpenChange={handleCloseDialog}>
-          <DialogContent className="sm:max-w-md text-center">
-            <DialogHeader>
-              <DialogTitle className="text-2xl text-center">
-                {isSelectedEarned ? 'Badge Earned!' : 'Badge Preview'}
-              </DialogTitle>
-              <DialogDescription className="text-center">
-                {isSelectedEarned 
-                  ? "You've unlocked this achievement!"
-                  : "Keep going to unlock this badge!"}
-              </DialogDescription>
-            </DialogHeader>
+{selectedBadge && selectedBadgeInfo && selectedBadgeIcon && selectedBadgeColors && (
+  <Dialog open={!!selectedBadge} onOpenChange={handleCloseDialog}>
+    <DialogContent className="sm:max-w-md text-center">
+      <DialogHeader>
+        <DialogTitle className="text-2xl text-center">
+          {isSelectedEarned ? 'Badge Earned!' : 'Badge Preview'}
+        </DialogTitle>
+        <DialogDescription className="text-center">
+          {isSelectedEarned 
+            ? "You've unlocked this achievement!"
+            : "Keep going to unlock this badge!"}
+        </DialogDescription>
+      </DialogHeader>
 
-            <div className="flex flex-col items-center py-6 space-y-4">
-              {/* Badge Display */}
-              <div
-                className={cn(
-                  'relative w-32 h-32 rounded-full flex items-center justify-center',
-                  'bg-gradient-to-br text-white shadow-2xl ring-8',
-                  selectedBadgeColors.bg,
-                  selectedBadgeColors.ring,
-                  !isSelectedEarned && 'opacity-50 grayscale'
-                )}
-              >
-                {selectedBadgeIcon && <selectedBadgeIcon className="w-16 h-16" />}
+      <div className="flex flex-col items-center py-6 space-y-4">
+        {/* Badge Display */}
+        <div
+          className={cn(
+            'relative w-32 h-32 rounded-full flex items-center justify-center',
+            'bg-gradient-to-br text-white shadow-2xl ring-8',
+            selectedBadgeColors.bg,
+            selectedBadgeColors.ring,
+            !isSelectedEarned && 'opacity-50 grayscale'
+          )}
+        >
+          {/* Render the icon component */}
+          {(() => {
+            const IconComponent = selectedBadgeIcon;
+            return <IconComponent className="w-16 h-16" />;
+          })()}
 
-                {/* Sparkle effects for earned badges */}
-                {isSelectedEarned && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Sparkles className="absolute w-6 h-6 text-yellow-300 -top-2 -left-2 animate-pulse" />
-                    <Sparkles className="absolute w-4 h-4 text-yellow-300 top-0 -right-1 animate-pulse" style={{ animationDelay: '100ms' }} />
-                    <Sparkles className="absolute w-5 h-5 text-yellow-300 -bottom-1 right-0 animate-pulse" style={{ animationDelay: '200ms' }} />
-                  </div>
-                )}
-              </div>
-
-              {/* Badge Info */}
-              <div className="space-y-2">
-                <h3 className="text-xl font-bold">{selectedBadgeInfo.name}</h3>
-                <p className="text-muted-foreground">{selectedBadgeInfo.description}</p>
-                {isSelectedEarned && selectedEarnedAt && (
-                  <p className="text-sm text-green-600 dark:text-green-400 font-medium">
-                    Earned on{' '}
-                    {new Date(selectedEarnedAt).toLocaleDateString('en-US', {
-                      month: 'long',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })}
-                  </p>
-                )}
-              </div>
+          {/* Sparkle effects for earned badges */}
+          {isSelectedEarned && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Sparkles className="absolute w-6 h-6 text-yellow-300 -top-2 -left-2 animate-pulse" />
+              <Sparkles className="absolute w-4 h-4 text-yellow-300 top-0 -right-1 animate-pulse" style={{ animationDelay: '100ms' }} />
+              <Sparkles className="absolute w-5 h-5 text-yellow-300 -bottom-1 right-0 animate-pulse" style={{ animationDelay: '200ms' }} />
             </div>
+          )}
+        </div>
 
-            <Button onClick={handleCloseDialog} className="w-full">
-              {isSelectedEarned ? 'Awesome!' : 'Got it!'}
-            </Button>
-          </DialogContent>
-        </Dialog>
-      )}
+        {/* Badge Info */}
+        <div className="space-y-2">
+          <h3 className="text-xl font-bold">{selectedBadgeInfo.name}</h3>
+          <p className="text-muted-foreground">{selectedBadgeInfo.description}</p>
+          {isSelectedEarned && selectedEarnedAt && (
+            <p className="text-sm text-green-600 dark:text-green-400 font-medium">
+              Earned on{' '}
+              {new Date(selectedEarnedAt).toLocaleDateString('en-US', {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric',
+              })}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <Button onClick={handleCloseDialog} className="w-full">
+        {isSelectedEarned ? 'Awesome!' : 'Got it!'}
+      </Button>
+    </DialogContent>
+  </Dialog>
+)}
     </>
   );
 }
