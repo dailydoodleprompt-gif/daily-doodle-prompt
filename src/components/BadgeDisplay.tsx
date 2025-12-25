@@ -73,10 +73,10 @@ const badgeColors: Record<BadgeType, string> = {
   'premium_patron': 'from-yellow-400 to-amber-500 text-white',
   // Streak - progressively hotter colors
   'creative_ember': 'from-orange-400 to-red-500 text-white',
-  'creative_blaze': 'from-red-500 to-orange-600 text-white',
-  'creative_wildfire': 'from-yellow-400 to-orange-500 text-white',
-  'creative_inferno': 'from-orange-500 to-red-600 text-white',
-  'creative_eternal': 'from-purple-500 to-pink-600 text-white',
+  'creative_fire': 'from-red-500 to-orange-600 text-white',
+  'creative_blaze': 'from-yellow-400 to-orange-500 text-white',
+  'creative_rocket': 'from-orange-500 to-red-600 text-white',
+  'creative_supernova': 'from-purple-500 to-pink-600 text-white',
   // Collection - cool to warm
   'new_collector': 'from-blue-400 to-indigo-500 text-white',
   'pack_rat': 'from-indigo-400 to-purple-500 text-white',
@@ -176,10 +176,10 @@ const allBadgeTypes: BadgeType[] = [
   'premium_patron',
   // Streak badges
   'creative_ember',
+  'creative_fire',
   'creative_blaze',
-  'creative_wildfire',
-  'creative_inferno',
-  'creative_eternal',
+  'creative_rocket',
+  'creative_supernova',
   // Collection badges
   'new_collector',
   'pack_rat',

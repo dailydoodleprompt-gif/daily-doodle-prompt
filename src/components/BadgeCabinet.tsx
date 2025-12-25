@@ -76,10 +76,10 @@ const badgeColors: Record<BadgeType, string> = {
   'premium_patron': 'from-yellow-400 to-amber-500',
   // Streaks - progressively hotter colors
   'creative_ember': 'from-orange-400 to-red-500',
-  'creative_blaze': 'from-red-500 to-orange-600',
-  'creative_wildfire': 'from-yellow-400 to-orange-500',
-  'creative_inferno': 'from-orange-500 to-red-600',
-  'creative_eternal': 'from-purple-500 to-pink-600',
+  'creative_fire': 'from-red-500 to-orange-600',
+  'creative_blaze': 'from-yellow-400 to-orange-500',
+  'creative_rocket': 'from-orange-500 to-red-600',
+  'creative_supernova': 'from-purple-500 to-pink-600',
   // Collection - cool to warm
   'new_collector': 'from-blue-400 to-indigo-500',
   'pack_rat': 'from-indigo-400 to-purple-500',
@@ -112,10 +112,10 @@ const allBadgesOrdered: BadgeType[] = [
   'warm_fuzzies',
   // Streak progression
   'creative_ember',
+  'creative_fire',
   'creative_blaze',
-  'creative_wildfire',
-  'creative_inferno',
-  'creative_eternal',
+  'creative_rocket',
+  'creative_supernova',
   // Doodle progression
   'first_doodle',
   'doodle_diary',

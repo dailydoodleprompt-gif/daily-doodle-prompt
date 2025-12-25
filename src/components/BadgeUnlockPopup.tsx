@@ -76,10 +76,10 @@ const badgeColors: Record<BadgeType, { bg: string; ring: string }> = {
   'premium_patron': { bg: 'from-yellow-400 to-amber-500', ring: 'ring-amber-500/50' },
   // Streak - progressively hotter colors
   'creative_ember': { bg: 'from-orange-400 to-red-500', ring: 'ring-orange-500/50' },
-  'creative_blaze': { bg: 'from-red-500 to-orange-600', ring: 'ring-red-500/50' },
-  'creative_wildfire': { bg: 'from-yellow-400 to-orange-500', ring: 'ring-yellow-500/50' },
-  'creative_inferno': { bg: 'from-orange-500 to-red-600', ring: 'ring-orange-600/50' },
-  'creative_eternal': { bg: 'from-purple-500 to-pink-600', ring: 'ring-purple-500/50' },
+  'creative_fire': { bg: 'from-red-500 to-orange-600', ring: 'ring-red-500/50' },
+  'creative_blaze': { bg: 'from-yellow-400 to-orange-500', ring: 'ring-yellow-500/50' },
+  'creative_rocket': { bg: 'from-orange-500 to-red-600', ring: 'ring-orange-600/50' },
+  'creative_supernova': { bg: 'from-purple-500 to-pink-600', ring: 'ring-purple-500/50' },
   // Collection - cool to warm
   'new_collector': { bg: 'from-blue-400 to-indigo-500', ring: 'ring-blue-500/50' },
   'pack_rat': { bg: 'from-indigo-400 to-purple-500', ring: 'ring-indigo-500/50' },
