@@ -716,20 +716,19 @@ export const useAppStore = create<AppState>()(
         });
 
         if (newStreak >= 3 && !badges.some(b => b.badge_type === 'creative_ember')) {
-          get().awardBadge('creative_ember');
-        }
-        if (newStreak >= 7 && !badges.some(b => b.badge_type === 'creative_blaze')) {
-          get().awardBadge('creative_blaze');
-        }
-        if (newStreak >= 14 && !badges.some(b => b.badge_type === 'creative_wildfire')) {
-          get().awardBadge('creative_wildfire');
-        }
-
-        if (newStreak >= 30 && !badges.some(b => b.badge_type === 'creative_inferno')) {
-  get().awardBadge('creative_inferno');
+  get().awardBadge('creative_ember');
 }
-if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_eternal')) {
-  get().awardBadge('creative_eternal');
+if (newStreak >= 7 && !badges.some(b => b.badge_type === 'creative_fire')) {
+  get().awardBadge('creative_fire');
+}
+if (newStreak >= 14 && !badges.some(b => b.badge_type === 'creative_blaze')) {
+  get().awardBadge('creative_blaze');
+}
+if (newStreak >= 30 && !badges.some(b => b.badge_type === 'creative_rocket')) {
+  get().awardBadge('creative_rocket');
+}
+if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')) {
+  get().awardBadge('creative_supernova');
 }
       },
 

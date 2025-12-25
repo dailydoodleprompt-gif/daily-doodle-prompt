@@ -192,10 +192,10 @@ export type BadgeType =
   | 'premium_patron'           // Completed one-time lifetime unlock purchase
   // Streak badges (consecutive visits)
   | 'creative_ember'           // 3 days in a row
-  | 'creative_blaze'           // 7 days in a row
-  | 'creative_wildfire'        // 14 days in a row
-  | 'creative_inferno'         // 30 days in a row
-  | 'creative_eternal'         // 100 days in a row
+  | 'creative_fire'            // 7 days in a row
+  | 'creative_blaze'           // 14 days in a row
+  | 'creative_rocket'          // 30 days in a row
+  | 'creative_supernova'       // 100 days in a row
   // Favorite/Collection badges
   | 'new_collector'            // Favorited first prompt
   | 'pack_rat'                 // Favorited 10 prompts
@@ -248,37 +248,37 @@ export const BADGE_INFO: Record<BadgeType, Omit<BadgeInfo, 'type'>> = {
     category: 'membership',
   },
   
-  // Streak badges - unique fire/energy progression
-  'creative_ember': {
-    name: 'Creative Ember',
-    description: 'Visited 3 days in a row',
-    icon: 'flame',
-    category: 'streak',
-  },
-  'creative_blaze': {
-    name: 'Creative Blaze',
-    description: 'Visited 7 days in a row',
-    icon: 'fire',
-    category: 'streak',
-  },
-  'creative_wildfire': {
-    name: 'Creative Wildfire',
-    description: 'Visited 14 days in a row',
-    icon: 'zap',
-    category: 'streak',
-  },
-  'creative_inferno': {
-    name: 'Creative Inferno',
-    description: 'Visited 30 days in a row',
-    icon: 'rocket',
-    category: 'streak',
-  },
-  'creative_eternal': {
-    name: 'Creative Eternal',
-    description: 'Visited 100 days in a row',
-    icon: 'infinity',
-    category: 'streak',
-  },
+  // Streak badges
+'creative_ember': {
+  name: 'Creative Ember',
+  description: 'Visited 3 days in a row',
+  icon: 'sparkles',
+  category: 'streak',
+},
+'creative_fire': {  // ← CHANGED from creative_blaze
+  name: 'Creative Fire',
+  description: 'Visited 7 days in a row',
+  icon: 'flame-kindling',
+  category: 'streak',
+},
+'creative_blaze': {  // ← CHANGED from creative_wildfire
+  name: 'Creative Blaze',
+  description: 'Visited 14 days in a row',
+  icon: 'flame',
+  category: 'streak',
+},
+'creative_rocket': {  // ← CHANGED from creative_inferno
+  name: 'Creative Rocket',
+  description: 'Visited 30 days in a row',
+  icon: 'rocket',
+  category: 'streak',
+},
+'creative_supernova': {  // ← CHANGED from creative_eternal
+  name: 'Creative Supernova',
+  description: 'Visited 100 days in a row',
+  icon: 'orbit',
+  category: 'streak',
+},
   
   // Collection badges - heart/bookmark progression
   'new_collector': {

@@ -35,6 +35,7 @@ import {
   HeartHandshake,
   CalendarCheck,
   Lightbulb,
+  Orbit,
 } from 'lucide-react';
 
 const badgeIcons: Record<BadgeType, typeof Flame> = {
@@ -43,10 +44,10 @@ const badgeIcons: Record<BadgeType, typeof Flame> = {
   'premium_patron': Crown,
   // Streak - fire/energy progression
   'creative_ember': Sparkles,
-  'creative_blaze': FlameKindling,
-  'creative_wildfire': Flame,
-  'creative_inferno': Rocket,
-  'creative_eternal': Infinity,
+  'creative_fire': FlameKindling,
+  'creative_blaze': Flame,
+  'creative_rocket': Rocket,
+  'creative_supernova': Orbit,
   // Collection - bookmark progression
   'new_collector': Bookmark,
   'pack_rat': BookOpen,
