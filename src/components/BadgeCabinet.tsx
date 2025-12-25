@@ -11,11 +11,13 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Flame,
+  FlameKindling,
   Trophy,
   Crown,
   Pencil,
   Bookmark,
   BookOpen,
+  Sparkle,
   Sparkles,
   Zap,
   Rocket,
@@ -37,12 +39,12 @@ import {
 
 const badgeIcons: Record<BadgeType, typeof Flame> = {
   // Membership
-  'creative_spark': Sparkles,
+  'creative_spark': Sparkle,
   'premium_patron': Crown,
   // Streaks - fire/energy progression
-  'creative_ember': Flame,
-  'creative_blaze': Flame,
-  'creative_wildfire': Zap,
+  'creative_ember': Sparkles,
+  'creative_blaze': FlameKindling,
+  'creative_wildfire': Flame,
   'creative_inferno': Rocket,
   'creative_eternal': Infinity,
   // Collection - bookmark progression

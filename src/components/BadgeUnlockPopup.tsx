@@ -11,11 +11,13 @@ import {
 import { Button } from '@/components/ui/button';
 import {
   Flame,
+  FlameKindling,
   Trophy,
   Crown,
   Pencil,
   Bookmark,
   BookOpen,
+  Sparkle,
   Sparkles,
   Zap,
   Rocket,
@@ -33,16 +35,15 @@ import {
   CalendarCheck,
   Lightbulb,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 const badgeIcons: Record<BadgeType, typeof Flame> = {
   // Membership
-  'creative_spark': Sparkles,
+  'creative_spark': Sparkle,
   'premium_patron': Crown,
   // Streak - fire/energy progression
-  'creative_ember': Flame,
-  'creative_blaze': Flame,
-  'creative_wildfire': Zap,
+  'creative_ember': Sparkles,
+  'creative_blaze': FlameKindling,
+  'creative_wildfire': Flame,
   'creative_inferno': Rocket,
   'creative_eternal': Infinity,
   // Collection - bookmark progression
