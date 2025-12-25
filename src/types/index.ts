@@ -192,8 +192,10 @@ export type BadgeType =
   | 'premium_patron'           // Completed one-time lifetime unlock purchase
   // Streak badges (consecutive visits)
   | 'creative_ember'           // 3 days in a row
-  | 'creative_blaze'           // 10 days in a row
-  | 'creative_wildfire'        // 20 days in a row
+  | 'creative_blaze'           // 7 days in a row
+  | 'creative_wildfire'        // 14 days in a row
+  | 'creative_inferno'         // 30 days in a row
+  | 'creative_eternal'         // 100 days in a row
   // Favorite/Collection badges
   | 'new_collector'            // Favorited first prompt
   | 'pack_rat'                 // Favorited 10 prompts
@@ -209,17 +211,11 @@ export type BadgeType =
   | 'doodle_diary'             // Uploaded 10 doodles
   | 'doodle_digest'            // Uploaded 25 doodles
   | 'doodle_library'           // Uploaded 50 doodles
+  | 'daily_doodler'            // Uploaded 7 days in a row
   // Social badges
   | 'warm_fuzzies'             // First like given
   | 'somebody_likes_me'        // First like received
-  | 'daily_doodler'            // Uploaded 7 days in a row
-  | 'idea_fairy'               // Submitted a prompt idea
-  // Legacy badges (keeping for backwards compatibility)
-  | '7_day_streak'
-  | '30_day_streak'
-  | '100_day_streak'
-  | 'first_prompt'
-  | 'first_bookmark';
+  | 'idea_fairy';              // Submitted a prompt idea
 
 export interface Badge {
   id: string;
@@ -241,122 +237,125 @@ export const BADGE_INFO: Record<BadgeType, Omit<BadgeInfo, 'type'>> = {
   // Membership badges
   'creative_spark': {
     name: 'Creative Spark',
-    description: 'Signed up for a free account',
+    description: 'Joined the creative community',
     icon: 'sparkles',
     category: 'membership',
   },
   'premium_patron': {
     name: 'Premium Patron',
-    description: 'Purchased lifetime access to all premium features',
+    description: 'Unlocked lifetime access to all premium features',
     icon: 'crown',
     category: 'membership',
   },
-  // Streak badges
+  
+  // Streak badges - unique fire/energy progression
   'creative_ember': {
     name: 'Creative Ember',
-    description: 'Visited Daily Doodle Prompt 3 days in a row',
+    description: 'Visited 3 days in a row',
     icon: 'flame',
     category: 'streak',
   },
   'creative_blaze': {
     name: 'Creative Blaze',
-    description: 'Visited Daily Doodle Prompt 10 days in a row',
-    icon: 'zap',
-    category: 'streak',
-  },
-  'creative_wildfire': {
-    name: 'Creative Wild Fire',
-    description: 'Visited Daily Doodle Prompt 20 days in a row',
+    description: 'Visited 7 days in a row',
     icon: 'fire',
     category: 'streak',
   },
-  // Collection badges
+  'creative_wildfire': {
+    name: 'Creative Wildfire',
+    description: 'Visited 14 days in a row',
+    icon: 'zap',
+    category: 'streak',
+  },
+  'creative_inferno': {
+    name: 'Creative Inferno',
+    description: 'Visited 30 days in a row',
+    icon: 'rocket',
+    category: 'streak',
+  },
+  'creative_eternal': {
+    name: 'Creative Eternal',
+    description: 'Visited 100 days in a row',
+    icon: 'infinity',
+    category: 'streak',
+  },
+  
+  // Collection badges - heart/bookmark progression
   'new_collector': {
     name: 'New Collector',
-    description: 'Favorited your first prompt',
-    icon: 'heart',
+    description: 'Saved your first favorite prompt',
+    icon: 'bookmark',
     category: 'collection',
   },
   'pack_rat': {
     name: 'Pack Rat',
-    description: 'Favorited 10 prompts total',
-    icon: 'archive',
+    description: 'Saved 10 favorite prompts',
+    icon: 'bookmarks',
     category: 'collection',
   },
   'cue_curator': {
     name: 'Cue Curator',
-    description: 'Favorited 25 prompts total',
+    description: 'Saved 25 favorite prompts',
     icon: 'library',
     category: 'collection',
   },
   'grand_gatherer': {
     name: 'Grand Gatherer',
-    description: 'Favorited 50 prompts total',
+    description: 'Saved 50 favorite prompts',
     icon: 'gem',
     category: 'collection',
   },
-  // Sharing badges
+  
+  // Sharing badges - nature/growth progression
   'planter_of_seeds': {
     name: 'Planter of Seeds',
-    description: 'Shared a prompt for the first time',
-    icon: 'share-2',
+    description: 'Shared your first prompt',
+    icon: 'sprout',
     category: 'sharing',
   },
   'gardener_of_growth': {
     name: 'Gardener of Growth',
-    description: 'Shared prompts 10 times total',
-    icon: 'sprout',
+    description: 'Shared 10 prompts',
+    icon: 'leaf',
     category: 'sharing',
   },
   'cultivator_of_influence': {
     name: 'Cultivator of Influence',
-    description: 'Shared prompts 25 times total',
-    icon: 'trees',
+    description: 'Shared 25 prompts',
+    icon: 'tree-deciduous',
     category: 'sharing',
   },
   'harvester_of_inspiration': {
     name: 'Harvester of Inspiration',
-    description: 'Shared prompts 50 times total',
-    icon: 'trophy',
+    description: 'Shared 50 prompts',
+    icon: 'wheat',
     category: 'sharing',
   },
-  // Creative/Doodle badges
+  
+  // Creative/Doodle badges - art/creation progression
   'first_doodle': {
     name: 'First Doodle',
     description: 'Uploaded your first doodle',
-    icon: 'image',
+    icon: 'pencil',
     category: 'creative',
   },
   'doodle_diary': {
     name: 'Doodle Diary',
-    description: 'Uploaded 10 doodles total',
-    icon: 'book-image',
+    description: 'Uploaded 10 doodles',
+    icon: 'notebook',
     category: 'creative',
   },
   'doodle_digest': {
     name: 'Doodle Digest',
-    description: 'Uploaded 25 doodles total',
-    icon: 'images',
+    description: 'Uploaded 25 doodles',
+    icon: 'palette',
     category: 'creative',
   },
   'doodle_library': {
     name: 'Doodle Library',
-    description: 'Uploaded 50 doodles total',
-    icon: 'book-open',
+    description: 'Uploaded 50 doodles',
+    icon: 'gallery-horizontal',
     category: 'creative',
-  },
-  // Social badges
-  'warm_fuzzies': {
-    name: 'Warm-Fuzzies',
-    description: 'First time you liked someone else\'s doodle',
-    icon: 'thumbs-up',
-    category: 'social',
-  },
-  'somebody_likes_me': {
-    name: 'Somebody Likes Me!',
-    description: 'First time another user liked your doodle',
-    icon: 'heart-handshake',
-    category: 'social',
   },
   'daily_doodler': {
     name: 'Daily Doodler',
@@ -364,42 +363,25 @@ export const BADGE_INFO: Record<BadgeType, Omit<BadgeInfo, 'type'>> = {
     icon: 'calendar-check',
     category: 'creative',
   },
+  
+  // Social badges
+  'warm_fuzzies': {
+    name: 'Warm Fuzzies',
+    description: 'Gave your first like to another artist',
+    icon: 'heart',
+    category: 'social',
+  },
+  'somebody_likes_me': {
+    name: 'Somebody Likes Me!',
+    description: 'Received your first like from another artist',
+    icon: 'heart-handshake',
+    category: 'social',
+  },
   'idea_fairy': {
     name: 'Idea Fairy',
-    description: 'Submitted a new prompt idea',
+    description: 'Submitted a creative prompt idea',
     icon: 'lightbulb',
-    category: 'creative',
-  },
-  // Legacy badges
-  '7_day_streak': {
-    name: '7-Day Streak',
-    description: 'Viewed prompts for 7 consecutive days',
-    icon: 'award',
-    category: 'streak',
-  },
-  '30_day_streak': {
-    name: '30-Day Streak',
-    description: 'Viewed prompts for 30 consecutive days',
-    icon: 'medal',
-    category: 'streak',
-  },
-  '100_day_streak': {
-    name: 'Century',
-    description: 'Viewed prompts for 100 consecutive days',
-    icon: 'star',
-    category: 'streak',
-  },
-  'first_prompt': {
-    name: 'First Steps',
-    description: 'Viewed your first prompt',
-    icon: 'pencil',
-    category: 'membership',
-  },
-  'first_bookmark': {
-    name: 'Collector',
-    description: 'Saved your first prompt to favorites',
-    icon: 'bookmark',
-    category: 'collection',
+    category: 'social',
   },
 };
 
