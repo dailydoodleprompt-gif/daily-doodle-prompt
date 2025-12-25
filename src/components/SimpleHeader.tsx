@@ -206,35 +206,37 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
 
               {/* Auth state */}
               {isAuthenticated ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
-                      <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-sm font-medium">
-                          {user?.username?.[0]?.toUpperCase() || 'U'}
-                        </span>
-                      </div>
-                      {isPremium && (
-                        <Crown className="absolute -top-1 -right-1 h-4 w-4 text-yellow-500 fill-yellow-500" />
-                      )}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">
-                          {user?.username}
-                          {isPremium && (
-                            <Badge variant="secondary" className="ml-2 text-xs">
-                              Premium
-                            </Badge>
-                          )}
-                        </p>
-                        <p className="text-xs leading-none text-muted-foreground">
-                          {user?.email}
-                        </p>
-                      </div>
-                    </DropdownMenuLabel>
+  <DropdownMenu>
+    <DropdownMenuTrigger asChild>
+      <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
+        {/* Avatar with colored background */}
+        <div className="relative h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white shadow-md">
+          <span className="text-sm font-semibold">
+            {user?.username?.[0]?.toUpperCase() || 'U'}
+          </span>
+          {/* Premium Crown - positioned on top right */}
+          {isPremium && (
+            <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center shadow-lg">
+              <Crown className="h-3 w-3 text-white" />
+            </div>
+          )}
+        </div>
+      </Button>
+    </DropdownMenuTrigger>
+    <DropdownMenuContent align="end" className="w-56">
+      <DropdownMenuLabel className="font-normal">
+        <div className="flex flex-col space-y-1">
+          <p className="text-sm font-medium leading-none flex items-center gap-2">
+            {user?.username}
+            {isPremium && (
+              <Crown className="h-3 w-3 text-yellow-500 fill-yellow-500" />
+            )}
+          </p>
+          <p className="text-xs leading-none text-muted-foreground">
+            {user?.email}
+          </p>
+        </div>
+      </DropdownMenuLabel>
                     <DropdownMenuSeparator />
 
                     <DropdownMenuItem onClick={() => handleNav('profile')}>
