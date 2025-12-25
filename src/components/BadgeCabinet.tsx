@@ -11,21 +11,28 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Flame,
+  Fire,
   Trophy,
   Crown,
   Pencil,
   Bookmark,
+  Bookmarks,
   Sparkles,
   Zap,
+  Rocket,
+  Infinity,
   Heart,
-  Archive,
   Library,
+  Gem,
   Share2,
   Sprout,
-  Trees,
+  Leaf,
+  TreeDeciduous,
+  Wheat,
   Image,
-  BookImage,
-  Images,
+  Notebook,
+  Palette,
+  GalleryHorizontal,
   HeartHandshake,
   CalendarCheck,
   Lightbulb,
@@ -33,80 +40,83 @@ import {
 } from 'lucide-react';
 
 const badgeIcons: Record<BadgeType, typeof Flame> = {
+  // Membership
   'creative_spark': Sparkles,
   'premium_patron': Crown,
+  // Streaks - fire/energy progression
   'creative_ember': Flame,
-  'creative_blaze': Zap,
-  'creative_wildfire': Flame,
-  'new_collector': Heart,
-  'pack_rat': Archive,
+  'creative_blaze': Fire,
+  'creative_wildfire': Zap,
+  'creative_inferno': Rocket,
+  'creative_eternal': Infinity,
+  // Collection - bookmark progression
+  'new_collector': Bookmark,
+  'pack_rat': Bookmarks,
   'cue_curator': Library,
-  'grand_gatherer': Crown,
-  'planter_of_seeds': Share2,
-  'gardener_of_growth': Sprout,
-  'cultivator_of_influence': Trees,
-  'harvester_of_inspiration': Trophy,
-  'first_doodle': Image,
-  'doodle_diary': BookImage,
-  'doodle_digest': Images,
-  'doodle_library': Library,
+  'grand_gatherer': Gem,
+  // Sharing - nature progression
+  'planter_of_seeds': Sprout,
+  'gardener_of_growth': Leaf,
+  'cultivator_of_influence': TreeDeciduous,
+  'harvester_of_inspiration': Wheat,
+  // Creative - art progression
+  'first_doodle': Pencil,
+  'doodle_diary': Notebook,
+  'doodle_digest': Palette,
+  'doodle_library': GalleryHorizontal,
+  'daily_doodler': CalendarCheck,
+  // Social
   'warm_fuzzies': Heart,
   'somebody_likes_me': HeartHandshake,
-  'daily_doodler': CalendarCheck,
   'idea_fairy': Lightbulb,
-  '7_day_streak': Flame,
-  '30_day_streak': Trophy,
-  '100_day_streak': Crown,
-  'first_prompt': Pencil,
-  'first_bookmark': Bookmark,
 };
 
 const badgeColors: Record<BadgeType, string> = {
+  // Membership
   'creative_spark': 'from-violet-400 to-purple-500',
   'premium_patron': 'from-yellow-400 to-amber-500',
+  // Streaks - progressively hotter colors
   'creative_ember': 'from-orange-400 to-red-500',
-  'creative_blaze': 'from-yellow-400 to-orange-500',
-  'creative_wildfire': 'from-red-500 to-orange-600',
-  'new_collector': 'from-pink-400 to-rose-500',
-  'pack_rat': 'from-teal-400 to-cyan-500',
-  'cue_curator': 'from-blue-400 to-indigo-500',
-  'grand_gatherer': 'from-purple-400 to-pink-500',
+  'creative_blaze': 'from-red-500 to-orange-600',
+  'creative_wildfire': 'from-yellow-400 to-orange-500',
+  'creative_inferno': 'from-orange-500 to-red-600',
+  'creative_eternal': 'from-purple-500 to-pink-600',
+  // Collection - cool to warm
+  'new_collector': 'from-blue-400 to-indigo-500',
+  'pack_rat': 'from-indigo-400 to-purple-500',
+  'cue_curator': 'from-purple-400 to-pink-500',
+  'grand_gatherer': 'from-pink-400 to-rose-500',
+  // Sharing - green/nature
   'planter_of_seeds': 'from-green-400 to-emerald-500',
   'gardener_of_growth': 'from-lime-400 to-green-500',
   'cultivator_of_influence': 'from-emerald-400 to-teal-500',
   'harvester_of_inspiration': 'from-yellow-400 to-amber-500',
+  // Creative - warm artistic colors
   'first_doodle': 'from-amber-400 to-orange-500',
   'doodle_diary': 'from-orange-400 to-red-400',
   'doodle_digest': 'from-rose-400 to-pink-500',
   'doodle_library': 'from-fuchsia-400 to-purple-500',
+  'daily_doodler': 'from-indigo-400 to-violet-500',
+  // Social
   'warm_fuzzies': 'from-rose-400 to-red-500',
   'somebody_likes_me': 'from-pink-400 to-rose-500',
-  'daily_doodler': 'from-indigo-400 to-violet-500',
   'idea_fairy': 'from-yellow-300 to-amber-400',
-  '7_day_streak': 'from-orange-400 to-red-500',
-  '30_day_streak': 'from-yellow-400 to-amber-500',
-  '100_day_streak': 'from-purple-400 to-pink-500',
-  'first_prompt': 'from-green-400 to-emerald-500',
-  'first_bookmark': 'from-blue-400 to-indigo-500',
 };
 
 // All badges in achievement-progress order (easier to harder)
 const allBadgesOrdered: BadgeType[] = [
   // Membership - first things users get
   'creative_spark',
-  'first_prompt',
   // Early engagement
   'new_collector',
-  'first_bookmark',
   'planter_of_seeds',
   'warm_fuzzies',
   // Streak progression
   'creative_ember',
   'creative_blaze',
   'creative_wildfire',
-  '7_day_streak',
-  '30_day_streak',
-  '100_day_streak',
+  'creative_inferno',
+  'creative_eternal',
   // Doodle progression
   'first_doodle',
   'doodle_diary',

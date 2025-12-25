@@ -657,7 +657,6 @@ export const useAppStore = create<AppState>()(
 
         if (newBookmarks.length === 1) {
           get().awardBadge('new_collector');
-          get().awardBadge('first_bookmark');
         }
         if (newBookmarks.length >= 10 && !get().hasBadge('pack_rat')) {
           get().awardBadge('pack_rat');
@@ -716,29 +715,22 @@ export const useAppStore = create<AppState>()(
           },
         });
 
-        if (!badges.some(b => b.badge_type === 'first_prompt')) {
-          get().awardBadge('first_prompt');
-        }
-
         if (newStreak >= 3 && !badges.some(b => b.badge_type === 'creative_ember')) {
           get().awardBadge('creative_ember');
         }
-        if (newStreak >= 10 && !badges.some(b => b.badge_type === 'creative_blaze')) {
+        if (newStreak >= 7 && !badges.some(b => b.badge_type === 'creative_blaze')) {
           get().awardBadge('creative_blaze');
         }
-        if (newStreak >= 20 && !badges.some(b => b.badge_type === 'creative_wildfire')) {
+        if (newStreak >= 14 && !badges.some(b => b.badge_type === 'creative_wildfire')) {
           get().awardBadge('creative_wildfire');
         }
 
-        if (newStreak >= 7 && !badges.some(b => b.badge_type === '7_day_streak')) {
-          get().awardBadge('7_day_streak');
-        }
-        if (newStreak >= 30 && !badges.some(b => b.badge_type === '30_day_streak')) {
-          get().awardBadge('30_day_streak');
-        }
-        if (newStreak >= 100 && !badges.some(b => b.badge_type === '100_day_streak')) {
-          get().awardBadge('100_day_streak');
-        }
+        if (newStreak >= 30 && !badges.some(b => b.badge_type === 'creative_inferno')) {
+  get().awardBadge('creative_inferno');
+}
+if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_eternal')) {
+  get().awardBadge('creative_eternal');
+}
       },
 
       useStreakFreeze: () => {

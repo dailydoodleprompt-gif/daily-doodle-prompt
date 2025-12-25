@@ -9,21 +9,28 @@ import {
 } from '@/components/ui/tooltip';
 import {
   Flame,
+  Fire,
   Trophy,
   Crown,
   Pencil,
   Bookmark,
+  Bookmarks,
   Sparkles,
   Zap,
+  Rocket,
+  Infinity,
   Heart,
-  Archive,
   Library,
+  Gem,
   Share2,
   Sprout,
-  Trees,
+  Leaf,
+  TreeDeciduous,
+  Wheat,
   Image,
-  BookImage,
-  Images,
+  Notebook,
+  Palette,
+  GalleryHorizontal,
   HeartHandshake,
   CalendarCheck,
   Lightbulb,
@@ -33,72 +40,64 @@ const badgeIcons: Record<BadgeType, typeof Flame> = {
   // Membership
   'creative_spark': Sparkles,
   'premium_patron': Crown,
-  // Streak
+  // Streak - fire/energy progression
   'creative_ember': Flame,
-  'creative_blaze': Zap,
-  'creative_wildfire': Flame,
-  // Collection
-  'new_collector': Heart,
-  'pack_rat': Archive,
+  'creative_blaze': Fire,
+  'creative_wildfire': Zap,
+  'creative_inferno': Rocket,
+  'creative_eternal': Infinity,
+  // Collection - bookmark progression
+  'new_collector': Bookmark,
+  'pack_rat': Bookmarks,
   'cue_curator': Library,
-  'grand_gatherer': Crown,
-  // Sharing
-  'planter_of_seeds': Share2,
-  'gardener_of_growth': Sprout,
-  'cultivator_of_influence': Trees,
-  'harvester_of_inspiration': Trophy,
-  // Creative
-  'first_doodle': Image,
-  'doodle_diary': BookImage,
-  'doodle_digest': Images,
-  'doodle_library': Library,
+  'grand_gatherer': Gem,
+  // Sharing - nature progression
+  'planter_of_seeds': Sprout,
+  'gardener_of_growth': Leaf,
+  'cultivator_of_influence': TreeDeciduous,
+  'harvester_of_inspiration': Wheat,
+  // Creative - art progression
+  'first_doodle': Pencil,
+  'doodle_diary': Notebook,
+  'doodle_digest': Palette,
+  'doodle_library': GalleryHorizontal,
+  'daily_doodler': CalendarCheck,
   // Social
   'warm_fuzzies': Heart,
   'somebody_likes_me': HeartHandshake,
-  'daily_doodler': CalendarCheck,
   'idea_fairy': Lightbulb,
-  // Legacy
-  '7_day_streak': Flame,
-  '30_day_streak': Trophy,
-  '100_day_streak': Crown,
-  'first_prompt': Pencil,
-  'first_bookmark': Bookmark,
 };
 
 const badgeColors: Record<BadgeType, string> = {
-  // Membership - Purple/Gold
+  // Membership
   'creative_spark': 'from-violet-400 to-purple-500 text-white',
   'premium_patron': 'from-yellow-400 to-amber-500 text-white',
-  // Streak - Fire colors
+  // Streak - progressively hotter colors
   'creative_ember': 'from-orange-400 to-red-500 text-white',
-  'creative_blaze': 'from-yellow-400 to-orange-500 text-white',
-  'creative_wildfire': 'from-red-500 to-orange-600 text-white',
-  // Collection - Blue/Teal
-  'new_collector': 'from-pink-400 to-rose-500 text-white',
-  'pack_rat': 'from-teal-400 to-cyan-500 text-white',
-  'cue_curator': 'from-blue-400 to-indigo-500 text-white',
-  'grand_gatherer': 'from-purple-400 to-pink-500 text-white',
-  // Sharing - Green
+  'creative_blaze': 'from-red-500 to-orange-600 text-white',
+  'creative_wildfire': 'from-yellow-400 to-orange-500 text-white',
+  'creative_inferno': 'from-orange-500 to-red-600 text-white',
+  'creative_eternal': 'from-purple-500 to-pink-600 text-white',
+  // Collection - cool to warm
+  'new_collector': 'from-blue-400 to-indigo-500 text-white',
+  'pack_rat': 'from-indigo-400 to-purple-500 text-white',
+  'cue_curator': 'from-purple-400 to-pink-500 text-white',
+  'grand_gatherer': 'from-pink-400 to-rose-500 text-white',
+  // Sharing - green/nature
   'planter_of_seeds': 'from-green-400 to-emerald-500 text-white',
   'gardener_of_growth': 'from-lime-400 to-green-500 text-white',
   'cultivator_of_influence': 'from-emerald-400 to-teal-500 text-white',
   'harvester_of_inspiration': 'from-yellow-400 to-amber-500 text-white',
-  // Creative - Warm
+  // Creative - warm artistic colors
   'first_doodle': 'from-amber-400 to-orange-500 text-white',
   'doodle_diary': 'from-orange-400 to-red-400 text-white',
   'doodle_digest': 'from-rose-400 to-pink-500 text-white',
   'doodle_library': 'from-fuchsia-400 to-purple-500 text-white',
-  // Social - Pink/Red
+  'daily_doodler': 'from-indigo-400 to-violet-500 text-white',
+  // Social
   'warm_fuzzies': 'from-rose-400 to-red-500 text-white',
   'somebody_likes_me': 'from-pink-400 to-rose-500 text-white',
-  'daily_doodler': 'from-indigo-400 to-violet-500 text-white',
   'idea_fairy': 'from-yellow-300 to-amber-400 text-white',
-  // Legacy
-  '7_day_streak': 'from-orange-400 to-red-500 text-white',
-  '30_day_streak': 'from-yellow-400 to-amber-500 text-white',
-  '100_day_streak': 'from-purple-400 to-pink-500 text-white',
-  'first_prompt': 'from-green-400 to-emerald-500 text-white',
-  'first_bookmark': 'from-blue-400 to-indigo-500 text-white',
 };
 
 interface BadgeItemProps {
@@ -180,6 +179,8 @@ const allBadgeTypes: BadgeType[] = [
   'creative_ember',
   'creative_blaze',
   'creative_wildfire',
+  'creative_inferno',
+  'creative_eternal',
   // Collection badges
   'new_collector',
   'pack_rat',
@@ -195,10 +196,10 @@ const allBadgeTypes: BadgeType[] = [
   'doodle_diary',
   'doodle_digest',
   'doodle_library',
+  'daily_doodler',
   // Social badges
   'warm_fuzzies',
   'somebody_likes_me',
-  'daily_doodler',
   'idea_fairy',
 ];
 
