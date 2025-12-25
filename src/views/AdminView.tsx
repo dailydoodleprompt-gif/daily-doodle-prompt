@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -64,11 +63,7 @@ import {
   Tag,
   Image,
 } from 'lucide-react';
-
-const adminLoginSchema = z.object({
-  email: z.string().email('Please enter a valid email'),
-  password: z.string().min(1, 'Password is required'),
-});
+import { supabase } from '@/sdk/core/supabase';
 
 const resetPasswordSchema = z.object({
   newPassword: z.string().min(6, 'Password must be at least 6 characters'),
@@ -85,7 +80,6 @@ const updateUsernameSchema = z.object({
     .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
 });
 
-type AdminLoginFormData = z.infer<typeof adminLoginSchema>;
 type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 type UpdateUsernameFormData = z.infer<typeof updateUsernameSchema>;
 
@@ -100,25 +94,18 @@ interface UserToManage {
   email: string;
   is_premium: boolean;
   is_admin?: boolean;
+  created_at: string;
 }
 
 export function AdminView({ onBack }: AdminViewProps) {
-  const user = useUser();
-  const login = useAppStore((state) => state.login);
-  const getAllUsers = useAppStore((state) => state.getAllUsers);
-  const getAdminStats = useAppStore((state) => state.getAdminStats);
-  const deleteUser = useAppStore((state) => state.deleteUser);
-  const toggleUserPremium = useAppStore((state) => state.toggleUserPremium);
-  const toggleUserAdmin = useAppStore((state) => state.toggleUserAdmin);
-  const resetUserPassword = useAppStore((state) => state.resetUserPassword);
-  const adminUpdateUsername = useAppStore((state) => state.adminUpdateUsername);
-  const adminDeleteDoodle = useAppStore((state) => state.adminDeleteDoodle);
+  const currentUser = useUser();
   const getAppSettings = useAppStore((state) => state.getAppSettings);
   const updateAppSettings = useAppStore((state) => state.updateAppSettings);
   const getDoodles = useAppStore((state) => state.getDoodles);
-  const getUserById = useAppStore((state) => state.getUserById);
+  const deleteDoodle = useAppStore((state) => state.deleteDoodle);
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [users, setUsers] = useState<UserToManage[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -130,17 +117,6 @@ export function AdminView({ onBack }: AdminViewProps) {
   const [selectedUser, setSelectedUser] = useState<UserToManage | null>(null);
   const [selectedDoodleId, setSelectedDoodleId] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
-
-  // Force re-render key for user list
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  const loginForm = useForm<AdminLoginFormData>({
-    resolver: zodResolver(adminLoginSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-    },
-  });
 
   const resetPasswordForm = useForm<ResetPasswordFormData>({
     resolver: zodResolver(resetPasswordSchema),
@@ -157,24 +133,31 @@ export function AdminView({ onBack }: AdminViewProps) {
     },
   });
 
-  const handleLogin = async (data: AdminLoginFormData) => {
-    setIsLoading(true);
-    setError(null);
-
+  // Fetch all users from Supabase
+  const fetchUsers = async () => {
     try {
-      await login(data.email, data.password);
-      // Check if logged in user is admin
-      const currentUser = useAppStore.getState().user;
-      if (!currentUser?.is_admin) {
-        setError('Access denied. Admin privileges required.');
-        useAppStore.getState().logout();
-      }
+      setLoading(true);
+      const { data, error: fetchError } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (fetchError) throw fetchError;
+
+      setUsers(data || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      console.error('Failed to fetch users:', err);
+      setError('Failed to load users');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (currentUser?.is_admin) {
+      fetchUsers();
+    }
+  }, [currentUser]);
 
   const handleDeleteUser = async () => {
     if (!selectedUser) return;
@@ -183,11 +166,13 @@ export function AdminView({ onBack }: AdminViewProps) {
     setError(null);
 
     try {
-      await deleteUser(selectedUser.id);
+      const { error: deleteError } = await supabase.auth.admin.deleteUser(selectedUser.id);
+      if (deleteError) throw deleteError;
+
       setSuccessMessage(`User "${selectedUser.username}" has been deleted.`);
       setDeleteDialogOpen(false);
       setSelectedUser(null);
-      setRefreshKey(k => k + 1);
+      fetchUsers();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete user');
     } finally {
@@ -199,9 +184,15 @@ export function AdminView({ onBack }: AdminViewProps) {
     setError(null);
 
     try {
-      await toggleUserPremium(targetUser.id);
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ is_premium: !targetUser.is_premium })
+        .eq('id', targetUser.id);
+
+      if (updateError) throw updateError;
+
       setSuccessMessage(`${targetUser.username}'s premium status has been ${targetUser.is_premium ? 'removed' : 'granted'}.`);
-      setRefreshKey(k => k + 1);
+      fetchUsers();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to toggle premium status');
     }
@@ -211,9 +202,15 @@ export function AdminView({ onBack }: AdminViewProps) {
     setError(null);
 
     try {
-      await toggleUserAdmin(targetUser.id);
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ is_admin: !targetUser.is_admin })
+        .eq('id', targetUser.id);
+
+      if (updateError) throw updateError;
+
       setSuccessMessage(`${targetUser.username}'s admin status has been ${targetUser.is_admin ? 'removed' : 'granted'}.`);
-      setRefreshKey(k => k + 1);
+      fetchUsers();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to toggle admin status');
     }
@@ -226,7 +223,13 @@ export function AdminView({ onBack }: AdminViewProps) {
     setError(null);
 
     try {
-      await resetUserPassword(selectedUser.id, data.newPassword);
+      const { error: updateError } = await supabase.auth.admin.updateUserById(
+        selectedUser.id,
+        { password: data.newPassword }
+      );
+
+      if (updateError) throw updateError;
+
       setSuccessMessage(`Password for "${selectedUser.username}" has been reset.`);
       setResetPasswordDialogOpen(false);
       setSelectedUser(null);
@@ -245,12 +248,18 @@ export function AdminView({ onBack }: AdminViewProps) {
     setError(null);
 
     try {
-      await adminUpdateUsername(selectedUser.id, data.username);
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ username: data.username })
+        .eq('id', selectedUser.id);
+
+      if (updateError) throw updateError;
+
       setSuccessMessage(`Username changed from "${selectedUser.username}" to "${data.username}".`);
       setUpdateUsernameDialogOpen(false);
       setSelectedUser(null);
       updateUsernameForm.reset();
-      setRefreshKey(k => k + 1);
+      fetchUsers();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update username');
     } finally {
@@ -282,11 +291,10 @@ export function AdminView({ onBack }: AdminViewProps) {
     setError(null);
 
     try {
-      await adminDeleteDoodle(selectedDoodleId);
+      deleteDoodle(selectedDoodleId);
       setSuccessMessage('Doodle has been deleted successfully.');
       setDeleteDoodleDialogOpen(false);
       setSelectedDoodleId(null);
-      setRefreshKey(k => k + 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete doodle');
     } finally {
@@ -297,93 +305,52 @@ export function AdminView({ onBack }: AdminViewProps) {
   const handleToggleTags = (enabled: boolean) => {
     updateAppSettings({ tags_enabled: enabled });
     setSuccessMessage(`Tags have been ${enabled ? 'enabled' : 'disabled'} globally.`);
-    setRefreshKey(k => k + 1);
   };
 
   // Clear success message after 5 seconds
-  if (successMessage) {
-    setTimeout(() => setSuccessMessage(null), 5000);
-  }
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => setSuccessMessage(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
 
-  // If not logged in or not admin, show login form
-  if (!user?.is_admin) {
+  // Check if user is admin
+  if (!currentUser?.is_admin) {
     return (
       <div className="container px-4 py-8 mx-auto max-w-md">
         <div className="flex items-center gap-4 mb-6">
           <Button variant="ghost" size="icon" onClick={onBack}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-2xl font-bold">Admin Login</h1>
+          <h1 className="text-2xl font-bold">Admin Access</h1>
         </div>
 
         <Card>
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-              <Shield className="h-6 w-6 text-primary" />
-            </div>
-            <CardTitle>Admin Access</CardTitle>
-            <CardDescription>
-              Sign in with your admin credentials to access the dashboard
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {error && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-
-            <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="admin-email">Email</Label>
-                <Input
-                  id="admin-email"
-                  type="email"
-                  placeholder="admin@example.com"
-                  {...loginForm.register('email')}
-                  disabled={isLoading}
-                />
-                {loginForm.formState.errors.email && (
-                  <p className="text-sm text-destructive">
-                    {loginForm.formState.errors.email.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="admin-password">Password</Label>
-                <Input
-                  id="admin-password"
-                  type="password"
-                  placeholder="Enter your password"
-                  {...loginForm.register('password')}
-                  disabled={isLoading}
-                />
-                {loginForm.formState.errors.password && (
-                  <p className="text-sm text-destructive">
-                    {loginForm.formState.errors.password.message}
-                  </p>
-                )}
-              </div>
-
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Sign In
-              </Button>
-            </form>
+          <CardContent className="py-12 text-center">
+            <Shield className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+            <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
+            <p className="text-muted-foreground">
+              You need admin privileges to access this page.
+            </p>
           </CardContent>
         </Card>
       </div>
     );
   }
-
-  // Admin dashboard
-  const stats = getAdminStats();
-  const allUsers = getAllUsers();
+  // Calculate stats
+  const stats = {
+    totalUsers: users.length,
+    newUsersThisWeek: users.filter(u => {
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      return new Date(u.created_at) > weekAgo;
+    }).length,
+    premiumUsers: users.filter(u => u.is_premium).length,
+  };
 
   return (
-    <div className="container px-4 py-8 mx-auto max-w-5xl" key={refreshKey}>
+    <div className="container px-4 py-8 mx-auto max-w-5xl">
       <div className="flex items-center gap-4 mb-6">
         <Button variant="ghost" size="icon" onClick={onBack}>
           <ArrowLeft className="h-5 w-5" />
@@ -405,8 +372,8 @@ export function AdminView({ onBack }: AdminViewProps) {
       )}
 
       {successMessage && (
-        <Alert className="mb-4 border-green-200 bg-green-50">
-          <AlertDescription className="text-green-800">{successMessage}</AlertDescription>
+        <Alert className="mb-4 border-green-200 bg-green-50 dark:bg-green-950">
+          <AlertDescription className="text-green-800 dark:text-green-200">{successMessage}</AlertDescription>
         </Alert>
       )}
 
@@ -506,7 +473,7 @@ export function AdminView({ onBack }: AdminViewProps) {
             return (
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 {allDoodles.slice(0, 12).map((doodle) => {
-                  const owner = getUserById(doodle.user_id);
+                  const owner = users.find(u => u.id === doodle.user_id);
                   return (
                     <div key={doodle.id} className="relative group">
                       <div className="aspect-square rounded-lg overflow-hidden bg-muted">
@@ -555,7 +522,12 @@ export function AdminView({ onBack }: AdminViewProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {allUsers.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-8">
+              <Loader2 className="h-8 w-8 mx-auto mb-4 animate-spin text-muted-foreground" />
+              <p className="text-muted-foreground">Loading users...</p>
+            </div>
+          ) : users.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               No users registered yet
             </div>
@@ -572,7 +544,7 @@ export function AdminView({ onBack }: AdminViewProps) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {allUsers.map((u) => (
+                  {users.map((u) => (
                     <TableRow key={u.id}>
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
@@ -626,7 +598,7 @@ export function AdminView({ onBack }: AdminViewProps) {
                               <Crown className="mr-2 h-4 w-4" />
                               {u.is_premium ? 'Remove Premium' : 'Grant Premium'}
                             </DropdownMenuItem>
-                            {u.id !== user.id && (
+                            {u.id !== currentUser.id && (
                               <DropdownMenuItem onClick={() => handleToggleAdmin(u)}>
                                 {u.is_admin ? (
                                   <>
@@ -642,7 +614,7 @@ export function AdminView({ onBack }: AdminViewProps) {
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuSeparator />
-                            {u.id !== user.id && (
+                            {u.id !== currentUser.id && (
                               <DropdownMenuItem
                                 className="text-destructive focus:text-destructive"
                                 onClick={() => openDeleteDialog(u)}
