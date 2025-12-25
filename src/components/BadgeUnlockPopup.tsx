@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+typescriptimport { useEffect, useState } from 'react';
 import { useAppStore, useNewlyEarnedBadge } from '@/store/app-store';
 import { type BadgeType, BADGE_INFO } from '@/types';
 import {
@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import {
   Flame,
   FlameKindling,
