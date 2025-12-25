@@ -291,6 +291,7 @@ interface AppState {
   preferences: UserPreferences | null;
   streak: Streak | null;
   badges: Badge[];
+  viewedBadges: BadgeType[];
   bookmarks: Bookmark[];
   userStats: UserStats | null;
   newlyEarnedBadge: BadgeType | null;
@@ -334,6 +335,7 @@ interface AppState {
   awardBadge: (badgeType: BadgeType) => void;
   hasBadge: (badgeType: BadgeType) => boolean;
   clearNewlyEarnedBadge: () => void;
+  markBadgeAsViewed: (badgeType: BadgeType) => void; 
 
   // Doodle actions
   uploadDoodle: (promptId: string, promptTitle: string, imageData: string, caption: string, isPublic: boolean) => Promise<{ success: boolean; error?: string }>;
@@ -401,6 +403,7 @@ export const useAppStore = create<AppState>()(
       preferences: null,
       streak: null,
       badges: [],
+      viewedBadges: [],
       bookmarks: [],
       userStats: null,
       newlyEarnedBadge: null,
@@ -441,6 +444,7 @@ export const useAppStore = create<AppState>()(
           preferences: null,
           streak: null,
           badges: [],
+          viewedBadges: [],
           bookmarks: [],
           userStats: null,
           newlyEarnedBadge: null,
@@ -782,6 +786,13 @@ if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')
       clearNewlyEarnedBadge: () => {
         set({ newlyEarnedBadge: null });
       },
+
+      markBadgeAsViewed: (badgeType: BadgeType) => {
+  const { viewedBadges } = get();
+  if (!viewedBadges.includes(badgeType)) {
+    set({ viewedBadges: [...viewedBadges, badgeType] });
+  }
+},
 
       // Doodle actions
       uploadDoodle: async (promptId: string, promptTitle: string, imageData: string, caption: string, isPublic: boolean) => {
@@ -1360,6 +1371,7 @@ if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')
         preferences: state.preferences,
         streak: state.streak,
         badges: state.badges,
+        viewedBadges: state.viewedBadges, 
         bookmarks: state.bookmarks,
         userStats: state.userStats,
         showOnboarding: state.showOnboarding,
