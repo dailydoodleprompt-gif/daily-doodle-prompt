@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { supabase } from '@/sdk/core/supabase';
 import type {
   User,
   UserPreferences,
@@ -308,10 +309,10 @@ interface AppState {
   updatePreferences: (prefs: Partial<UserPreferences>) => void;
   completeOnboarding: () => void;
   purchaseLifetimeAccess: () => void;
-  updateAvatar: (avatarType: AvatarType, avatarIcon?: AvatarIconType) => void;
+  updateAvatar: (avatarType: AvatarType, avatarIcon?: AvatarIconType) => Promise<void>;
 
   // Title actions
-  setTitle: (titleId: ProfileTitleType) => void;
+  setTitle: (titleId: ProfileTitleType) => Promise<void>;
   getAvailableTitles: () => ProfileTitleType[];
   getUnlockedSecretTitles: () => ProfileTitleType[];
   clearNewlyUnlockedTitles: () => void;
@@ -510,36 +511,89 @@ export const useAppStore = create<AppState>()(
         }, 300);
       },
 
-      updateAvatar: (avatarType: AvatarType, avatarIcon?: AvatarIconType) => {
-        const { user } = get();
-        if (!user) return;
+      updateAvatar: async (avatarType: AvatarType, avatarIcon?: AvatarIconType) => {
+  const { user } = get();
+  if (!user) return;
 
-        set({
-          user: {
-            ...user,
-            avatar_type: avatarType,
-            avatar_icon: avatarIcon,
-            updated_at: new Date().toISOString(),
-          },
-        });
+  const now = new Date().toISOString();
+  
+  // Update local state immediately (optimistic update)
+  set({
+    user: {
+      ...user,
+      avatar_type: avatarType,
+      avatar_icon: avatarIcon,
+      updated_at: now,
+    },
+  });
+
+  // Save to Supabase
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) return;
+
+    const response = await fetch('/api/me', {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        avatar_type: avatarType,
+        avatar_icon: avatarIcon,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('Failed to save avatar to Supabase');
+    }
+  } catch (error) {
+    console.error('Error saving avatar:', error);
+  }
+},
 
       // Title actions
-      setTitle: (titleId: ProfileTitleType) => {
-        const { user } = get();
-        if (!user || (!user.is_premium && !user.is_admin)) return;
+      setTitle: async (titleId: ProfileTitleType) => {
+  const { user } = get();
+  if (!user || (!user.is_premium && !user.is_admin)) return;
 
-        const availableTitles = get().getAvailableTitles();
-        if (!availableTitles.includes(titleId)) return;
+  const availableTitles = get().getAvailableTitles();
+  if (!availableTitles.includes(titleId)) return;
 
-        set({
-          user: {
-            ...user,
-            current_title: titleId,
-            updated_at: new Date().toISOString(),
-          },
-        });
+  const now = new Date().toISOString();
+
+  // Update local state immediately (optimistic update)
+  set({
+    user: {
+      ...user,
+      current_title: titleId,
+      updated_at: now,
+    },
+  });
+
+  // Save to Supabase
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) return;
+
+    const response = await fetch('/api/me', {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        current_title: titleId,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('Failed to save title to Supabase');
+    }
+  } catch (error) {
+    console.error('Error saving title:', error);
+  }
+},
 
       getAvailableTitles: () => {
         const { user } = get();
