@@ -53,13 +53,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   });
 
   const { data: authData, error: authError } = await supabase.auth.getUser(token);
+  
   if (authError || !authData?.user) {
     return res.status(401).json({ error: "Invalid token" });
   }
 
   // Handle PATCH - update user profile
   if (req.method === "PATCH") {
-    const { username, is_premium, is_admin, stripe_customer_id, stripe_session_id } = req.body;
+    const { 
+      username, 
+      is_premium, 
+      is_admin, 
+      stripe_customer_id, 
+      stripe_session_id,
+      avatar_type,
+      avatar_icon,
+      current_title
+    } = req.body;
 
     const updates: any = {};
     if (username !== undefined) updates.username = username;
@@ -67,6 +77,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (is_admin !== undefined) updates.is_admin = is_admin;
     if (stripe_customer_id !== undefined) updates.stripe_customer_id = stripe_customer_id;
     if (stripe_session_id !== undefined) updates.stripe_session_id = stripe_session_id;
+    if (avatar_type !== undefined) updates.avatar_type = avatar_type;
+    if (avatar_icon !== undefined) updates.avatar_icon = avatar_icon;
+    if (current_title !== undefined) updates.current_title = current_title;
 
     const { error: updateError } = await supabase
       .from("profiles")
@@ -109,6 +122,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     is_premium: profile.is_premium ?? false,
     is_admin: profile.is_admin ?? false,
     oauth_provider: profile.oauth_provider ?? null,
+    avatar_type: profile.avatar_type ?? 'initial',
+    avatar_icon: profile.avatar_icon ?? null,
+    current_title: profile.current_title ?? null,
     created_at: profile.created_at,
     updated_at: profile.updated_at,
   });
