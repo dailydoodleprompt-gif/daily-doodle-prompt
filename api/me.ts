@@ -60,11 +60,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // Handle PATCH - update user profile
   if (req.method === "PATCH") {
-    const { 
-      username, 
-      is_premium, 
-      is_admin, 
-      stripe_customer_id, 
+    console.log("[API /api/me PATCH] Request received");
+    console.log("[API /api/me PATCH] User ID:", authData.user.id);
+    console.log("[API /api/me PATCH] Request body:", JSON.stringify(req.body));
+
+    const {
+      username,
+      is_premium,
+      is_admin,
+      stripe_customer_id,
       stripe_session_id,
       avatar_type,
       avatar_icon,
@@ -81,17 +85,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (avatar_icon !== undefined) updates.avatar_icon = avatar_icon;
     if (current_title !== undefined) updates.current_title = current_title;
 
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq("id", authData.user.id);
+    console.log("[API /api/me PATCH] Updates to apply:", JSON.stringify(updates));
 
-    if (updateError) {
-      console.error("Failed to update profile:", updateError);
-      return res.status(500).json({ error: "Failed to update profile" });
+    if (Object.keys(updates).length === 0) {
+      console.warn("[API /api/me PATCH] No valid fields to update - body may be empty or malformed");
+      return res.status(400).json({ error: "No valid fields to update" });
     }
 
-    return res.status(200).json({ success: true });
+    const updatePayload = { ...updates, updated_at: new Date().toISOString() };
+    console.log("[API /api/me PATCH] Sending to Supabase:", JSON.stringify(updatePayload));
+
+    const { data: updateData, error: updateError } = await supabase
+      .from("profiles")
+      .update(updatePayload)
+      .eq("id", authData.user.id)
+      .select();
+
+    console.log("[API /api/me PATCH] Supabase response:", { data: updateData, error: updateError });
+
+    if (updateError) {
+      console.error("[API /api/me PATCH] Failed to update profile:", updateError);
+      return res.status(500).json({ error: "Failed to update profile", details: updateError.message });
+    }
+
+    if (!updateData || updateData.length === 0) {
+      console.warn("[API /api/me PATCH] Update succeeded but no rows returned - profile may not exist");
+    } else {
+      console.log("[API /api/me PATCH] Updated profile:", JSON.stringify(updateData[0]));
+    }
+
+    return res.status(200).json({ success: true, updated: updateData?.[0] || null });
   }
 
   // Handle GET - fetch user profile

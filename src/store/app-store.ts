@@ -512,11 +512,17 @@ export const useAppStore = create<AppState>()(
       },
 
       updateAvatar: async (avatarType: AvatarType, avatarIcon?: AvatarIconType) => {
+  console.log('[updateAvatar] Called with:', { avatarType, avatarIcon });
+
   const { user } = get();
-  if (!user) return;
+  if (!user) {
+    console.error('[updateAvatar] No user in store - aborting');
+    return;
+  }
+  console.log('[updateAvatar] Current user:', { id: user.id, username: user.username });
 
   const now = new Date().toISOString();
-  
+
   // Update local state immediately (optimistic update)
   set({
     user: {
@@ -526,11 +532,30 @@ export const useAppStore = create<AppState>()(
       updated_at: now,
     },
   });
+  console.log('[updateAvatar] Local state updated optimistically');
 
   // Save to Supabase
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) return;
+    console.log('[updateAvatar] Getting Supabase session...');
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+    if (sessionError) {
+      console.error('[updateAvatar] Session error:', sessionError);
+      return;
+    }
+
+    if (!session?.access_token) {
+      console.error('[updateAvatar] No session or access token - user may not be authenticated');
+      console.log('[updateAvatar] Session data:', session);
+      return;
+    }
+    console.log('[updateAvatar] Got session, token length:', session.access_token.length);
+
+    const payload = {
+      avatar_type: avatarType,
+      avatar_icon: avatarIcon,
+    };
+    console.log('[updateAvatar] Sending PATCH to /api/me with payload:', payload);
 
     const response = await fetch('/api/me', {
       method: 'PATCH',
@@ -538,27 +563,51 @@ export const useAppStore = create<AppState>()(
         'Authorization': `Bearer ${session.access_token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        avatar_type: avatarType,
-        avatar_icon: avatarIcon,
-      }),
+      body: JSON.stringify(payload),
+    });
+
+    const responseData = await response.json().catch(() => null);
+    console.log('[updateAvatar] API response:', {
+      status: response.status,
+      ok: response.ok,
+      data: responseData
     });
 
     if (!response.ok) {
-      console.error('Failed to save avatar to Supabase');
+      console.error('[updateAvatar] Failed to save avatar to Supabase:', responseData);
+    } else {
+      console.log('[updateAvatar] Successfully saved avatar to Supabase');
     }
   } catch (error) {
-    console.error('Error saving avatar:', error);
+    console.error('[updateAvatar] Error saving avatar:', error);
   }
 },
 
       // Title actions
       setTitle: async (titleId: ProfileTitleType) => {
+  console.log('[setTitle] Called with:', { titleId });
+
   const { user } = get();
-  if (!user || (!user.is_premium && !user.is_admin)) return;
+  if (!user) {
+    console.error('[setTitle] No user in store - aborting');
+    return;
+  }
+  if (!user.is_premium && !user.is_admin) {
+    console.error('[setTitle] User is not premium or admin - aborting', {
+      is_premium: user.is_premium,
+      is_admin: user.is_admin
+    });
+    return;
+  }
+  console.log('[setTitle] Current user:', { id: user.id, username: user.username, is_premium: user.is_premium, is_admin: user.is_admin });
 
   const availableTitles = get().getAvailableTitles();
-  if (!availableTitles.includes(titleId)) return;
+  console.log('[setTitle] Available titles:', availableTitles);
+
+  if (!availableTitles.includes(titleId)) {
+    console.error('[setTitle] Title not in available titles - aborting:', titleId);
+    return;
+  }
 
   const now = new Date().toISOString();
 
@@ -570,11 +619,27 @@ export const useAppStore = create<AppState>()(
       updated_at: now,
     },
   });
+  console.log('[setTitle] Local state updated optimistically');
 
   // Save to Supabase
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) return;
+    console.log('[setTitle] Getting Supabase session...');
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+    if (sessionError) {
+      console.error('[setTitle] Session error:', sessionError);
+      return;
+    }
+
+    if (!session?.access_token) {
+      console.error('[setTitle] No session or access token - user may not be authenticated');
+      console.log('[setTitle] Session data:', session);
+      return;
+    }
+    console.log('[setTitle] Got session, token length:', session.access_token.length);
+
+    const payload = { current_title: titleId };
+    console.log('[setTitle] Sending PATCH to /api/me with payload:', payload);
 
     const response = await fetch('/api/me', {
       method: 'PATCH',
@@ -582,16 +647,23 @@ export const useAppStore = create<AppState>()(
         'Authorization': `Bearer ${session.access_token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        current_title: titleId,
-      }),
+      body: JSON.stringify(payload),
+    });
+
+    const responseData = await response.json().catch(() => null);
+    console.log('[setTitle] API response:', {
+      status: response.status,
+      ok: response.ok,
+      data: responseData
     });
 
     if (!response.ok) {
-      console.error('Failed to save title to Supabase');
+      console.error('[setTitle] Failed to save title to Supabase:', responseData);
+    } else {
+      console.log('[setTitle] Successfully saved title to Supabase');
     }
   } catch (error) {
-    console.error('Error saving title:', error);
+    console.error('[setTitle] Error saving title:', error);
   }
 },
 

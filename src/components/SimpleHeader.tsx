@@ -65,19 +65,27 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
           if (response.ok) {
             const data = await response.json();
             console.log('[SimpleHeader] User loaded:', data.email);
-            
+            console.log('[SimpleHeader] Profile data from API:', {
+              avatar_type: data.avatar_type,
+              avatar_icon: data.avatar_icon,
+              current_title: data.current_title
+            });
+
             if (mounted) {
-              // Set user in app store
+              // Set user in app store - include avatar and title fields!
               setUser({
                 id: data.id,
                 email: data.email,
                 username: data.username || data.email?.split('@')[0] || 'User',
                 is_premium: data.is_premium || false,
                 is_admin: data.is_admin || false,
+                avatar_type: data.avatar_type || 'initial',
+                avatar_icon: data.avatar_icon || undefined,
+                current_title: data.current_title || null,
                 created_at: data.created_at || new Date().toISOString(),
                 updated_at: data.updated_at || new Date().toISOString(),
               });
-              
+
               // Load user's badges, stats, etc.
               loadUserData(data.id);
             }
