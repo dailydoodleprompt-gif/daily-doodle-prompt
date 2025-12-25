@@ -12,23 +12,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Flame,
   FlameKindling,
-  Trophy,
   Crown,
   Pencil,
   Bookmark,
   BookOpen,
   Sparkle,
   Sparkles,
-  Zap,
   Rocket,
-  Infinity,
   Heart,
   Library,
   Gem,
-  Share2,
   Sprout,
   Trees,
-  Wheat,
   Palette,
   Images,
   HeartHandshake,
@@ -36,6 +31,8 @@ import {
   Lightbulb,
   Award,
   Orbit,
+  Shrub,
+  Flower,
 } from 'lucide-react';
 
 const badgeIcons: Record<BadgeType, typeof Flame> = {
