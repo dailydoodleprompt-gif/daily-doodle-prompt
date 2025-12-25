@@ -1,4 +1,4 @@
-typescriptimport { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppStore, useNewlyEarnedBadge } from '@/store/app-store';
 import { type BadgeType, BADGE_INFO } from '@/types';
 import {
