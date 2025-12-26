@@ -37,6 +37,7 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
   const setUser = useAppStore((state) => state.setUser);
   const loadUserData = useAppStore((state) => state.loadUserData);
   const clearUserData = useAppStore((state) => state.clearUserData);
+  const setViewedBadges = useAppStore((state) => state.setViewedBadges);
 
   // Check auth status on mount and listen for changes
   useEffect(() => {
@@ -68,7 +69,8 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
             console.log('[SimpleHeader] Profile data from API:', {
               avatar_type: data.avatar_type,
               avatar_icon: data.avatar_icon,
-              current_title: data.current_title
+              current_title: data.current_title,
+              viewed_badges: data.viewed_badges
             });
 
             if (mounted) {
@@ -85,6 +87,11 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
                 created_at: data.created_at || new Date().toISOString(),
                 updated_at: data.updated_at || new Date().toISOString(),
               });
+
+              // Set viewed badges from Supabase
+              if (data.viewed_badges && Array.isArray(data.viewed_badges)) {
+                setViewedBadges(data.viewed_badges);
+              }
 
               // Load user's badges, stats, etc.
               loadUserData(data.id);
@@ -132,7 +139,7 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [setUser, loadUserData, clearUserData]);
+  }, [setUser, loadUserData, clearUserData, setViewedBadges]);
 
   const isAuthenticated = !!user;
   const isPremium = user?.is_premium || false;

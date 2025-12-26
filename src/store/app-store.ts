@@ -336,7 +336,8 @@ interface AppState {
   awardBadge: (badgeType: BadgeType) => void;
   hasBadge: (badgeType: BadgeType) => boolean;
   clearNewlyEarnedBadge: () => void;
-  markBadgeAsViewed: (badgeType: BadgeType) => void; 
+  markBadgeAsViewed: (badgeType: BadgeType) => Promise<void>;
+  setViewedBadges: (badges: BadgeType[]) => void; 
 
   // Doodle actions
   uploadDoodle: (promptId: string, promptTitle: string, imageData: string, caption: string, isPublic: boolean) => Promise<{ success: boolean; error?: string }>;
@@ -417,9 +418,9 @@ export const useAppStore = create<AppState>()(
       loadUserData: (userId: string) => {
   const userStats = getOrCreateUserStats(userId);
   const badges = loadUserBadges(userId);
-  
+
   // Initialize default preferences if they don't exist
-  const { preferences, user } = get();
+  const { preferences, streak } = get();
   const defaultPreferences: UserPreferences = {
     id: userId,
     user_id: userId,
@@ -431,11 +432,25 @@ export const useAppStore = create<AppState>()(
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
-  
+
+  // Initialize default streak if it doesn't exist
+  const defaultStreak: Streak = {
+    id: userId,
+    user_id: userId,
+    current_streak: 0,
+    longest_streak: 0,
+    last_viewed_date: null,
+    streak_freeze_available: true,
+    streak_freeze_used_this_month: false,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
   set({
     userStats,
     badges,
     preferences: preferences || defaultPreferences,
+    streak: streak || defaultStreak,
   });
 },
 
@@ -913,10 +928,32 @@ if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')
         set({ newlyEarnedBadge: null });
       },
 
-      markBadgeAsViewed: (badgeType: BadgeType) => {
+      setViewedBadges: (badges: BadgeType[]) => {
+        set({ viewedBadges: badges });
+      },
+
+      markBadgeAsViewed: async (badgeType: BadgeType) => {
   const { viewedBadges } = get();
-  if (!viewedBadges.includes(badgeType)) {
-    set({ viewedBadges: [...viewedBadges, badgeType] });
+  if (viewedBadges.includes(badgeType)) return;
+
+  const newViewedBadges = [...viewedBadges, badgeType];
+  set({ viewedBadges: newViewedBadges });
+
+  // Sync to Supabase
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) return;
+
+    await fetch('/api/me', {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ viewed_badges: newViewedBadges }),
+    });
+  } catch (error) {
+    console.error('[markBadgeAsViewed] Failed to sync to Supabase:', error);
   }
 },
 

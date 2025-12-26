@@ -72,7 +72,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       stripe_session_id,
       avatar_type,
       avatar_icon,
-      current_title
+      current_title,
+      viewed_badges
     } = req.body;
 
     const updates: any = {};
@@ -84,6 +85,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (avatar_type !== undefined) updates.avatar_type = avatar_type;
     if (avatar_icon !== undefined) updates.avatar_icon = avatar_icon;
     if (current_title !== undefined) updates.current_title = current_title;
+    if (viewed_badges !== undefined) updates.viewed_badges = viewed_badges;
 
     console.log("[API /api/me PATCH] Updates to apply:", JSON.stringify(updates));
 
@@ -148,6 +150,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     avatar_type: profile.avatar_type ?? 'initial',
     avatar_icon: profile.avatar_icon ?? null,
     current_title: profile.current_title ?? null,
+    viewed_badges: profile.viewed_badges ?? [],
     created_at: profile.created_at,
     updated_at: profile.updated_at,
   });
