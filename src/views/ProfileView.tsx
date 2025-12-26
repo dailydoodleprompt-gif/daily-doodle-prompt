@@ -1,14 +1,19 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { StreakBadge } from '@/components/StreakBadge';
 import { BadgeCabinet } from '@/components/BadgeCabinet';
 import { DoodleGallery } from '@/components/DoodleGallery';
 import { DoodleFeed } from '@/components/DoodleFeed';
 import { UserAvatar, AVATAR_ICON_OPTIONS, AVATAR_ICONS, ICON_COLORS } from '@/components/UserAvatar';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import {
   useUser,
   useStreak,
@@ -29,6 +34,8 @@ import {
   Rss,
   Bookmark,
   Upload,
+  Flame,
+  Snowflake,
 } from 'lucide-react';
 import type { AvatarIconType, AvatarType, Doodle } from '@/types';
 import { getTitleDisplayName } from '@/types';
@@ -54,6 +61,20 @@ export function ProfileView({ prompts = [], onUpgrade, onSettings, onAdminDashbo
   const getFollowerCount = useAppStore((state) => state.getFollowerCount);
   const getFollowingCount = useAppStore((state) => state.getFollowingCount);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [activeTab, setActiveTab] = useState('feed');
+  const tabsRef = useRef<HTMLDivElement>(null);
+
+  // Streak values with fallbacks
+  const currentStreak = streak?.current_streak ?? 0;
+  const longestStreak = streak?.longest_streak ?? 0;
+  const freezeAvailable = isPremium && streak?.streak_freeze_available;
+
+  // Handle clicking on Saved Prompts card
+  const handleSavedPromptsClick = () => {
+    setActiveTab('favorites');
+    // Scroll to tabs section
+    tabsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   if (!user) {
     return null;
@@ -213,12 +234,64 @@ export function ProfileView({ prompts = [], onUpgrade, onSettings, onAdminDashbo
 
       {/* Stats Grid */}
       <div className="grid gap-4 sm:grid-cols-3 mb-6">
+        {/* Current Streak Card */}
         <Card>
           <CardContent className="pt-6 text-center">
-            <StreakBadge variant="large" showFreeze />
+            <div className="flex flex-col items-center gap-2">
+              <div
+                className={cn(
+                  'relative flex items-center justify-center w-24 h-24 rounded-full',
+                  currentStreak > 0
+                    ? 'bg-gradient-to-br from-orange-400 to-red-500'
+                    : 'bg-muted'
+                )}
+              >
+                <Flame
+                  className={cn(
+                    'w-12 h-12',
+                    currentStreak > 0 ? 'text-white' : 'text-muted-foreground'
+                  )}
+                />
+                <div className="absolute -bottom-2 bg-background rounded-full px-3 py-1 border shadow-sm">
+                  <span className="font-bold text-lg">{currentStreak}</span>
+                </div>
+              </div>
+              <div className="text-center">
+                <p className="font-semibold">
+                  {currentStreak === 1 ? '1 Day' : `${currentStreak} Days`}
+                </p>
+                <p className="text-sm text-muted-foreground">Current Streak</p>
+              </div>
+              {isPremium && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge
+                        variant={freezeAvailable ? 'default' : 'secondary'}
+                        className={cn(
+                          'gap-1',
+                          freezeAvailable
+                            ? 'bg-blue-500 hover:bg-blue-600'
+                            : 'opacity-60'
+                        )}
+                      >
+                        <Snowflake className="w-3 h-3" />
+                        Streak Freeze {freezeAvailable ? 'Available' : 'Used'}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {freezeAvailable
+                        ? 'You can freeze your streak once this month if you miss a day'
+                        : 'Streak freeze resets at the start of each month'}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </div>
           </CardContent>
         </Card>
 
+        {/* Longest Streak Card */}
         <Card>
           <CardContent className="pt-6 text-center">
             <div className="flex flex-col items-center gap-2">
@@ -226,23 +299,28 @@ export function ProfileView({ prompts = [], onUpgrade, onSettings, onAdminDashbo
                 <TrendingUp className="w-12 h-12 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <p className="font-bold text-lg">{streak?.longest_streak || 0} Days</p>
+                <p className="font-bold text-lg">{longestStreak} Days</p>
                 <p className="text-sm text-muted-foreground">Longest Streak</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        {/* Saved Prompts Card - Clickable */}
+        <Card
+          className="cursor-pointer hover:bg-muted/50 transition-colors"
+          onClick={handleSavedPromptsClick}
+        >
           <CardContent className="pt-6 text-center">
             <div className="flex flex-col items-center gap-2">
               <div className="flex h-24 w-24 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
-                <Star className="w-12 h-12 text-blue-600 dark:text-blue-400" />
+                <Bookmark className="w-12 h-12 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
                 <p className="font-bold text-lg">{bookmarks.length}</p>
                 <p className="text-sm text-muted-foreground">Saved Prompts</p>
               </div>
+              <p className="text-xs text-primary">Click to view →</p>
             </div>
           </CardContent>
         </Card>
@@ -252,7 +330,7 @@ export function ProfileView({ prompts = [], onUpgrade, onSettings, onAdminDashbo
       <BadgeCabinet className="mb-6" />
 
       {/* Main Content Tabs */}
-      <Tabs defaultValue="feed" className="mb-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6" ref={tabsRef}>
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="feed" className="gap-1">
             <Rss className="h-4 w-4" />
