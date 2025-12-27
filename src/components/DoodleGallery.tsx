@@ -256,7 +256,22 @@ export function DoodleGallery({
                     />
                   </div>
 
-                  {/* User credit - disabled until user lookup is implemented */}
+                  {/* User credit using embedded username */}
+                  {showUserCredit && doodle.user_username && doodle.is_public && (
+                    <button
+                      type="button"
+                      onClick={(e) => handleUserClick(e, doodle.user_id)}
+                      className={cn(
+                        "flex items-center gap-1.5 mt-2 text-white/80 text-xs",
+                        onUserClick && "hover:text-white cursor-pointer"
+                      )}
+                    >
+                      <User className="h-3 w-3" />
+                      <span className={cn(onUserClick && "hover:underline")}>
+                        {doodle.user_username}
+                      </span>
+                    </button>
+                  )}
                 </div>
               </div>
             </Card>
@@ -296,7 +311,36 @@ export function DoodleGallery({
                 />
               </div>
 
-              {/* User credit in detail view - disabled until user lookup is implemented */}
+              {/* User credit in detail view using embedded username */}
+              {selectedDoodle.user_username && (selectedDoodle.is_public || selectedDoodle.user_id === user?.id) && (
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      if (onUserClick) {
+                        handleUserClick(e, selectedDoodle.user_id);
+                        setSelectedDoodle(null);
+                      }
+                    }}
+                    className={cn(
+                      "flex items-center gap-2",
+                      onUserClick && "cursor-pointer"
+                    )}
+                  >
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
+                        {selectedDoodle.user_username.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className={cn(
+                      "font-medium",
+                      onUserClick && "hover:underline hover:text-primary"
+                    )}>
+                      {selectedDoodle.user_username}
+                    </span>
+                  </button>
+                </div>
+              )}
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">

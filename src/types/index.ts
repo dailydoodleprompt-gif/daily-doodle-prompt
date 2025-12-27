@@ -389,6 +389,9 @@ export const BADGE_INFO: Record<BadgeType, Omit<BadgeInfo, 'type'>> = {
 export interface Doodle {
   id: string;
   user_id: string;
+  user_username?: string; // Embedded at upload time for display
+  user_avatar_type?: AvatarType; // Embedded at upload time
+  user_avatar_icon?: AvatarIconType; // Embedded at upload time
   prompt_id: string;
   prompt_title: string;
   image_url: string; // Base64 data URL for local storage

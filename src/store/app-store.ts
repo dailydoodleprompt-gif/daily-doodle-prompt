@@ -1017,6 +1017,9 @@ if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')
         const newDoodle: Doodle = {
           id: generateId(),
           user_id: user.id,
+          user_username: user.username,
+          user_avatar_type: user.avatar_type,
+          user_avatar_icon: user.avatar_icon,
           prompt_id: promptId,
           prompt_title: promptTitle,
           image_url: imageData,
