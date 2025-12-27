@@ -418,6 +418,7 @@ export const useAppStore = create<AppState>()(
       loadUserData: (userId: string) => {
   const userStats = getOrCreateUserStats(userId);
   const badges = loadUserBadges(userId);
+  const { user } = get();
 
   // Initialize default preferences if they don't exist
   const { preferences, streak } = get();
@@ -452,6 +453,23 @@ export const useAppStore = create<AppState>()(
     preferences: preferences || defaultPreferences,
     streak: streak || defaultStreak,
   });
+
+  // Auto-award missing badges after state is set
+  setTimeout(() => {
+    const { awardBadge, hasBadge } = get();
+
+    // Award creative_spark to all users who don't have it
+    if (!hasBadge('creative_spark')) {
+      console.log('[loadUserData] Auto-awarding creative_spark badge');
+      awardBadge('creative_spark');
+    }
+
+    // Award premium_patron to premium users who don't have it
+    if (user?.is_premium && !hasBadge('premium_patron')) {
+      console.log('[loadUserData] Auto-awarding premium_patron badge');
+      awardBadge('premium_patron');
+    }
+  }, 100);
 },
 
       clearUserData: () => {
@@ -914,6 +932,24 @@ if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')
 
         saveUserBadge(user.id, newBadge);
 
+        // Sync to Supabase badges table
+        (async () => {
+          try {
+            const { error } = await supabase.from('badges').insert({
+              user_id: user.id,
+              badge_type: badgeType,
+              earned_at: newBadge.earned_at,
+            });
+            if (error) {
+              console.error('[awardBadge] Failed to sync badge to Supabase:', error);
+            } else {
+              console.log('[awardBadge] Badge synced to Supabase:', badgeType);
+            }
+          } catch (err) {
+            console.error('[awardBadge] Error syncing badge:', err);
+          }
+        })();
+
         set({ badges: [...badges, newBadge], newlyEarnedBadge: badgeType });
       },
 
@@ -1159,6 +1195,31 @@ if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')
         const ownerStats = getOrCreateUserStats(doodle.user_id);
         const newLikesReceived = ownerStats.total_likes_received + 1;
         updateUserStats(doodle.user_id, { total_likes_received: newLikesReceived });
+
+        // Award 'somebody_likes_me' badge to doodle owner on first like received
+        if (newLikesReceived === 1) {
+          // Check if owner already has the badge
+          const ownerBadges = loadUserBadges(doodle.user_id);
+          if (!ownerBadges.some(b => b.badge_type === 'somebody_likes_me')) {
+            console.log('[likeDoodle] Awarding somebody_likes_me to doodle owner:', doodle.user_id);
+            const newBadge: Badge = {
+              id: generateId(),
+              user_id: doodle.user_id,
+              badge_type: 'somebody_likes_me',
+              earned_at: new Date().toISOString(),
+            };
+            saveUserBadge(doodle.user_id, newBadge);
+
+            // Sync to Supabase
+            supabase.from('badges').insert({
+              user_id: doodle.user_id,
+              badge_type: 'somebody_likes_me',
+              earned_at: newBadge.earned_at,
+            }).then(({ error }) => {
+              if (error) console.error('[likeDoodle] Failed to sync badge:', error);
+            });
+          }
+        }
       },
 
       unlikeDoodle: (doodleId: string) => {
