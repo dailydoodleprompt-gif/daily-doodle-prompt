@@ -17,7 +17,6 @@ import {
   Pencil,
   Bookmark,
   BookOpen,
-  Sparkle,
   Sparkles,
   Rocket,
   Heart,
@@ -37,7 +36,7 @@ import {
 
 const badgeIcons: Record<BadgeType, typeof Flame> = {
   // Membership
-  'creative_spark': Sparkle,
+  'creative_spark': Sparkles,
   'premium_patron': Crown,
   // Streak - fire/energy progression
   'creative_ember': Sparkles,
@@ -118,6 +117,14 @@ export function BadgeUnlockPopup() {
   const info = BADGE_INFO[newlyEarnedBadge];
   const Icon = badgeIcons[newlyEarnedBadge];
   const colors = badgeColors[newlyEarnedBadge];
+
+  // Defensive check - if any lookup failed, don't render and clear the badge
+  if (!info || !Icon || !colors) {
+    console.error('[BadgeUnlockPopup] Missing data for badge:', newlyEarnedBadge, { info: !!info, Icon: !!Icon, colors: !!colors });
+    // Clear the badge so we don't get stuck
+    clearNewlyEarnedBadge();
+    return null;
+  }
 
   const handleClose = () => {
     clearNewlyEarnedBadge();
