@@ -959,17 +959,22 @@ if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')
 
       // Doodle actions
       uploadDoodle: async (promptId: string, promptTitle: string, imageData: string, caption: string, isPublic: boolean) => {
+        console.log('[uploadDoodle] Starting upload...');
+        try {
         const { user } = get();
+        console.log('[uploadDoodle] User check:', { hasUser: !!user, isPremium: user?.is_premium });
         if (!user) return { success: false, error: 'Not logged in' };
 
         if (!user.is_premium) {
           return { success: false, error: 'Doodle upload is a premium feature. Please upgrade to upload doodles.' };
         }
 
+        console.log('[uploadDoodle] Checking content...');
         if (containsInappropriateContent(caption)) {
           return { success: false, error: 'Your caption contains inappropriate content. Please revise and try again.' };
         }
 
+        console.log('[uploadDoodle] Creating doodle...');
         const now = new Date().toISOString();
         const today = getTodayEST();
 
@@ -985,10 +990,12 @@ if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')
           created_at: now,
         };
 
+        console.log('[uploadDoodle] Saving to localStorage...');
         const doodles = getStoredDoodles();
         doodles.push(newDoodle);
         saveDoodles(doodles);
 
+        console.log('[uploadDoodle] Updating stats...');
         const stats = getOrCreateUserStats(user.id);
         const userDoodles = doodles.filter(d => d.user_id === user.id);
         const totalUploads = userDoodles.length;
@@ -1015,6 +1022,7 @@ if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')
           last_upload_date: today,
         });
 
+        console.log('[uploadDoodle] Awarding badges...');
         if (totalUploads === 1) {
           get().awardBadge('first_doodle');
         }
@@ -1032,9 +1040,15 @@ if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')
           get().awardBadge('daily_doodler');
         }
 
+        console.log('[uploadDoodle] Checking secret titles...');
         get().checkAndUnlockSecretTitles();
 
+        console.log('[uploadDoodle] SUCCESS!');
         return { success: true };
+        } catch (err) {
+          console.error('[uploadDoodle] CAUGHT ERROR:', err);
+          return { success: false, error: String(err) };
+        }
       },
 
       getDoodles: (userId?: string, onlyPublic?: boolean) => {
