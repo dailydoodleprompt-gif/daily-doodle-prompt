@@ -1213,14 +1213,9 @@ if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')
             };
             saveUserBadge(doodle.user_id, newBadge);
 
-            // Sync to Supabase
-            supabase.from('badges').insert({
-              user_id: doodle.user_id,
-              badge_type: 'somebody_likes_me',
-              earned_at: newBadge.earned_at,
-            }).then(({ error }) => {
-              if (error) console.error('[likeDoodle] Failed to sync badge:', error);
-            });
+            // Note: Cannot sync cross-user badges to Supabase due to RLS policy.
+            // Badge is saved locally and will be available when the owner logs in.
+            // The owner can sync their own badges if needed.
           }
         }
       },
