@@ -2,7 +2,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { PaymentCancelView } from '@/views/PaymentCancelView';
 
-export const Route = createFileRoute('/')({
+export const Route = createFileRoute('/payment/cancel')({
   component: PaymentCancelRoute,
 });
 

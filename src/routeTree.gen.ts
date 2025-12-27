@@ -11,13 +11,55 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as TermsImport } from './routes/terms'
+import { Route as SupportImport } from './routes/support'
+import { Route as PromptImport } from './routes/prompt'
+import { Route as PrivacyImport } from './routes/privacy'
 import { Route as IndexImport } from './routes/index'
+import { Route as PaymentSuccessImport } from './routes/payment/success'
+import { Route as PaymentCancelImport } from './routes/payment/cancel'
 
 // Create/Update Routes
+
+const TermsRoute = TermsImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const SupportRoute = SupportImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const PromptRoute = PromptImport.update({
+  id: '/prompt',
+  path: '/prompt',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const PrivacyRoute = PrivacyImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const PaymentSuccessRoute = PaymentSuccessImport.update({
+  id: '/payment/success',
+  path: '/payment/success',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const PaymentCancelRoute = PaymentCancelImport.update({
+  id: '/payment/cancel',
+  path: '/payment/cancel',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -32,6 +74,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexImport
       parentRoute: typeof rootRoute
     }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyImport
+      parentRoute: typeof rootRoute
+    }
+    '/prompt': {
+      id: '/prompt'
+      path: '/prompt'
+      fullPath: '/prompt'
+      preLoaderRoute: typeof PromptImport
+      parentRoute: typeof rootRoute
+    }
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportImport
+      parentRoute: typeof rootRoute
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsImport
+      parentRoute: typeof rootRoute
+    }
+    '/payment/cancel': {
+      id: '/payment/cancel'
+      path: '/payment/cancel'
+      fullPath: '/payment/cancel'
+      preLoaderRoute: typeof PaymentCancelImport
+      parentRoute: typeof rootRoute
+    }
+    '/payment/success': {
+      id: '/payment/success'
+      path: '/payment/success'
+      fullPath: '/payment/success'
+      preLoaderRoute: typeof PaymentSuccessImport
+      parentRoute: typeof rootRoute
+    }
   }
 }
 
@@ -39,32 +123,84 @@ declare module '@tanstack/react-router' {
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/privacy': typeof PrivacyRoute
+  '/prompt': typeof PromptRoute
+  '/support': typeof SupportRoute
+  '/terms': typeof TermsRoute
+  '/payment/cancel': typeof PaymentCancelRoute
+  '/payment/success': typeof PaymentSuccessRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/privacy': typeof PrivacyRoute
+  '/prompt': typeof PromptRoute
+  '/support': typeof SupportRoute
+  '/terms': typeof TermsRoute
+  '/payment/cancel': typeof PaymentCancelRoute
+  '/payment/success': typeof PaymentSuccessRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
+  '/privacy': typeof PrivacyRoute
+  '/prompt': typeof PromptRoute
+  '/support': typeof SupportRoute
+  '/terms': typeof TermsRoute
+  '/payment/cancel': typeof PaymentCancelRoute
+  '/payment/success': typeof PaymentSuccessRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/privacy'
+    | '/prompt'
+    | '/support'
+    | '/terms'
+    | '/payment/cancel'
+    | '/payment/success'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/privacy'
+    | '/prompt'
+    | '/support'
+    | '/terms'
+    | '/payment/cancel'
+    | '/payment/success'
+  id:
+    | '__root__'
+    | '/'
+    | '/privacy'
+    | '/prompt'
+    | '/support'
+    | '/terms'
+    | '/payment/cancel'
+    | '/payment/success'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  PrivacyRoute: typeof PrivacyRoute
+  PromptRoute: typeof PromptRoute
+  SupportRoute: typeof SupportRoute
+  TermsRoute: typeof TermsRoute
+  PaymentCancelRoute: typeof PaymentCancelRoute
+  PaymentSuccessRoute: typeof PaymentSuccessRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  PrivacyRoute: PrivacyRoute,
+  PromptRoute: PromptRoute,
+  SupportRoute: SupportRoute,
+  TermsRoute: TermsRoute,
+  PaymentCancelRoute: PaymentCancelRoute,
+  PaymentSuccessRoute: PaymentSuccessRoute,
 }
 
 export const routeTree = rootRoute
@@ -77,11 +213,35 @@ export const routeTree = rootRoute
     "__root__": {
       "filePath": "__root.tsx",
       "children": [
-        "/"
+        "/",
+        "/privacy",
+        "/prompt",
+        "/support",
+        "/terms",
+        "/payment/cancel",
+        "/payment/success"
       ]
     },
     "/": {
       "filePath": "index.tsx"
+    },
+    "/privacy": {
+      "filePath": "privacy.tsx"
+    },
+    "/prompt": {
+      "filePath": "prompt.tsx"
+    },
+    "/support": {
+      "filePath": "support.tsx"
+    },
+    "/terms": {
+      "filePath": "terms.tsx"
+    },
+    "/payment/cancel": {
+      "filePath": "payment/cancel.tsx"
+    },
+    "/payment/success": {
+      "filePath": "payment/success.tsx"
     }
   }
 }

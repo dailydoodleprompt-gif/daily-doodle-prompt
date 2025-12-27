@@ -56,9 +56,7 @@ export function DoodleFeed({ prompts, className, onUserClick, onPromptClick }: D
   const isAdmin = useIsAdmin();
   const getFeed = useAppStore((state) => state.getFeed);
   const getFollowingCount = useAppStore((state) => state.getFollowingCount);
-  const getUserById = useAppStore((state) => state.getUserById);
   const deleteDoodle = useAppStore((state) => state.deleteDoodle);
-  const adminDeleteDoodle = useAppStore((state) => state.adminDeleteDoodle);
 
   const openDeleteDialog = (doodleId: string, asAdmin: boolean) => {
     setDoodleToDelete({ id: doodleId, isAdmin: asAdmin });
@@ -69,13 +67,8 @@ export function DoodleFeed({ prompts, className, onUserClick, onPromptClick }: D
     if (!doodleToDelete) return;
 
     try {
-      if (doodleToDelete.isAdmin) {
-        await adminDeleteDoodle(doodleToDelete.id);
-        toast.success('Doodle deleted by admin');
-      } else {
-        deleteDoodle(doodleToDelete.id);
-        toast.success('Doodle deleted successfully');
-      }
+      deleteDoodle(doodleToDelete.id);
+      toast.success(doodleToDelete.isAdmin ? 'Doodle deleted by admin' : 'Doodle deleted successfully');
       setRefreshKey(k => k + 1);
     } catch {
       toast.error('Failed to delete doodle');
@@ -172,7 +165,6 @@ export function DoodleFeed({ prompts, className, onUserClick, onPromptClick }: D
                   ) : (
                     <DoodleFeedItem
                       doodle={item.data as Doodle}
-                      getUserById={getUserById}
                       onUserClick={onUserClick}
                       onPromptClick={onPromptClick}
                       isAdmin={isAdmin}
@@ -266,17 +258,16 @@ function PromptFeedItem({ prompt, onPromptClick }: PromptFeedItemProps) {
 
 interface DoodleFeedItemProps {
   doodle: Doodle;
-  getUserById: (userId: string) => { id: string; username: string } | undefined;
   onUserClick?: (userId: string) => void;
   onPromptClick?: (promptId: string) => void;
   isAdmin?: boolean;
   onDeleteClick?: (doodleId: string, asAdmin: boolean) => void;
 }
 
-function DoodleFeedItem({ doodle, getUserById, onUserClick, onPromptClick, isAdmin, onDeleteClick }: DoodleFeedItemProps) {
+function DoodleFeedItem({ doodle, onUserClick, onPromptClick, isAdmin, onDeleteClick }: DoodleFeedItemProps) {
   const user = useUser();
   const isOwn = doodle.user_id === user?.id;
-  const doodleOwner = getUserById(doodle.user_id);
+  const username = doodle.user_username || 'Artist';
   const canDelete = isOwn || isAdmin;
 
   return (
@@ -290,25 +281,23 @@ function DoodleFeedItem({ doodle, getUserById, onUserClick, onPromptClick, isAdm
         >
           <Avatar className="h-10 w-10">
             <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
-              {doodleOwner?.username.charAt(0).toUpperCase() || <ImageIcon className="h-5 w-5" />}
+              {username.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
         </button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2 mb-1">
             <div className="flex items-center gap-2">
-              {doodleOwner && (
-                <button
-                  type="button"
-                  onClick={() => onUserClick?.(doodle.user_id)}
-                  className={cn(
-                    "font-medium text-sm",
-                    onUserClick && "hover:underline hover:text-primary cursor-pointer"
-                  )}
-                >
-                  {doodleOwner.username}
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => onUserClick?.(doodle.user_id)}
+                className={cn(
+                  "font-medium text-sm",
+                  onUserClick && "hover:underline hover:text-primary cursor-pointer"
+                )}
+              >
+                {username}
+              </button>
               <span className="text-xs text-muted-foreground">
                 {new Date(doodle.created_at).toLocaleDateString('en-US', {
                   month: 'short',
