@@ -1654,7 +1654,12 @@ if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')
         const doodles = getStoredDoodles();
 
         const feedDoodles = doodles
-          .filter(d => d.is_public && following.includes(d.user_id))
+          .filter(d => {
+            // Include user's own doodles (public or private)
+            if (d.user_id === user.id) return true;
+            // Include public doodles from followed users
+            return d.is_public && following.includes(d.user_id);
+          })
           .map(d => ({
             type: 'doodle' as const,
             data: d,

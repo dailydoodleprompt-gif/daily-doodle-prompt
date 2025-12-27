@@ -48,9 +48,10 @@ interface ProfileViewProps {
   onSettings: () => void;
   onAdminDashboard?: () => void;
   onUserClick?: (userId: string) => void;
+  onPromptClick?: (promptId: string) => void;
 }
 
-export function ProfileView({ prompts = [], onUpgrade, onSettings, onAdminDashboard, onUserClick }: ProfileViewProps) {
+export function ProfileView({ prompts = [], onUpgrade, onSettings, onAdminDashboard, onUserClick, onPromptClick }: ProfileViewProps) {
   const user = useUser();
   const streak = useStreak();
   const bookmarks = useBookmarks();
@@ -351,7 +352,7 @@ export function ProfileView({ prompts = [], onUpgrade, onSettings, onAdminDashbo
         </TabsList>
 
         <TabsContent value="feed" className="mt-4">
-          <DoodleFeed prompts={prompts} onUserClick={onUserClick} />
+          <DoodleFeed prompts={prompts} onUserClick={onUserClick} onPromptClick={onPromptClick} />
         </TabsContent>
 
         <TabsContent value="doodles" className="mt-4">

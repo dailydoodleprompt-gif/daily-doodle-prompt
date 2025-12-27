@@ -140,8 +140,8 @@ export function DoodleFeed({ prompts, className, onUserClick, onPromptClick }: D
         </CardTitle>
         <p className="text-sm text-muted-foreground">
           {followingCount > 0
-            ? `Updates from ${followingCount} artist${followingCount > 1 ? 's' : ''} you follow`
-            : 'Follow artists to see their doodles here'}
+            ? `Your doodles and updates from ${followingCount} artist${followingCount > 1 ? 's' : ''} you follow`
+            : 'Your doodles and prompts. Follow artists to see their work too!'}
         </p>
       </CardHeader>
 

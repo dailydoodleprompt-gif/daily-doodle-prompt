@@ -199,6 +199,7 @@ function App() {
             onSettings={() => handleNavigate('settings')}
             onAdminDashboard={() => handleNavigate('admin')}
             onUserClick={handleViewArtist}
+            onPromptClick={() => handleNavigate('archive')}
           />
         );
       case 'settings':
