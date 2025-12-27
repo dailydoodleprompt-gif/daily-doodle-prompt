@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppStore, useNewlyEarnedBadge } from '@/store/app-store';
 import { type BadgeType, BADGE_INFO } from '@/types';
 import {
@@ -32,143 +32,106 @@ import {
   Orbit,
   Shrub,
   Flower,
-  Star,
 } from 'lucide-react';
 
-// Pre-computed badge display data - simple object, no functions
-interface BadgeDisplayData {
-  iconName: string;
-  bgGradient: string;
-  ringColor: string;
-}
-
-// Static mapping - all values are simple strings
-const BADGE_DISPLAY: Record<BadgeType, BadgeDisplayData> = {
+const badgeIcons: Record<BadgeType, typeof Flame> = {
   // Membership
-  'creative_spark': { iconName: 'sparkles', bgGradient: 'from-violet-400 to-purple-500', ringColor: 'ring-purple-500/50' },
-  'premium_patron': { iconName: 'crown', bgGradient: 'from-yellow-400 to-amber-500', ringColor: 'ring-amber-500/50' },
-  // Streak
-  'creative_ember': { iconName: 'sparkles', bgGradient: 'from-orange-400 to-red-500', ringColor: 'ring-orange-500/50' },
-  'creative_fire': { iconName: 'flame-kindling', bgGradient: 'from-red-500 to-orange-600', ringColor: 'ring-red-500/50' },
-  'creative_blaze': { iconName: 'flame', bgGradient: 'from-yellow-400 to-orange-500', ringColor: 'ring-yellow-500/50' },
-  'creative_rocket': { iconName: 'rocket', bgGradient: 'from-orange-500 to-red-600', ringColor: 'ring-orange-600/50' },
-  'creative_supernova': { iconName: 'orbit', bgGradient: 'from-purple-500 to-pink-600', ringColor: 'ring-purple-500/50' },
-  // Collection
-  'new_collector': { iconName: 'bookmark', bgGradient: 'from-blue-400 to-indigo-500', ringColor: 'ring-blue-500/50' },
-  'pack_rat': { iconName: 'book-open', bgGradient: 'from-indigo-400 to-purple-500', ringColor: 'ring-indigo-500/50' },
-  'cue_curator': { iconName: 'library', bgGradient: 'from-purple-400 to-pink-500', ringColor: 'ring-purple-500/50' },
-  'grand_gatherer': { iconName: 'gem', bgGradient: 'from-pink-400 to-rose-500', ringColor: 'ring-pink-500/50' },
-  // Sharing
-  'planter_of_seeds': { iconName: 'sprout', bgGradient: 'from-green-400 to-emerald-500', ringColor: 'ring-green-500/50' },
-  'gardener_of_growth': { iconName: 'shrub', bgGradient: 'from-lime-400 to-green-500', ringColor: 'ring-lime-500/50' },
-  'cultivator_of_influence': { iconName: 'trees', bgGradient: 'from-emerald-400 to-teal-500', ringColor: 'ring-emerald-500/50' },
-  'harvester_of_inspiration': { iconName: 'flower', bgGradient: 'from-yellow-400 to-amber-500', ringColor: 'ring-yellow-500/50' },
-  // Creative
-  'first_doodle': { iconName: 'pencil', bgGradient: 'from-amber-400 to-orange-500', ringColor: 'ring-amber-500/50' },
-  'doodle_diary': { iconName: 'book-open', bgGradient: 'from-orange-400 to-red-400', ringColor: 'ring-orange-500/50' },
-  'doodle_digest': { iconName: 'palette', bgGradient: 'from-rose-400 to-pink-500', ringColor: 'ring-rose-500/50' },
-  'doodle_library': { iconName: 'images', bgGradient: 'from-fuchsia-400 to-purple-500', ringColor: 'ring-fuchsia-500/50' },
-  'daily_doodler': { iconName: 'calendar-check', bgGradient: 'from-indigo-400 to-violet-500', ringColor: 'ring-indigo-500/50' },
+  'creative_spark': Sparkles,
+  'premium_patron': Crown,
+  // Streak - fire/energy progression
+  'creative_ember': Sparkles,
+  'creative_fire': FlameKindling,
+  'creative_blaze': Flame,
+  'creative_rocket': Rocket,
+  'creative_supernova': Orbit,
+  // Collection - bookmark progression
+  'new_collector': Bookmark,
+  'pack_rat': BookOpen,
+  'cue_curator': Library,
+  'grand_gatherer': Gem,
+  // Sharing - nature progression
+  'planter_of_seeds': Sprout,
+  'gardener_of_growth': Shrub,
+  'cultivator_of_influence': Trees,
+  'harvester_of_inspiration': Flower,
+  // Creative - art progression
+  'first_doodle': Pencil,
+  'doodle_diary': BookOpen,
+  'doodle_digest': Palette,
+  'doodle_library': Images,
+  'daily_doodler': CalendarCheck,
   // Social
-  'warm_fuzzies': { iconName: 'heart', bgGradient: 'from-rose-400 to-red-500', ringColor: 'ring-rose-500/50' },
-  'somebody_likes_me': { iconName: 'heart-handshake', bgGradient: 'from-pink-400 to-rose-500', ringColor: 'ring-pink-500/50' },
-  'idea_fairy': { iconName: 'lightbulb', bgGradient: 'from-yellow-300 to-amber-400', ringColor: 'ring-yellow-400/50' },
+  'warm_fuzzies': Heart,
+  'somebody_likes_me': HeartHandshake,
+  'idea_fairy': Lightbulb,
 };
 
-// Render icon based on name - explicit switch for production safety
-function BadgeIcon({ name, className }: { name: string; className?: string }) {
-  const iconClass = className || 'w-16 h-16';
-
-  switch (name) {
-    case 'sparkles': return <Sparkles className={iconClass} />;
-    case 'crown': return <Crown className={iconClass} />;
-    case 'flame-kindling': return <FlameKindling className={iconClass} />;
-    case 'flame': return <Flame className={iconClass} />;
-    case 'rocket': return <Rocket className={iconClass} />;
-    case 'orbit': return <Orbit className={iconClass} />;
-    case 'bookmark': return <Bookmark className={iconClass} />;
-    case 'book-open': return <BookOpen className={iconClass} />;
-    case 'library': return <Library className={iconClass} />;
-    case 'gem': return <Gem className={iconClass} />;
-    case 'sprout': return <Sprout className={iconClass} />;
-    case 'shrub': return <Shrub className={iconClass} />;
-    case 'trees': return <Trees className={iconClass} />;
-    case 'flower': return <Flower className={iconClass} />;
-    case 'pencil': return <Pencil className={iconClass} />;
-    case 'palette': return <Palette className={iconClass} />;
-    case 'images': return <Images className={iconClass} />;
-    case 'calendar-check': return <CalendarCheck className={iconClass} />;
-    case 'heart': return <Heart className={iconClass} />;
-    case 'heart-handshake': return <HeartHandshake className={iconClass} />;
-    case 'lightbulb': return <Lightbulb className={iconClass} />;
-    default: return <Star className={iconClass} />; // Fallback icon
-  }
-}
+const badgeColors: Record<BadgeType, { bg: string; ring: string }> = {
+  // Membership
+  'creative_spark': { bg: 'from-violet-400 to-purple-500', ring: 'ring-purple-500/50' },
+  'premium_patron': { bg: 'from-yellow-400 to-amber-500', ring: 'ring-amber-500/50' },
+  // Streak - progressively hotter colors
+  'creative_ember': { bg: 'from-orange-400 to-red-500', ring: 'ring-orange-500/50' },
+  'creative_fire': { bg: 'from-red-500 to-orange-600', ring: 'ring-red-500/50' },
+  'creative_blaze': { bg: 'from-yellow-400 to-orange-500', ring: 'ring-yellow-500/50' },
+  'creative_rocket': { bg: 'from-orange-500 to-red-600', ring: 'ring-orange-600/50' },
+  'creative_supernova': { bg: 'from-purple-500 to-pink-600', ring: 'ring-purple-500/50' },
+  // Collection - cool to warm
+  'new_collector': { bg: 'from-blue-400 to-indigo-500', ring: 'ring-blue-500/50' },
+  'pack_rat': { bg: 'from-indigo-400 to-purple-500', ring: 'ring-indigo-500/50' },
+  'cue_curator': { bg: 'from-purple-400 to-pink-500', ring: 'ring-purple-500/50' },
+  'grand_gatherer': { bg: 'from-pink-400 to-rose-500', ring: 'ring-pink-500/50' },
+  // Sharing - green/nature
+  'planter_of_seeds': { bg: 'from-green-400 to-emerald-500', ring: 'ring-green-500/50' },
+  'gardener_of_growth': { bg: 'from-lime-400 to-green-500', ring: 'ring-lime-500/50' },
+  'cultivator_of_influence': { bg: 'from-emerald-400 to-teal-500', ring: 'ring-emerald-500/50' },
+  'harvester_of_inspiration': { bg: 'from-yellow-400 to-amber-500', ring: 'ring-yellow-500/50' },
+  // Creative - warm artistic colors
+  'first_doodle': { bg: 'from-amber-400 to-orange-500', ring: 'ring-amber-500/50' },
+  'doodle_diary': { bg: 'from-orange-400 to-red-400', ring: 'ring-orange-500/50' },
+  'doodle_digest': { bg: 'from-rose-400 to-pink-500', ring: 'ring-rose-500/50' },
+  'doodle_library': { bg: 'from-fuchsia-400 to-purple-500', ring: 'ring-fuchsia-500/50' },
+  'daily_doodler': { bg: 'from-indigo-400 to-violet-500', ring: 'ring-indigo-500/50' },
+  // Social
+  'warm_fuzzies': { bg: 'from-rose-400 to-red-500', ring: 'ring-rose-500/50' },
+  'somebody_likes_me': { bg: 'from-pink-400 to-rose-500', ring: 'ring-pink-500/50' },
+  'idea_fairy': { bg: 'from-yellow-300 to-amber-400', ring: 'ring-yellow-400/50' },
+};
 
 export function BadgeUnlockPopup() {
   const newlyEarnedBadge = useNewlyEarnedBadge();
   const clearNewlyEarnedBadge = useAppStore((state) => state.clearNewlyEarnedBadge);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
 
-  // Pre-compute all badge data safely
-  const badgeData = useMemo(() => {
-    if (!newlyEarnedBadge) return null;
-
-    try {
-      const info = BADGE_INFO[newlyEarnedBadge];
-      const display = BADGE_DISPLAY[newlyEarnedBadge];
-
-      if (!info || !display) {
-        console.error('[BadgeUnlockPopup] Missing data for badge:', newlyEarnedBadge);
-        return null;
-      }
-
-      return {
-        type: newlyEarnedBadge,
-        name: info.name || 'Badge Unlocked',
-        description: info.description || 'You earned a new badge!',
-        iconName: display.iconName,
-        bgGradient: display.bgGradient,
-        ringColor: display.ringColor,
-      };
-    } catch (err) {
-      console.error('[BadgeUnlockPopup] Error computing badge data:', err);
-      return null;
-    }
-  }, [newlyEarnedBadge]);
-
-  // Handle opening/closing with animation
   useEffect(() => {
-    if (newlyEarnedBadge && badgeData) {
-      setIsOpen(true);
+    if (newlyEarnedBadge) {
       setIsAnimating(true);
+      // Reset animation state after animation completes
       const timer = setTimeout(() => setIsAnimating(false), 1000);
       return () => clearTimeout(timer);
     }
-  }, [newlyEarnedBadge, badgeData]);
+  }, [newlyEarnedBadge]);
 
-  // If no badge or data is invalid, clear and don't render
-  useEffect(() => {
-    if (newlyEarnedBadge && !badgeData) {
-      console.warn('[BadgeUnlockPopup] Clearing invalid badge:', newlyEarnedBadge);
-      clearNewlyEarnedBadge();
-    }
-  }, [newlyEarnedBadge, badgeData, clearNewlyEarnedBadge]);
+  if (!newlyEarnedBadge) return null;
+
+  const info = BADGE_INFO[newlyEarnedBadge];
+  const Icon = badgeIcons[newlyEarnedBadge];
+  const colors = badgeColors[newlyEarnedBadge];
+
+  // Defensive check - if any lookup failed, don't render and clear the badge
+  if (!info || !Icon || !colors) {
+    console.error('[BadgeUnlockPopup] Missing data for badge:', newlyEarnedBadge, { info: !!info, Icon: !!Icon, colors: !!colors });
+    // Clear the badge so we don't get stuck
+    clearNewlyEarnedBadge();
+    return null;
+  }
 
   const handleClose = () => {
-    setIsOpen(false);
-    // Small delay before clearing to allow dialog close animation
-    setTimeout(() => {
-      clearNewlyEarnedBadge();
-    }, 150);
+    clearNewlyEarnedBadge();
   };
 
-  // Don't render if no valid badge data
-  if (!badgeData) return null;
-
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+    <Dialog open={!!newlyEarnedBadge} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md text-center">
         <DialogHeader>
           <DialogTitle className="text-2xl text-center">
@@ -186,15 +149,15 @@ export function BadgeUnlockPopup() {
               'relative w-32 h-32 rounded-full flex items-center justify-center',
               'bg-gradient-to-br text-white shadow-2xl',
               'ring-8',
-              badgeData.bgGradient,
-              badgeData.ringColor,
+              colors.bg,
+              colors.ring,
               isAnimating && 'animate-bounce'
             )}
           >
-            <BadgeIcon name={badgeData.iconName} className="w-16 h-16" />
+            <Icon className="w-16 h-16" />
 
             {/* Sparkle effects */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="absolute inset-0 flex items-center justify-center">
               <Sparkles className={cn(
                 'absolute w-6 h-6 text-yellow-300',
                 '-top-2 -left-2',
@@ -203,20 +166,20 @@ export function BadgeUnlockPopup() {
               <Sparkles className={cn(
                 'absolute w-4 h-4 text-yellow-300',
                 'top-0 -right-1',
-                isAnimating && 'animate-pulse'
-              )} style={{ animationDelay: '100ms' }} />
+                isAnimating && 'animate-pulse delay-100'
+              )} />
               <Sparkles className={cn(
                 'absolute w-5 h-5 text-yellow-300',
                 '-bottom-1 right-0',
-                isAnimating && 'animate-pulse'
-              )} style={{ animationDelay: '200ms' }} />
+                isAnimating && 'animate-pulse delay-200'
+              )} />
             </div>
           </div>
 
           {/* Badge Info */}
           <div className="space-y-2">
-            <h3 className="text-xl font-bold">{badgeData.name}</h3>
-            <p className="text-muted-foreground">{badgeData.description}</p>
+            <h3 className="text-xl font-bold">{info.name}</h3>
+            <p className="text-muted-foreground">{info.description}</p>
           </div>
         </div>
 
