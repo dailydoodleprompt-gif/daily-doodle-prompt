@@ -479,7 +479,7 @@ export const useAppStore = create<AppState>()(
         }
 
         // Initialize default preferences if they don't exist
-        const { preferences, streak } = get();
+        const { preferences } = get();
         const defaultPreferences: UserPreferences = {
           id: userId,
           user_id: userId,
@@ -492,7 +492,7 @@ export const useAppStore = create<AppState>()(
           updated_at: new Date().toISOString(),
         };
 
-        // Initialize default streak if it doesn't exist
+        // STREAK: Supabase is source of truth
         const defaultStreak: Streak = {
           id: userId,
           user_id: userId,
@@ -505,11 +505,118 @@ export const useAppStore = create<AppState>()(
           updated_at: new Date().toISOString(),
         };
 
+        let loadedStreak: Streak = defaultStreak;
+        try {
+          console.log('[loadUserData] Fetching streak from Supabase for user:', userId);
+          const { data: supabaseStreak, error } = await supabase
+            .from('streaks')
+            .select('*')
+            .eq('user_id', userId)
+            .single();
+
+          if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+            console.error('[loadUserData] Failed to fetch streak from Supabase:', error);
+          } else if (supabaseStreak) {
+            loadedStreak = {
+              id: supabaseStreak.id,
+              user_id: supabaseStreak.user_id,
+              current_streak: supabaseStreak.current_streak,
+              longest_streak: supabaseStreak.longest_streak,
+              last_viewed_date: supabaseStreak.last_viewed_date,
+              streak_freeze_available: supabaseStreak.streak_freeze_available,
+              streak_freeze_used_this_month: supabaseStreak.streak_freeze_used_this_month,
+              created_at: supabaseStreak.created_at,
+              updated_at: supabaseStreak.updated_at,
+            };
+            console.log('[loadUserData] Loaded streak from Supabase:', loadedStreak.current_streak);
+          } else {
+            console.log('[loadUserData] No streak found in Supabase, using default');
+          }
+        } catch (err) {
+          console.error('[loadUserData] Error fetching streak:', err);
+        }
+
+        // FOLLOWS: Supabase is source of truth
+        try {
+          console.log('[loadUserData] Fetching follows from Supabase for user:', userId);
+          const { data: supabaseFollows, error } = await supabase
+            .from('follows')
+            .select('*')
+            .eq('follower_id', userId);
+
+          if (error) {
+            console.error('[loadUserData] Failed to fetch follows from Supabase:', error);
+          } else if (supabaseFollows && supabaseFollows.length > 0) {
+            // Get current localStorage follows
+            const localFollows = getStoredFollows();
+
+            // Merge: keep local follows for other users, replace current user's follows with Supabase data
+            const otherUsersFollows = localFollows.filter(f => f.follower_id !== userId);
+            const supabaseFollowsMapped: Follow[] = supabaseFollows.map(f => ({
+              id: f.id,
+              follower_id: f.follower_id,
+              following_id: f.following_id,
+              created_at: f.created_at,
+            }));
+
+            // Update localStorage with merged data
+            const mergedFollows = [...otherUsersFollows, ...supabaseFollowsMapped];
+            saveFollows(mergedFollows);
+            console.log('[loadUserData] Loaded', supabaseFollowsMapped.length, 'follows from Supabase');
+          } else {
+            console.log('[loadUserData] No follows found in Supabase');
+          }
+        } catch (err) {
+          console.error('[loadUserData] Error fetching follows:', err);
+        }
+
+        // DOODLES: Supabase is source of truth
+        try {
+          console.log('[loadUserData] Fetching doodles from Supabase for user:', userId);
+          const { data: supabaseDoodles, error } = await supabase
+            .from('doodles')
+            .select('*')
+            .eq('user_id', userId);
+
+          if (error) {
+            console.error('[loadUserData] Failed to fetch doodles from Supabase:', error);
+          } else if (supabaseDoodles && supabaseDoodles.length > 0) {
+            // Get current localStorage doodles
+            const localDoodles = getStoredDoodles();
+
+            // Merge: keep local doodles from other users, replace current user's doodles with Supabase data
+            const otherUsersDoodles = localDoodles.filter(d => d.user_id !== userId);
+            const supabaseDoodlesMapped: Doodle[] = supabaseDoodles.map(d => ({
+              id: d.id,
+              user_id: d.user_id,
+              user_username: d.user_username,
+              user_avatar_type: d.user_avatar_type,
+              user_avatar_icon: d.user_avatar_icon,
+              prompt_id: d.prompt_id,
+              prompt_title: d.prompt_title,
+              image_url: d.image_url,
+              caption: d.caption || '',
+              is_public: d.is_public,
+              likes_count: d.likes_count,
+              created_at: d.created_at,
+            }));
+
+            // Update localStorage with merged data
+            const mergedDoodles = [...otherUsersDoodles, ...supabaseDoodlesMapped];
+            saveDoodles(mergedDoodles);
+            console.log('[loadUserData] Loaded', supabaseDoodlesMapped.length, 'doodles from Supabase');
+          } else {
+            console.log('[loadUserData] No doodles found in Supabase for user');
+          }
+        } catch (err) {
+          console.error('[loadUserData] Error fetching doodles:', err);
+        }
+
         set({
           userStats,
           badges,
           preferences: preferences || defaultPreferences,
-          streak: streak || defaultStreak,
+          streak: loadedStreak,
         });
 
         // Auto-award missing badges after state is set
@@ -926,15 +1033,37 @@ export const useAppStore = create<AppState>()(
           longestStreak = newStreak;
         }
 
-        set({
-          streak: {
-            ...streak,
-            current_streak: newStreak,
-            longest_streak: longestStreak,
-            last_viewed_date: today,
-            updated_at: new Date().toISOString(),
-          },
-        });
+        const updatedStreak = {
+          ...streak,
+          current_streak: newStreak,
+          longest_streak: longestStreak,
+          last_viewed_date: today,
+          updated_at: new Date().toISOString(),
+        };
+
+        set({ streak: updatedStreak });
+
+        // Sync streak to Supabase (fire-and-forget)
+        (async () => {
+          try {
+            const { error } = await supabase
+              .from('streaks')
+              .upsert({
+                user_id: user.id,
+                current_streak: newStreak,
+                longest_streak: longestStreak,
+                last_viewed_date: today,
+                updated_at: updatedStreak.updated_at,
+              }, { onConflict: 'user_id' });
+            if (error) {
+              console.error('[recordPromptView] Failed to sync streak to Supabase:', error);
+            } else {
+              console.log('[recordPromptView] Streak synced to Supabase:', newStreak);
+            }
+          } catch (err) {
+            console.error('[recordPromptView] Error syncing streak:', err);
+          }
+        })();
 
         if (newStreak >= 3 && !badges.some(b => b.badge_type === 'creative_ember')) {
   get().awardBadge('creative_ember');
@@ -1092,6 +1221,31 @@ if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')
         doodles.push(newDoodle);
         saveDoodles(doodles);
 
+        // Sync doodle to Supabase (fire-and-forget)
+        console.log('[uploadDoodle] Syncing to Supabase...');
+        (async () => {
+          try {
+            const { error } = await supabase.from('doodles').insert({
+              id: newDoodle.id,
+              user_id: newDoodle.user_id,
+              prompt_id: newDoodle.prompt_id,
+              prompt_title: newDoodle.prompt_title,
+              image_url: newDoodle.image_url,
+              caption: newDoodle.caption,
+              is_public: newDoodle.is_public,
+              likes_count: newDoodle.likes_count,
+              created_at: newDoodle.created_at,
+            });
+            if (error) {
+              console.error('[uploadDoodle] Failed to sync doodle to Supabase:', error);
+            } else {
+              console.log('[uploadDoodle] Doodle synced to Supabase');
+            }
+          } catch (err) {
+            console.error('[uploadDoodle] Error syncing doodle:', err);
+          }
+        })();
+
         console.log('[uploadDoodle] Updating stats...');
         const stats = getOrCreateUserStats(user.id);
         const userDoodles = doodles.filter(d => d.user_id === user.id);
@@ -1201,6 +1355,24 @@ if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')
 
         const filteredLikes = likes.filter(l => l.doodle_id !== doodleId);
         saveLikes(filteredLikes);
+
+        // Sync delete to Supabase (fire-and-forget)
+        (async () => {
+          try {
+            const { error } = await supabase
+              .from('doodles')
+              .delete()
+              .eq('id', doodleId)
+              .eq('user_id', user.id);
+            if (error) {
+              console.error('[deleteDoodle] Failed to sync delete to Supabase:', error);
+            } else {
+              console.log('[deleteDoodle] Delete synced to Supabase');
+            }
+          } catch (err) {
+            console.error('[deleteDoodle] Error syncing delete:', err);
+          }
+        })();
       },
 
       toggleDoodleVisibility: (doodleId: string) => {
@@ -1212,8 +1384,27 @@ if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')
 
         if (doodleIndex === -1 || doodles[doodleIndex].user_id !== user.id) return;
 
-        doodles[doodleIndex].is_public = !doodles[doodleIndex].is_public;
+        const newVisibility = !doodles[doodleIndex].is_public;
+        doodles[doodleIndex].is_public = newVisibility;
         saveDoodles(doodles);
+
+        // Sync visibility change to Supabase (fire-and-forget)
+        (async () => {
+          try {
+            const { error } = await supabase
+              .from('doodles')
+              .update({ is_public: newVisibility })
+              .eq('id', doodleId)
+              .eq('user_id', user.id);
+            if (error) {
+              console.error('[toggleDoodleVisibility] Failed to sync to Supabase:', error);
+            } else {
+              console.log('[toggleDoodleVisibility] Visibility synced to Supabase');
+            }
+          } catch (err) {
+            console.error('[toggleDoodleVisibility] Error syncing:', err);
+          }
+        })();
       },
 
       // Like actions
