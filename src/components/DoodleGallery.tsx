@@ -73,9 +73,7 @@ export function DoodleGallery({
   const user = useUser();
   const isAdmin = useIsAdmin();
   const deleteDoodle = useAppStore((state) => state.deleteDoodle);
-  const adminDeleteDoodle = useAppStore((state) => state.adminDeleteDoodle);
   const toggleDoodleVisibility = useAppStore((state) => state.toggleDoodleVisibility);
-  const getUserById = useAppStore((state) => state.getUserById);
 
   // Sync local doodles with props
   useState(() => {
@@ -108,13 +106,9 @@ export function DoodleGallery({
     if (!doodleToDelete) return;
 
     try {
-      if (doodleToDelete.isAdmin) {
-        await adminDeleteDoodle(doodleToDelete.id);
-        toast.success('Doodle deleted by admin');
-      } else {
-        deleteDoodle(doodleToDelete.id);
-        toast.success('Doodle deleted successfully');
-      }
+      // Use regular delete for both owner and admin
+      deleteDoodle(doodleToDelete.id);
+      toast.success(doodleToDelete.isAdmin ? 'Doodle deleted by admin' : 'Doodle deleted successfully');
 
       // Remove from local state for immediate UI update
       setLocalDoodles(prev => prev.filter(d => d.id !== doodleToDelete.id));
@@ -148,7 +142,6 @@ export function DoodleGallery({
       <div className={cn('grid gap-4', columnClasses[columns], className)}>
         {doodles.map((doodle) => {
           const isOwn = doodle.user_id === user?.id;
-          const doodleOwner = getUserById(doodle.user_id);
 
           return (
             <Card
@@ -263,22 +256,7 @@ export function DoodleGallery({
                     />
                   </div>
 
-                  {/* User credit */}
-                  {showUserCredit && doodleOwner && doodle.is_public && (
-                    <button
-                      type="button"
-                      onClick={(e) => handleUserClick(e, doodle.user_id)}
-                      className={cn(
-                        "flex items-center gap-1.5 mt-2 text-white/80 text-xs",
-                        onUserClick && "hover:text-white cursor-pointer"
-                      )}
-                    >
-                      <User className="h-3 w-3" />
-                      <span className={cn(onUserClick && "hover:underline")}>
-                        {doodleOwner.username}
-                      </span>
-                    </button>
-                  )}
+                  {/* User credit - disabled until user lookup is implemented */}
                 </div>
               </div>
             </Card>
@@ -318,41 +296,7 @@ export function DoodleGallery({
                 />
               </div>
 
-              {/* User credit in detail view */}
-              {(() => {
-                const owner = getUserById(selectedDoodle.user_id);
-                if (!owner || (!selectedDoodle.is_public && selectedDoodle.user_id !== user?.id)) return null;
-
-                return (
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        if (onUserClick) {
-                          handleUserClick(e, selectedDoodle.user_id);
-                          setSelectedDoodle(null);
-                        }
-                      }}
-                      className={cn(
-                        "flex items-center gap-2",
-                        onUserClick && "cursor-pointer"
-                      )}
-                    >
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
-                          {owner.username.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className={cn(
-                        "font-medium",
-                        onUserClick && "hover:underline hover:text-primary"
-                      )}>
-                        {owner.username}
-                      </span>
-                    </button>
-                  </div>
-                );
-              })()}
+              {/* User credit in detail view - disabled until user lookup is implemented */}
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
