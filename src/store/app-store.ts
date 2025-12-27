@@ -1279,6 +1279,24 @@ if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')
 
         follows.push(newFollow);
         saveFollows(follows);
+
+        // Sync to Supabase (fire-and-forget)
+        (async () => {
+          try {
+            const { error } = await supabase.from('follows').insert({
+              follower_id: user.id,
+              following_id: userId,
+              created_at: newFollow.created_at,
+            });
+            if (error) {
+              console.error('[followUser] Failed to sync follow to Supabase:', error);
+            } else {
+              console.log('[followUser] Follow synced to Supabase');
+            }
+          } catch (err) {
+            console.error('[followUser] Error syncing follow:', err);
+          }
+        })();
       },
 
       unfollowUser: (userId: string) => {
@@ -1290,6 +1308,24 @@ if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')
           f => !(f.follower_id === user.id && f.following_id === userId)
         );
         saveFollows(filtered);
+
+        // Sync to Supabase (fire-and-forget)
+        (async () => {
+          try {
+            const { error } = await supabase
+              .from('follows')
+              .delete()
+              .eq('follower_id', user.id)
+              .eq('following_id', userId);
+            if (error) {
+              console.error('[unfollowUser] Failed to sync unfollow to Supabase:', error);
+            } else {
+              console.log('[unfollowUser] Unfollow synced to Supabase');
+            }
+          } catch (err) {
+            console.error('[unfollowUser] Error syncing unfollow:', err);
+          }
+        })();
       },
 
       isFollowing: (userId: string) => {
