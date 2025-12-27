@@ -303,7 +303,7 @@ interface AppState {
 
   // User actions (NO AUTH - managed by Supabase)
   setUser: (user: User | null) => void;
-  loadUserData: (userId: string) => void;
+  loadUserData: (userId: string) => Promise<void>;
   clearUserData: () => void;
   
   updatePreferences: (prefs: Partial<UserPreferences>) => void;
@@ -415,62 +415,120 @@ export const useAppStore = create<AppState>()(
       // User management (replaces auth)
       setUser: (user) => set({ user }),
       
-      loadUserData: (userId: string) => {
-  const userStats = getOrCreateUserStats(userId);
-  const badges = loadUserBadges(userId);
-  const { user } = get();
+      loadUserData: async (userId: string) => {
+        const userStats = getOrCreateUserStats(userId);
+        const { user } = get();
 
-  // Initialize default preferences if they don't exist
-  const { preferences, streak } = get();
-  const defaultPreferences: UserPreferences = {
-    id: userId,
-    user_id: userId,
-    push_notifications_enabled: true,
-    push_notification_time: '09:00',
-    email_notifications_enabled: true,
-    theme_mode: 'system',
-    has_completed_onboarding: false,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  };
+        // BADGES: Supabase is source of truth, localStorage is cache
+        let badges: Badge[] = [];
+        try {
+          console.log('[loadUserData] Fetching badges from Supabase for user:', userId);
+          const { data: supabaseBadges, error } = await supabase
+            .from('badges')
+            .select('*')
+            .eq('user_id', userId);
 
-  // Initialize default streak if it doesn't exist
-  const defaultStreak: Streak = {
-    id: userId,
-    user_id: userId,
-    current_streak: 0,
-    longest_streak: 0,
-    last_viewed_date: null,
-    streak_freeze_available: true,
-    streak_freeze_used_this_month: false,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  };
+          if (error) {
+            console.error('[loadUserData] Failed to fetch badges from Supabase:', error);
+            // Fall back to localStorage cache
+            badges = loadUserBadges(userId);
+            console.log('[loadUserData] Using localStorage cache, found', badges.length, 'badges');
+          } else {
+            // Supabase is authoritative - use these badges
+            badges = (supabaseBadges || []).map(b => ({
+              id: b.id || generateId(),
+              user_id: b.user_id,
+              badge_type: b.badge_type as BadgeType,
+              earned_at: b.earned_at,
+            }));
+            console.log('[loadUserData] Loaded', badges.length, 'badges from Supabase');
 
-  set({
-    userStats,
-    badges,
-    preferences: preferences || defaultPreferences,
-    streak: streak || defaultStreak,
-  });
+            // Also check localStorage for any badges that haven't been synced yet
+            const localBadges = loadUserBadges(userId);
+            const supabaseBadgeTypes = new Set(badges.map(b => b.badge_type));
+            const unsyncedBadges = localBadges.filter(b => !supabaseBadgeTypes.has(b.badge_type));
 
-  // Auto-award missing badges after state is set
-  setTimeout(() => {
-    const { awardBadge, hasBadge } = get();
+            if (unsyncedBadges.length > 0) {
+              console.log('[loadUserData] Found', unsyncedBadges.length, 'unsynced local badges, syncing to Supabase');
+              // Sync unsynced badges to Supabase
+              for (const badge of unsyncedBadges) {
+                try {
+                  await supabase.from('badges').insert({
+                    user_id: badge.user_id,
+                    badge_type: badge.badge_type,
+                    earned_at: badge.earned_at,
+                  });
+                  badges.push(badge);
+                } catch (syncErr) {
+                  console.error('[loadUserData] Failed to sync badge:', syncErr);
+                }
+              }
+            }
 
-    // Award creative_spark to all users who don't have it
-    if (!hasBadge('creative_spark')) {
-      console.log('[loadUserData] Auto-awarding creative_spark badge');
-      awardBadge('creative_spark');
-    }
+            // Update localStorage cache with authoritative Supabase data
+            const storageKey = `badges_${userId}`;
+            try {
+              localStorage.setItem(storageKey, JSON.stringify(badges));
+            } catch (e) {
+              console.error('[loadUserData] Failed to cache badges to localStorage:', e);
+            }
+          }
+        } catch (err) {
+          console.error('[loadUserData] Error fetching badges:', err);
+          badges = loadUserBadges(userId);
+        }
 
-    // Award premium_patron to premium users who don't have it
-    if (user?.is_premium && !hasBadge('premium_patron')) {
-      console.log('[loadUserData] Auto-awarding premium_patron badge');
-      awardBadge('premium_patron');
-    }
-  }, 100);
-},
+        // Initialize default preferences if they don't exist
+        const { preferences, streak } = get();
+        const defaultPreferences: UserPreferences = {
+          id: userId,
+          user_id: userId,
+          push_notifications_enabled: true,
+          push_notification_time: '09:00',
+          email_notifications_enabled: true,
+          theme_mode: 'system',
+          has_completed_onboarding: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        // Initialize default streak if it doesn't exist
+        const defaultStreak: Streak = {
+          id: userId,
+          user_id: userId,
+          current_streak: 0,
+          longest_streak: 0,
+          last_viewed_date: null,
+          streak_freeze_available: true,
+          streak_freeze_used_this_month: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        set({
+          userStats,
+          badges,
+          preferences: preferences || defaultPreferences,
+          streak: streak || defaultStreak,
+        });
+
+        // Auto-award missing badges after state is set
+        setTimeout(() => {
+          const { awardBadge, hasBadge } = get();
+
+          // Award creative_spark to all users who don't have it
+          if (!hasBadge('creative_spark')) {
+            console.log('[loadUserData] Auto-awarding creative_spark badge');
+            awardBadge('creative_spark');
+          }
+
+          // Award premium_patron to premium users who don't have it
+          if (user?.is_premium && !hasBadge('premium_patron')) {
+            console.log('[loadUserData] Auto-awarding premium_patron badge');
+            awardBadge('premium_patron');
+          }
+        }, 100);
+      },
 
       clearUserData: () => {
         set({

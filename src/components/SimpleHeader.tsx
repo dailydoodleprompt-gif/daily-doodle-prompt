@@ -93,8 +93,8 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
                 setViewedBadges(data.viewed_badges);
               }
 
-              // Load user's badges, stats, etc.
-              loadUserData(data.id);
+              // Load user's badges, stats, etc. from Supabase (source of truth)
+              await loadUserData(data.id);
             }
           } else {
             console.error('[SimpleHeader] Failed to fetch user:', response.status);
