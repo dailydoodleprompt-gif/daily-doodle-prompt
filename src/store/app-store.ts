@@ -703,49 +703,69 @@ export const useAppStore = create<AppState>()(
         }
 
         // DOODLES: Supabase is source of truth
+        // Fetch BOTH: user's own doodles AND all public doodles from other users
         try {
-          console.log('[loadUserData] 🔍 Fetching doodles from Supabase for user:', userId);
-          const { data: supabaseDoodles, error } = await supabase
+          console.log('[loadUserData] 🔍 Fetching doodles from Supabase...');
+
+          // Query 1: Get current user's doodles (public + private)
+          const { data: userDoodles, error: userError } = await supabase
             .from('doodles')
             .select('*')
             .eq('user_id', userId);
 
-          console.log('[loadUserData] Doodles query result:', {
-            error: error?.message,
-            count: supabaseDoodles?.length,
-            doodles: supabaseDoodles
+          // Query 2: Get ALL public doodles (for gallery/social features)
+          const { data: publicDoodles, error: publicError } = await supabase
+            .from('doodles')
+            .select('*')
+            .eq('is_public', true);
+
+          console.log('[loadUserData] Doodles query results:', {
+            userDoodles: { count: userDoodles?.length, error: userError?.message },
+            publicDoodles: { count: publicDoodles?.length, error: publicError?.message }
           });
 
-          if (error) {
-            console.error('[loadUserData] ❌ Failed to fetch doodles from Supabase:', error.message, error.code);
-          } else if (supabaseDoodles && supabaseDoodles.length > 0) {
-            // Get current localStorage doodles
-            const localDoodles = getStoredDoodles();
-
-            // Merge: keep local doodles from other users, replace current user's doodles with Supabase data
-            const otherUsersDoodles = localDoodles.filter(d => d.user_id !== userId);
-            const supabaseDoodlesMapped: Doodle[] = supabaseDoodles.map(d => ({
-              id: d.id,
-              user_id: d.user_id,
-              user_username: d.user_username,
-              user_avatar_type: d.user_avatar_type,
-              user_avatar_icon: d.user_avatar_icon,
-              prompt_id: d.prompt_id,
-              prompt_title: d.prompt_title,
-              image_url: d.image_url,
-              caption: d.caption || '',
-              is_public: d.is_public,
-              likes_count: d.likes_count,
-              created_at: d.created_at,
-            }));
-
-            // Update localStorage with merged data
-            const mergedDoodles = [...otherUsersDoodles, ...supabaseDoodlesMapped];
-            saveDoodles(mergedDoodles);
-            console.log('[loadUserData] Loaded', supabaseDoodlesMapped.length, 'doodles from Supabase');
-          } else {
-            console.log('[loadUserData] No doodles found in Supabase for user');
+          if (userError) {
+            console.error('[loadUserData] ❌ Failed to fetch user doodles:', userError.message);
           }
+          if (publicError) {
+            console.error('[loadUserData] ❌ Failed to fetch public doodles:', publicError.message);
+          }
+
+          // Merge doodles: user's own + public from others (deduplicated)
+          const allDoodles = new Map<string, Doodle>();
+
+          const mapDoodle = (d: any): Doodle => ({
+            id: d.id,
+            user_id: d.user_id,
+            user_username: d.user_username,
+            user_avatar_type: d.user_avatar_type,
+            user_avatar_icon: d.user_avatar_icon,
+            prompt_id: d.prompt_id,
+            prompt_title: d.prompt_title,
+            image_url: d.image_url,
+            caption: d.caption || '',
+            is_public: d.is_public,
+            likes_count: d.likes_count,
+            created_at: d.created_at,
+          });
+
+          // Add user's own doodles first
+          if (userDoodles) {
+            userDoodles.forEach(d => allDoodles.set(d.id, mapDoodle(d)));
+          }
+
+          // Add public doodles (won't overwrite user's own due to Map)
+          if (publicDoodles) {
+            publicDoodles.forEach(d => {
+              if (!allDoodles.has(d.id)) {
+                allDoodles.set(d.id, mapDoodle(d));
+              }
+            });
+          }
+
+          const mergedDoodles = Array.from(allDoodles.values());
+          saveDoodles(mergedDoodles);
+          console.log('[loadUserData] ✅ Loaded', mergedDoodles.length, 'total doodles (user:', userDoodles?.length || 0, ', public from others:', (publicDoodles?.length || 0) - (userDoodles?.filter(d => d.is_public).length || 0), ')');
         } catch (err) {
           console.error('[loadUserData] Error fetching doodles:', err);
         }
