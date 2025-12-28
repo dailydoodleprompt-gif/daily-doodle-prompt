@@ -646,14 +646,20 @@ export const useAppStore = create<AppState>()(
 
         // DOODLES: Supabase is source of truth
         try {
-          console.log('[loadUserData] Fetching doodles from Supabase for user:', userId);
+          console.log('[loadUserData] 🔍 Fetching doodles from Supabase for user:', userId);
           const { data: supabaseDoodles, error } = await supabase
             .from('doodles')
             .select('*')
             .eq('user_id', userId);
 
+          console.log('[loadUserData] Doodles query result:', {
+            error: error?.message,
+            count: supabaseDoodles?.length,
+            doodles: supabaseDoodles
+          });
+
           if (error) {
-            console.error('[loadUserData] Failed to fetch doodles from Supabase:', error);
+            console.error('[loadUserData] ❌ Failed to fetch doodles from Supabase:', error.message, error.code);
           } else if (supabaseDoodles && supabaseDoodles.length > 0) {
             // Get current localStorage doodles
             const localDoodles = getStoredDoodles();
@@ -1306,8 +1312,7 @@ if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')
         };
 
         // Save to Supabase database first (source of truth)
-        console.log('[uploadDoodle] Saving to Supabase database...');
-        const { error: dbError } = await supabase.from('doodles').insert({
+        const insertData = {
           id: newDoodle.id,
           user_id: newDoodle.user_id,
           prompt_id: newDoodle.prompt_id,
@@ -1317,13 +1322,15 @@ if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')
           is_public: newDoodle.is_public,
           likes_count: newDoodle.likes_count,
           created_at: newDoodle.created_at,
-        });
+        };
+        console.log('[uploadDoodle] Inserting into doodles table:', JSON.stringify(insertData, null, 2));
+
+        const { data: insertedData, error: dbError } = await supabase.from('doodles').insert(insertData).select();
 
         if (dbError) {
-          console.error('[uploadDoodle] Database insert failed:', dbError);
-          // Don't fail completely - image is already uploaded, save to localStorage as backup
+          console.error('[uploadDoodle] ❌ Database insert FAILED:', dbError.message, dbError.code, dbError.details);
         } else {
-          console.log('[uploadDoodle] Doodle saved to Supabase database');
+          console.log('[uploadDoodle] ✅ Doodle saved to Supabase database! Returned:', insertedData);
         }
 
         // Also save to localStorage as cache
