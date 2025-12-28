@@ -15,8 +15,8 @@ export function DoodleImage({ src, alt, className, aspectRatio = 'square' }: Doo
 
   return (
     <div className={cn(
-      'relative overflow-hidden bg-muted',
-      aspectRatio === 'square' && 'aspect-square',
+      'relative bg-muted',
+      aspectRatio === 'square' ? 'overflow-hidden aspect-square' : 'flex items-center justify-center',
       className
     )}>
       {/* Skeleton placeholder while loading */}
@@ -36,7 +36,8 @@ export function DoodleImage({ src, alt, className, aspectRatio = 'square' }: Doo
         src={src}
         alt={alt}
         className={cn(
-          'w-full h-full object-contain transition-opacity duration-300',
+          'object-contain transition-opacity duration-300',
+          aspectRatio === 'square' ? 'w-full h-full' : 'w-auto h-auto max-w-full max-h-full',
           isLoading ? 'opacity-0' : 'opacity-100'
         )}
         loading="lazy"

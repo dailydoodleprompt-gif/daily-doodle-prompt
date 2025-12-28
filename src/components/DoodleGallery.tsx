@@ -303,11 +303,11 @@ export function DoodleGallery({
 
           {selectedDoodle && (
             <div className="space-y-4">
-              <div className="relative max-h-[60vh] rounded-lg overflow-hidden">
+              <div className="flex items-center justify-center rounded-lg overflow-hidden">
                 <DoodleImage
                   src={selectedDoodle.image_url}
                   alt={selectedDoodle.caption || selectedDoodle.prompt_title}
-                  className="max-h-[60vh]"
+                  className="max-h-[80vh] rounded-lg"
                   aspectRatio="auto"
                 />
               </div>
