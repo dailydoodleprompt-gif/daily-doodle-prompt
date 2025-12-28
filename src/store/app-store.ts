@@ -319,7 +319,7 @@ async function compressImage(
       ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(img, 0, 0, width, height);
 
-      // Convert to blob with compression
+      // Convert to blob with JPEG compression (PNG ignores quality parameter)
       canvas.toBlob(
         (blob) => {
           if (blob) {
@@ -330,7 +330,7 @@ async function compressImage(
             reject(new Error('Failed to create blob from canvas'));
           }
         },
-        'image/png',
+        'image/jpeg',
         options.quality
       );
     };
@@ -378,14 +378,14 @@ async function uploadImageToStorage(
       quality: 0.85,
     });
 
-    const fileName = `${userId}/${doodleId}.png`;
+    const fileName = `${userId}/${doodleId}.jpg`;
 
     console.log('[uploadImageToStorage] Uploading to Supabase Storage:', fileName, `(${(compressedBlob.size / 1024).toFixed(1)}KB)`);
 
     const { data, error } = await supabase.storage
       .from('doodles')
       .upload(fileName, compressedBlob, {
-        contentType: 'image/png',
+        contentType: 'image/jpeg',
         upsert: true,
       });
 
