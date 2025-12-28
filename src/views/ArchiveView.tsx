@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { type Prompt } from '@/hooks/use-google-sheets';
 import { PromptCard } from '@/components/PromptCard';
 import { PromptDetailDialog } from '@/components/PromptDetailDialog';
@@ -33,6 +33,7 @@ interface ArchiveViewProps {
   isLoading: boolean;
   error: Error | null;
   onUpgrade: () => void;
+  initialPromptId?: string;
 }
 
 export function ArchiveView({
@@ -40,6 +41,7 @@ export function ArchiveView({
   isLoading,
   error,
   onUpgrade,
+  initialPromptId,
 }: ArchiveViewProps) {
   const isPremium = useIsPremium();
   const getAppSettings = useAppStore((state) => state.getAppSettings);
@@ -50,6 +52,17 @@ export function ArchiveView({
   const [showFilters, setShowFilters] = useState(false);
   const [selectedPrompt, setSelectedPrompt] = useState<Prompt | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  // Auto-open dialog when initialPromptId is provided
+  useEffect(() => {
+    if (initialPromptId && prompts.length > 0) {
+      const prompt = prompts.find(p => p.id === initialPromptId);
+      if (prompt) {
+        setSelectedPrompt(prompt);
+        setDialogOpen(true);
+      }
+    }
+  }, [initialPromptId, prompts]);
 
   const handlePromptClick = (prompt: Prompt) => {
     setSelectedPrompt(prompt);

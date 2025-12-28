@@ -52,6 +52,7 @@ function App() {
     useState<'login' | 'signup'>('login');
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [viewingArtistId, setViewingArtistId] = useState<string | null>(null);
+  const [archiveInitialPromptId, setArchiveInitialPromptId] = useState<string | null>(null);
 
   const showOnboarding = useAppStore((state) => state.showOnboarding);
   const needsUsernameSetup = isAuthenticated && user?.needs_username_setup;
@@ -116,6 +117,15 @@ function App() {
     if (!currentView) return;
     setPreviousView(currentView);
     setCurrentView(view);
+    // Clear archive prompt ID when navigating away from archive
+    if (view !== 'archive') {
+      setArchiveInitialPromptId(null);
+    }
+  };
+
+  const handleNavigateToPrompt = (promptId: string) => {
+    setArchiveInitialPromptId(promptId);
+    handleNavigate('archive');
   };
 
   const handleSignUp = () => {
@@ -146,9 +156,9 @@ function App() {
         <ArtistProfileView
           artistId={viewingArtistId}
           onBack={() => setViewingArtistId(null)}
-          onPromptClick={() => {
+          onPromptClick={(promptId: string) => {
             setViewingArtistId(null);
-            handleNavigate('archive');
+            handleNavigateToPrompt(promptId);
           }}
         />
       );
@@ -181,6 +191,7 @@ function App() {
             isLoading={isLoading}
             error={error}
             onUpgrade={() => handleNavigate('pricing')}
+            initialPromptId={archiveInitialPromptId || undefined}
           />
         );
       case 'bookmarks':
@@ -199,7 +210,7 @@ function App() {
             onSettings={() => handleNavigate('settings')}
             onAdminDashboard={() => handleNavigate('admin')}
             onUserClick={handleViewArtist}
-            onPromptClick={() => handleNavigate('archive')}
+            onPromptClick={handleNavigateToPrompt}
           />
         );
       case 'settings':
