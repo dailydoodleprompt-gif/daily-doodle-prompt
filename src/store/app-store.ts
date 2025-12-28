@@ -1500,13 +1500,32 @@ if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')
       },
 
       deleteDoodle: (doodleId: string) => {
+        console.log('[deleteDoodle] Starting delete for doodle:', doodleId);
+
         const { user } = get();
-        if (!user) return;
+        if (!user) {
+          console.error('[deleteDoodle] No user logged in');
+          return;
+        }
 
         const doodles = getStoredDoodles();
         const doodle = doodles.find(d => d.id === doodleId);
 
-        if (!doodle || doodle.user_id !== user.id) return;
+        if (!doodle) {
+          console.error('[deleteDoodle] Doodle not found:', doodleId);
+          return;
+        }
+
+        // Check permissions: owner OR admin can delete
+        const isOwner = doodle.user_id === user.id;
+        const isAdmin = user.is_admin === true;
+
+        if (!isOwner && !isAdmin) {
+          console.error('[deleteDoodle] User is not owner or admin, cannot delete');
+          return;
+        }
+
+        console.log('[deleteDoodle] Permission check passed:', { isOwner, isAdmin, doodleUserId: doodle.user_id });
 
         const likes = getStoredLikes();
         const doodleLikes = likes.filter(l => l.doodle_id === doodleId);
@@ -1529,40 +1548,57 @@ if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')
 
         const filtered = doodles.filter(d => d.id !== doodleId);
         saveDoodles(filtered);
+        console.log('[deleteDoodle] Removed from local storage');
 
         const filteredLikes = likes.filter(l => l.doodle_id !== doodleId);
         saveLikes(filteredLikes);
 
-        // Sync delete to Supabase (fire-and-forget)
+        // Sync delete to Supabase
         (async () => {
           try {
-            // Delete from database
-            const { error } = await supabase
+            // Delete from database - admin can delete any, owner can delete their own
+            let query = supabase
               .from('doodles')
               .delete()
-              .eq('id', doodleId)
-              .eq('user_id', user.id);
+              .eq('id', doodleId);
+
+            // Only add user_id filter for non-admins (owners)
+            if (!isAdmin) {
+              query = query.eq('user_id', user.id);
+            }
+
+            const { error, count } = await query;
+
             if (error) {
-              console.error('[deleteDoodle] Failed to delete from Supabase database:', error);
+              console.error('[deleteDoodle] ❌ Failed to delete from database:', error.message, error.code);
             } else {
-              console.log('[deleteDoodle] Deleted from Supabase database');
+              console.log('[deleteDoodle] ✅ Deleted from database');
             }
 
             // Also delete image from storage if it's a Supabase Storage URL
-            if (doodle.image_url && doodle.image_url.includes('supabase.co/storage')) {
-              // Extract the file path from the URL (format: userId/doodleId.ext)
-              const urlParts = doodle.image_url.split('/doodles/');
-              if (urlParts.length > 1) {
-                const filePath = urlParts[1];
+            if (doodle.image_url && doodle.image_url.includes('supabase')) {
+              // Extract the file path from the URL
+              // URL format: https://xxx.supabase.co/storage/v1/object/public/doodles/userId/doodleId.jpg
+              let filePath = '';
+
+              // Try to extract path after /doodles/
+              const doodlesMatch = doodle.image_url.match(/\/doodles\/(.+?)(?:\?|$)/);
+              if (doodlesMatch && doodlesMatch[1]) {
+                filePath = decodeURIComponent(doodlesMatch[1]);
+              }
+
+              if (filePath) {
                 console.log('[deleteDoodle] Deleting from storage:', filePath);
                 const { error: storageError } = await supabase.storage
                   .from('doodles')
                   .remove([filePath]);
                 if (storageError) {
-                  console.error('[deleteDoodle] Failed to delete from storage:', storageError);
+                  console.error('[deleteDoodle] ❌ Failed to delete from storage:', storageError.message);
                 } else {
-                  console.log('[deleteDoodle] Deleted from storage');
+                  console.log('[deleteDoodle] ✅ Deleted from storage');
                 }
+              } else {
+                console.warn('[deleteDoodle] Could not extract file path from URL:', doodle.image_url);
               }
             }
           } catch (err) {
