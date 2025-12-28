@@ -3,6 +3,7 @@ import { useState, useMemo } from 'react';
 import { useAppStore, useUser, useIsAdmin } from '@/store/app-store';
 import { type Doodle } from '@/types';
 import { LikeButton } from '@/components/LikeButton';
+import { DoodleImage } from '@/components/DoodleImage';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -150,11 +151,10 @@ export function DoodleGallery({
               onClick={() => setSelectedDoodle(doodle)}
             >
               <div className="relative aspect-square bg-muted flex items-center justify-center">
-                <img
+                <DoodleImage
                   src={doodle.image_url}
                   alt={doodle.caption || doodle.prompt_title}
-                  className="w-full h-full object-contain"
-                  loading="lazy"
+                  className="w-full h-full"
                 />
 
                 {/* Visibility Badge */}
@@ -303,11 +303,12 @@ export function DoodleGallery({
 
           {selectedDoodle && (
             <div className="space-y-4">
-              <div className="relative aspect-square max-h-[60vh] rounded-lg overflow-hidden bg-muted">
-                <img
+              <div className="relative max-h-[60vh] rounded-lg overflow-hidden">
+                <DoodleImage
                   src={selectedDoodle.image_url}
                   alt={selectedDoodle.caption || selectedDoodle.prompt_title}
-                  className="w-full h-full object-contain"
+                  className="max-h-[60vh]"
+                  aspectRatio="auto"
                 />
               </div>
 

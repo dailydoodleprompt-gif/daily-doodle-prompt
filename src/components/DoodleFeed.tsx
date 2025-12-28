@@ -4,6 +4,7 @@ import { useAppStore, useUser, useIsAdmin } from '@/store/app-store';
 import { type Doodle } from '@/types';
 import { type Prompt } from '@/hooks/use-google-sheets';
 import { LikeButton } from '@/components/LikeButton';
+import { DoodleImage } from '@/components/DoodleImage';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -328,15 +329,14 @@ function DoodleFeedItem({ doodle, onUserClick, onPromptClick, isAdmin, onDeleteC
             type="button"
             onClick={() => onPromptClick?.(doodle.prompt_id)}
             className={cn(
-              "relative aspect-square max-w-[300px] rounded-lg overflow-hidden bg-muted mb-2 block w-full",
+              "relative max-w-[300px] rounded-lg overflow-hidden mb-2 block w-full",
               onPromptClick && "cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
             )}
           >
-            <img
+            <DoodleImage
               src={doodle.image_url}
               alt={doodle.caption || doodle.prompt_title}
-              className="w-full h-full object-contain"
-              loading="lazy"
+              className="w-full"
             />
           </button>
 
