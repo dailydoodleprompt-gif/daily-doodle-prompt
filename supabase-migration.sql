@@ -91,6 +91,9 @@ CREATE POLICY "Users can delete own bookmarks" ON bookmarks
 CREATE TABLE IF NOT EXISTS doodles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_username TEXT,
+  user_avatar_type TEXT,
+  user_avatar_icon TEXT,
   prompt_id TEXT NOT NULL,
   prompt_title TEXT NOT NULL,
   image_url TEXT NOT NULL,

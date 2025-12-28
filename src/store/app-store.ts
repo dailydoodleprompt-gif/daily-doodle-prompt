@@ -1393,6 +1393,9 @@ if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')
         const insertData = {
           id: newDoodle.id,
           user_id: newDoodle.user_id,
+          user_username: newDoodle.user_username,
+          user_avatar_type: newDoodle.user_avatar_type,
+          user_avatar_icon: newDoodle.user_avatar_icon,
           prompt_id: newDoodle.prompt_id,
           prompt_title: newDoodle.prompt_title,
           image_url: newDoodle.image_url,
