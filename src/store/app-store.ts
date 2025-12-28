@@ -275,6 +275,70 @@ function generateId(): string {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }
 
+// Convert base64 data URL to Blob for Supabase Storage upload
+function base64ToBlob(base64DataUrl: string): { blob: Blob; mimeType: string } {
+  // Extract the base64 part and mime type from data URL
+  const matches = base64DataUrl.match(/^data:([^;]+);base64,(.+)$/);
+  if (!matches) {
+    throw new Error('Invalid base64 data URL');
+  }
+
+  const mimeType = matches[1];
+  const base64Data = matches[2];
+
+  // Decode base64 to binary
+  const binaryString = atob(base64Data);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+
+  return {
+    blob: new Blob([bytes], { type: mimeType }),
+    mimeType,
+  };
+}
+
+// Upload image to Supabase Storage and return public URL
+async function uploadImageToStorage(
+  userId: string,
+  doodleId: string,
+  base64DataUrl: string
+): Promise<{ url: string | null; error: string | null }> {
+  try {
+    const { blob, mimeType } = base64ToBlob(base64DataUrl);
+
+    // Determine file extension from mime type
+    const extension = mimeType.split('/')[1] || 'png';
+    const fileName = `${userId}/${doodleId}.${extension}`;
+
+    console.log('[uploadImageToStorage] Uploading to Supabase Storage:', fileName);
+
+    const { data, error } = await supabase.storage
+      .from('doodles')
+      .upload(fileName, blob, {
+        contentType: mimeType,
+        upsert: true,
+      });
+
+    if (error) {
+      console.error('[uploadImageToStorage] Upload failed:', error);
+      return { url: null, error: error.message };
+    }
+
+    // Get public URL
+    const { data: urlData } = supabase.storage
+      .from('doodles')
+      .getPublicUrl(fileName);
+
+    console.log('[uploadImageToStorage] Upload successful, URL:', urlData.publicUrl);
+    return { url: urlData.publicUrl, error: null };
+  } catch (err) {
+    console.error('[uploadImageToStorage] Error:', err);
+    return { url: null, error: String(err) };
+  }
+}
+
 const INAPPROPRIATE_KEYWORDS = [
   'porn', 'xxx', 'nude', 'naked', 'sex', 'adult', 'nsfw',
   'hate', 'nazi', 'kkk', 'terrorist',
@@ -1197,54 +1261,66 @@ if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')
           return { success: false, error: 'Your caption contains inappropriate content. Please revise and try again.' };
         }
 
-        console.log('[uploadDoodle] Creating doodle...');
+        const doodleId = generateId();
         const now = new Date().toISOString();
         const today = getTodayEST();
 
+        // Upload image to Supabase Storage first
+        console.log('[uploadDoodle] Uploading image to Supabase Storage...');
+        const { url: storageUrl, error: storageError } = await uploadImageToStorage(
+          user.id,
+          doodleId,
+          imageData
+        );
+
+        if (storageError || !storageUrl) {
+          console.error('[uploadDoodle] Storage upload failed:', storageError);
+          return { success: false, error: `Failed to upload image: ${storageError || 'Unknown error'}` };
+        }
+
+        console.log('[uploadDoodle] Image uploaded successfully:', storageUrl);
+
         const newDoodle: Doodle = {
-          id: generateId(),
+          id: doodleId,
           user_id: user.id,
           user_username: user.username,
           user_avatar_type: user.avatar_type,
           user_avatar_icon: user.avatar_icon,
           prompt_id: promptId,
           prompt_title: promptTitle,
-          image_url: imageData,
+          image_url: storageUrl, // Use Supabase Storage URL, not base64
           caption,
           is_public: isPublic,
           likes_count: 0,
           created_at: now,
         };
 
-        console.log('[uploadDoodle] Saving to localStorage...');
+        // Save to Supabase database first (source of truth)
+        console.log('[uploadDoodle] Saving to Supabase database...');
+        const { error: dbError } = await supabase.from('doodles').insert({
+          id: newDoodle.id,
+          user_id: newDoodle.user_id,
+          prompt_id: newDoodle.prompt_id,
+          prompt_title: newDoodle.prompt_title,
+          image_url: newDoodle.image_url,
+          caption: newDoodle.caption,
+          is_public: newDoodle.is_public,
+          likes_count: newDoodle.likes_count,
+          created_at: newDoodle.created_at,
+        });
+
+        if (dbError) {
+          console.error('[uploadDoodle] Database insert failed:', dbError);
+          // Don't fail completely - image is already uploaded, save to localStorage as backup
+        } else {
+          console.log('[uploadDoodle] Doodle saved to Supabase database');
+        }
+
+        // Also save to localStorage as cache
+        console.log('[uploadDoodle] Caching to localStorage...');
         const doodles = getStoredDoodles();
         doodles.push(newDoodle);
         saveDoodles(doodles);
-
-        // Sync doodle to Supabase (fire-and-forget)
-        console.log('[uploadDoodle] Syncing to Supabase...');
-        (async () => {
-          try {
-            const { error } = await supabase.from('doodles').insert({
-              id: newDoodle.id,
-              user_id: newDoodle.user_id,
-              prompt_id: newDoodle.prompt_id,
-              prompt_title: newDoodle.prompt_title,
-              image_url: newDoodle.image_url,
-              caption: newDoodle.caption,
-              is_public: newDoodle.is_public,
-              likes_count: newDoodle.likes_count,
-              created_at: newDoodle.created_at,
-            });
-            if (error) {
-              console.error('[uploadDoodle] Failed to sync doodle to Supabase:', error);
-            } else {
-              console.log('[uploadDoodle] Doodle synced to Supabase');
-            }
-          } catch (err) {
-            console.error('[uploadDoodle] Error syncing doodle:', err);
-          }
-        })();
 
         console.log('[uploadDoodle] Updating stats...');
         const stats = getOrCreateUserStats(user.id);
@@ -1359,15 +1435,34 @@ if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')
         // Sync delete to Supabase (fire-and-forget)
         (async () => {
           try {
+            // Delete from database
             const { error } = await supabase
               .from('doodles')
               .delete()
               .eq('id', doodleId)
               .eq('user_id', user.id);
             if (error) {
-              console.error('[deleteDoodle] Failed to sync delete to Supabase:', error);
+              console.error('[deleteDoodle] Failed to delete from Supabase database:', error);
             } else {
-              console.log('[deleteDoodle] Delete synced to Supabase');
+              console.log('[deleteDoodle] Deleted from Supabase database');
+            }
+
+            // Also delete image from storage if it's a Supabase Storage URL
+            if (doodle.image_url && doodle.image_url.includes('supabase.co/storage')) {
+              // Extract the file path from the URL (format: userId/doodleId.ext)
+              const urlParts = doodle.image_url.split('/doodles/');
+              if (urlParts.length > 1) {
+                const filePath = urlParts[1];
+                console.log('[deleteDoodle] Deleting from storage:', filePath);
+                const { error: storageError } = await supabase.storage
+                  .from('doodles')
+                  .remove([filePath]);
+                if (storageError) {
+                  console.error('[deleteDoodle] Failed to delete from storage:', storageError);
+                } else {
+                  console.log('[deleteDoodle] Deleted from storage');
+                }
+              }
             }
           } catch (err) {
             console.error('[deleteDoodle] Error syncing delete:', err);

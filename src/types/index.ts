@@ -394,7 +394,7 @@ export interface Doodle {
   user_avatar_icon?: AvatarIconType; // Embedded at upload time
   prompt_id: string;
   prompt_title: string;
-  image_url: string; // Base64 data URL for local storage
+  image_url: string; // Supabase Storage public URL
   caption: string;
   is_public: boolean;
   likes_count: number;

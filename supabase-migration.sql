@@ -301,7 +301,51 @@ CREATE TRIGGER update_user_stats_updated_at
   EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================
--- DONE! All tables created with RLS policies
+-- STEP 11: Create Storage Bucket for Doodle Images
+-- ============================================
+-- NOTE: This must be run in the Supabase Dashboard > Storage
+-- OR via the Supabase CLI
+
+-- Create the bucket (run in SQL Editor):
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('doodles', 'doodles', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Storage RLS Policies for doodles bucket
+-- Allow authenticated users to upload to their own folder
+CREATE POLICY "Users can upload own doodles"
+ON storage.objects FOR INSERT
+TO authenticated
+WITH CHECK (
+  bucket_id = 'doodles' AND
+  (storage.foldername(name))[1] = auth.uid()::text
+);
+
+-- Allow users to update/delete their own images
+CREATE POLICY "Users can update own doodles"
+ON storage.objects FOR UPDATE
+TO authenticated
+USING (
+  bucket_id = 'doodles' AND
+  (storage.foldername(name))[1] = auth.uid()::text
+);
+
+CREATE POLICY "Users can delete own doodles"
+ON storage.objects FOR DELETE
+TO authenticated
+USING (
+  bucket_id = 'doodles' AND
+  (storage.foldername(name))[1] = auth.uid()::text
+);
+
+-- Allow public read access (since bucket is public)
+CREATE POLICY "Anyone can view doodle images"
+ON storage.objects FOR SELECT
+TO public
+USING (bucket_id = 'doodles');
+
+-- ============================================
+-- DONE! All tables and storage created with RLS policies
 -- ============================================
 
 -- Verify tables were created
@@ -309,3 +353,6 @@ SELECT table_name FROM information_schema.tables
 WHERE table_schema = 'public'
 AND table_name IN ('streaks', 'badges', 'bookmarks', 'doodles', 'likes', 'follows', 'shares', 'user_stats')
 ORDER BY table_name;
+
+-- Verify storage bucket exists
+SELECT id, name, public FROM storage.buckets WHERE id = 'doodles';
