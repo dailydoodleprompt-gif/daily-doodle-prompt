@@ -77,9 +77,14 @@ export function TitleSelector({ onUpgrade, compact = false }: TitleSelectorProps
   }
 
   const handleTitleChange = (titleId: string) => {
-    const newTitle = titleId as ProfileTitleType;
-    setSelectedTitle(newTitle);
-    setTitle(newTitle);
+    if (titleId === 'none') {
+      setSelectedTitle(null);
+      setTitle(null);
+    } else {
+      const newTitle = titleId as ProfileTitleType;
+      setSelectedTitle(newTitle);
+      setTitle(newTitle);
+    }
 
     // Clear newly unlocked badges if viewing them
     if (newlyUnlocked.length > 0) {
@@ -105,10 +110,25 @@ export function TitleSelector({ onUpgrade, compact = false }: TitleSelectorProps
       </CardHeader>
       <CardContent className={cn(compact && 'p-0')}>
         <RadioGroup
-          value={selectedTitle ?? ''}
+          value={selectedTitle ?? 'none'}
           onValueChange={handleTitleChange}
           className="space-y-3"
         >
+          {/* No Title option */}
+          <div
+            className={cn(
+              'flex items-center space-x-3 p-3 rounded-lg border-2 transition-colors cursor-pointer',
+              selectedTitle === null
+                ? 'border-primary bg-primary/5'
+                : 'border-transparent hover:border-muted-foreground/20'
+            )}
+          >
+            <RadioGroupItem value="none" id="none" />
+            <Label htmlFor="none" className="flex-1 cursor-pointer text-muted-foreground">
+              No Title
+            </Label>
+          </div>
+
           {/* Admin title first if admin */}
           {adminTitle && (
             <div className="mb-4">
@@ -206,17 +226,21 @@ export function TitleSelector({ onUpgrade, compact = false }: TitleSelectorProps
         </RadioGroup>
 
         {/* Current title preview */}
-        {selectedTitle && (
-          <div className="mt-6 pt-4 border-t">
-            <p className="text-sm text-muted-foreground mb-2">Preview:</p>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-lg">{user.username}</span>
-            </div>
+        <div className="mt-6 pt-4 border-t">
+          <p className="text-sm text-muted-foreground mb-2">Preview:</p>
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-lg">{user.username}</span>
+          </div>
+          {selectedTitle ? (
             <p className="text-sm text-muted-foreground italic">
               {getTitleDisplayName(selectedTitle)}
             </p>
-          </div>
-        )}
+          ) : (
+            <p className="text-sm text-muted-foreground/50 italic">
+              No title displayed
+            </p>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

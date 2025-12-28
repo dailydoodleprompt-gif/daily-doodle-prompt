@@ -444,7 +444,7 @@ interface AppState {
   updateAvatar: (avatarType: AvatarType, avatarIcon?: AvatarIconType) => Promise<void>;
 
   // Title actions
-  setTitle: (titleId: ProfileTitleType) => Promise<void>;
+  setTitle: (titleId: ProfileTitleType | null) => Promise<void>;
   getAvailableTitles: () => ProfileTitleType[];
   getUnlockedSecretTitles: () => ProfileTitleType[];
   clearNewlyUnlockedTitles: () => void;
@@ -940,7 +940,7 @@ export const useAppStore = create<AppState>()(
 },
 
       // Title actions
-      setTitle: async (titleId: ProfileTitleType) => {
+      setTitle: async (titleId: ProfileTitleType | null) => {
   console.log('[setTitle] Called with:', { titleId });
 
   const { user } = get();
@@ -957,12 +957,15 @@ export const useAppStore = create<AppState>()(
   }
   console.log('[setTitle] Current user:', { id: user.id, username: user.username, is_premium: user.is_premium, is_admin: user.is_admin });
 
-  const availableTitles = get().getAvailableTitles();
-  console.log('[setTitle] Available titles:', availableTitles);
+  // Allow null to clear the title
+  if (titleId !== null) {
+    const availableTitles = get().getAvailableTitles();
+    console.log('[setTitle] Available titles:', availableTitles);
 
-  if (!availableTitles.includes(titleId)) {
-    console.error('[setTitle] Title not in available titles - aborting:', titleId);
-    return;
+    if (!availableTitles.includes(titleId)) {
+      console.error('[setTitle] Title not in available titles - aborting:', titleId);
+      return;
+    }
   }
 
   const now = new Date().toISOString();
