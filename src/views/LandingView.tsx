@@ -51,7 +51,7 @@ export function LandingView({ onGetStarted, onSignUp }: LandingViewProps) {
             New prompts every day
           </span>
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
-            <span style={{ color: '#000000' }}>Spark Your Creativity</span>
+            <span className="text-[#000000] dark:text-[#fffaed]">Spark Your Creativity</span>
             <br />
             <span style={{ color: '#F17313' }}>One Doodle at a Time!</span>
           </h1>
