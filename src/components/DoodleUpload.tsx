@@ -13,6 +13,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { DoodleUploadSuccessDialog } from '@/components/DoodleUploadSuccessDialog';
 import { useAppStore, useIsPremium, useIsAuthenticated } from '@/store/app-store';
 import { Upload, Image, AlertCircle, Lock, Loader2, Crown } from 'lucide-react';
 import { toast } from 'sonner';
@@ -34,6 +35,8 @@ export function DoodleUpload({ promptId, promptTitle, onUploadSuccess, onAuthReq
   const [isPublic, setIsPublic] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isAuthenticated = useIsAuthenticated();
@@ -85,8 +88,12 @@ export function DoodleUpload({ promptId, promptTitle, onUploadSuccess, onAuthReq
       );
 
       if (result.success) {
+        // Store the uploaded image URL for the success dialog
+        setUploadedImageUrl(result.imageUrl || preview);
         setOpen(false);
         resetForm();
+        // Show success dialog with share options
+        setSuccessDialogOpen(true);
         onUploadSuccess?.();
       } else {
         setError(result.error || 'Failed to upload doodle. Please try again.');
@@ -158,6 +165,7 @@ export function DoodleUpload({ promptId, promptTitle, onUploadSuccess, onAuthReq
   }
 
   return (
+    <>
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button variant="default" className="gap-2">
@@ -273,5 +281,14 @@ export function DoodleUpload({ promptId, promptTitle, onUploadSuccess, onAuthReq
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {/* Success Dialog with Social Sharing */}
+    <DoodleUploadSuccessDialog
+      open={successDialogOpen}
+      onOpenChange={setSuccessDialogOpen}
+      imageUrl={uploadedImageUrl || ''}
+      promptTitle={promptTitle}
+    />
+    </>
   );
 }

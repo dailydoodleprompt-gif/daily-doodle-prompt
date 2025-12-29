@@ -472,7 +472,7 @@ interface AppState {
   setViewedBadges: (badges: BadgeType[]) => void; 
 
   // Doodle actions
-  uploadDoodle: (promptId: string, promptTitle: string, imageData: string, caption: string, isPublic: boolean) => Promise<{ success: boolean; error?: string }>;
+  uploadDoodle: (promptId: string, promptTitle: string, imageData: string, caption: string, isPublic: boolean) => Promise<{ success: boolean; error?: string; imageUrl?: string }>;
   getDoodles: (userId?: string, onlyPublic?: boolean) => Doodle[];
   getPromptDoodles: (promptId: string) => Doodle[];
   deleteDoodle: (doodleId: string) => void;
@@ -1472,7 +1472,7 @@ if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')
         get().checkAndUnlockSecretTitles();
 
         console.log('[uploadDoodle] SUCCESS!');
-        return { success: true };
+        return { success: true, imageUrl: storageUrl };
         } catch (err) {
           console.error('[uploadDoodle] CAUGHT ERROR:', err);
           return { success: false, error: String(err) };
