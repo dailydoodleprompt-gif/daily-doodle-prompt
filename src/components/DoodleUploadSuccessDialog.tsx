@@ -33,6 +33,9 @@ export function DoodleUploadSuccessDialog({
 }: DoodleUploadSuccessDialogProps) {
   const [copied, setCopied] = useState(false);
 
+  // Debug logging
+  console.log('[DoodleUploadSuccessDialog] Render:', { open, imageUrl, promptTitle });
+
   const shareText = `I just completed today's doodle prompt: "${promptTitle}" on Daily Doodle Prompt! 🎨\n\nJoin me:`;
   const shareUrl = 'https://www.dailydoodleprompt.com';
 

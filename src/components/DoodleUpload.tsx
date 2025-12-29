@@ -89,10 +89,16 @@ export function DoodleUpload({ promptId, promptTitle, onUploadSuccess, onAuthReq
 
       if (result.success) {
         // Store the uploaded image URL for the success dialog
-        setUploadedImageUrl(result.imageUrl || preview);
+        const imageUrlToUse = result.imageUrl || preview || '';
+        console.log('[DoodleUpload] Upload success! Setting up success dialog:', {
+          imageUrl: imageUrlToUse,
+          promptTitle,
+        });
+        setUploadedImageUrl(imageUrlToUse);
         setOpen(false);
         resetForm();
         // Show success dialog with share options
+        console.log('[DoodleUpload] Opening success dialog...');
         setSuccessDialogOpen(true);
         onUploadSuccess?.();
       } else {
