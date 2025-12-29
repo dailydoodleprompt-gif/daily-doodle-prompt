@@ -4,22 +4,19 @@ import { PromptCard } from '@/components/PromptCard';
 import { PromptDetailDialog } from '@/components/PromptDetailDialog';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useBookmarks, useIsPremium } from '@/store/app-store';
-import { Bookmark, Lock, Archive } from 'lucide-react';
+import { useBookmarks } from '@/store/app-store';
+import { Bookmark, Archive } from 'lucide-react';
 
 interface BookmarksViewProps {
   prompts: Prompt[];
-  onUpgrade: () => void;
   onBrowseArchive: () => void;
 }
 
 export function BookmarksView({
   prompts,
-  onUpgrade,
   onBrowseArchive,
 }: BookmarksViewProps) {
   const bookmarks = useBookmarks();
-  const isPremium = useIsPremium();
   const [selectedPrompt, setSelectedPrompt] = useState<Prompt | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -32,24 +29,6 @@ export function BookmarksView({
     const bookmarkIds = new Set(bookmarks.map((b) => b.prompt_id));
     return prompts.filter((p) => bookmarkIds.has(p.id));
   }, [prompts, bookmarks]);
-
-  if (!isPremium) {
-    return (
-      <div className="container px-4 py-8 mx-auto max-w-3xl">
-        <Card>
-          <CardContent className="py-12 text-center">
-            <Lock className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-            <h2 className="text-xl font-semibold mb-2">Premium Feature</h2>
-            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-              Bookmarks are available for premium users. Upgrade to save your
-              favorite prompts and access them anytime.
-            </p>
-            <Button onClick={onUpgrade}>Upgrade to Premium</Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   if (bookmarkedPrompts.length === 0) {
     return (

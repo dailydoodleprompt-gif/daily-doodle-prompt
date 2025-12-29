@@ -1128,7 +1128,7 @@ export const useAppStore = create<AppState>()(
       // Bookmark actions
       addBookmark: (promptId: string) => {
         const { user, bookmarks } = get();
-        if (!user || !user.is_premium) return;
+        if (!user) return;
 
         if (bookmarks.some(b => b.prompt_id === promptId)) return;
 

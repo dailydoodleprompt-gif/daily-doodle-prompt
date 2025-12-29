@@ -49,7 +49,6 @@ export function PromptDetailDialog({
 
   const handleBookmarkClick = () => {
     if (!user || !prompt) return;
-    if (!isPremium) return;
 
     if (bookmarked) {
       removeBookmark(prompt.id);
@@ -147,14 +146,13 @@ export function PromptDetailDialog({
                 variant="outline"
                 size="sm"
                 onClick={handleBookmarkClick}
-                disabled={!isPremium}
                 className="gap-2"
-                title={isPremium ? (bookmarked ? 'Remove from favorites' : 'Add to favorites') : 'Premium feature'}
+                title={bookmarked ? 'Remove from favorites' : 'Add to favorites'}
               >
                 <Star
                   className={cn(
                     'w-4 h-4',
-                    bookmarked && isPremium ? 'fill-yellow-400 text-yellow-400' : ''
+                    bookmarked ? 'fill-yellow-400 text-yellow-400' : ''
                   )}
                 />
                 {bookmarked ? 'Saved' : 'Save'}

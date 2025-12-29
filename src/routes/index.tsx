@@ -198,7 +198,6 @@ function App() {
         return (
           <BookmarksView
             prompts={displayPrompts}
-            onUpgrade={() => handleNavigate('pricing')}
             onBrowseArchive={() => handleNavigate('archive')}
           />
         );

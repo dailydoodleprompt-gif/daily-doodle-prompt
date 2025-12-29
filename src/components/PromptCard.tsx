@@ -52,7 +52,6 @@ export function PromptCard({
 
   const handleBookmarkClick = () => {
     if (!user) return;
-    if (!isPremium) return;
 
     if (bookmarked) {
       removeBookmark(prompt.id);
@@ -200,13 +199,12 @@ export function PromptCard({
                 variant="ghost"
                 size="icon"
                 onClick={handleBookmarkClick}
-                disabled={!isPremium}
-                title={isPremium ? (bookmarked ? 'Remove from favorites' : 'Add to favorites') : 'Premium feature'}
+                title={bookmarked ? 'Remove from favorites' : 'Add to favorites'}
               >
                 <Star
                   className={cn(
                     'w-5 h-5',
-                    bookmarked && isPremium ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'
+                    bookmarked ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'
                   )}
                 />
               </Button>
