@@ -160,6 +160,7 @@ function App() {
             setViewingArtistId(null);
             handleNavigateToPrompt(promptId);
           }}
+          onAuthRequired={handleLogin}
         />
       );
     }
@@ -182,6 +183,7 @@ function App() {
             isLoading={isLoading}
             error={error}
             onUserClick={handleViewArtist}
+            onAuthRequired={handleLogin}
           />
         );
       case 'archive':
@@ -192,6 +194,7 @@ function App() {
             error={error}
             onUpgrade={() => handleNavigate('pricing')}
             initialPromptId={archiveInitialPromptId || undefined}
+            onAuthRequired={handleLogin}
           />
         );
       case 'bookmarks':
@@ -199,6 +202,7 @@ function App() {
           <BookmarksView
             prompts={displayPrompts}
             onBrowseArchive={() => handleNavigate('archive')}
+            onAuthRequired={handleLogin}
           />
         );
       case 'profile':

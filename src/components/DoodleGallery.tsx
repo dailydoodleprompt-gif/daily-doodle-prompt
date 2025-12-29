@@ -53,6 +53,7 @@ interface DoodleGalleryProps {
   onUserClick?: (userId: string) => void;
   onPromptClick?: (promptId: string) => void;
   onDoodleDeleted?: () => void;
+  onAuthRequired?: () => void;
 }
 
 export function DoodleGallery({
@@ -65,6 +66,7 @@ export function DoodleGallery({
   onUserClick,
   onPromptClick,
   onDoodleDeleted,
+  onAuthRequired,
 }: DoodleGalleryProps) {
   const [selectedDoodle, setSelectedDoodle] = useState<Doodle | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -253,6 +255,7 @@ export function DoodleGallery({
                       isOwnDoodle={isOwn}
                       size="sm"
                       className="text-white hover:text-white"
+                      onAuthRequired={onAuthRequired}
                     />
                   </div>
 
@@ -349,6 +352,7 @@ export function DoodleGallery({
                     doodleId={selectedDoodle.id}
                     likesCount={selectedDoodle.likes_count}
                     isOwnDoodle={selectedDoodle.user_id === user?.id}
+                    onAuthRequired={onAuthRequired}
                   />
                   {!selectedDoodle.is_public && (
                     <Badge variant="secondary" className="gap-1">

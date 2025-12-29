@@ -30,9 +30,10 @@ interface ArtistProfileViewProps {
   artistId: string;
   onBack: () => void;
   onPromptClick?: (promptId: string) => void;
+  onAuthRequired?: () => void;
 }
 
-export function ArtistProfileView({ artistId, onBack, onPromptClick }: ArtistProfileViewProps) {
+export function ArtistProfileView({ artistId, onBack, onPromptClick, onAuthRequired }: ArtistProfileViewProps) {
   const currentUser = useUser();
   const isAuthenticated = useIsAuthenticated();
   const getDoodles = useAppStore((state) => state.getDoodles);
@@ -139,9 +140,13 @@ export function ArtistProfileView({ artistId, onBack, onPromptClick }: ArtistPro
 
   const handleFollowToggle = () => {
     if (!isAuthenticated) {
-      toast.info('Sign in Required', {
-        description: 'Create a free account to follow artists.',
-      });
+      if (onAuthRequired) {
+        onAuthRequired();
+      } else {
+        toast.info('Sign in Required', {
+          description: 'Create a free account to follow artists.',
+        });
+      }
       return;
     }
 
@@ -290,6 +295,7 @@ export function ArtistProfileView({ artistId, onBack, onPromptClick }: ArtistPro
               showUserCredit={false}
               onPromptClick={onPromptClick}
               emptyMessage="No public doodles yet"
+              onAuthRequired={onAuthRequired}
             />
           ) : (
             <div className="py-12 text-center">

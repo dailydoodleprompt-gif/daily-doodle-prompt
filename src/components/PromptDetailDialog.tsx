@@ -30,6 +30,7 @@ interface PromptDetailDialogProps {
   onShare?: () => void;
   onTagClick?: (tag: string) => void;
   onCategoryClick?: (category: string) => void;
+  onAuthRequired?: () => void;
 }
 
 export function PromptDetailDialog({
@@ -39,6 +40,7 @@ export function PromptDetailDialog({
   onShare,
   onTagClick,
   onCategoryClick,
+  onAuthRequired,
 }: PromptDetailDialogProps) {
   const [refreshKey, setRefreshKey] = useState(0);
   const { user, addBookmark, removeBookmark, isBookmarked, getAppSettings, getPromptDoodles } = useAppStore();
@@ -48,7 +50,12 @@ export function PromptDetailDialog({
   const tagsEnabled = getAppSettings().tags_enabled;
 
   const handleBookmarkClick = () => {
-    if (!user || !prompt) return;
+    if (!prompt) return;
+
+    if (!user) {
+      onAuthRequired?.();
+      return;
+    }
 
     if (bookmarked) {
       removeBookmark(prompt.id);
@@ -141,23 +148,21 @@ export function PromptDetailDialog({
 
           {/* Actions */}
           <div className="flex items-center gap-2 pt-2 flex-wrap">
-            {user && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleBookmarkClick}
-                className="gap-2"
-                title={bookmarked ? 'Remove from favorites' : 'Add to favorites'}
-              >
-                <Star
-                  className={cn(
-                    'w-4 h-4',
-                    bookmarked ? 'fill-yellow-400 text-yellow-400' : ''
-                  )}
-                />
-                {bookmarked ? 'Saved' : 'Save'}
-              </Button>
-            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleBookmarkClick}
+              className="gap-2"
+              title={bookmarked ? 'Remove from favorites' : 'Add to favorites'}
+            >
+              <Star
+                className={cn(
+                  'w-4 h-4',
+                  bookmarked ? 'fill-yellow-400 text-yellow-400' : ''
+                )}
+              />
+              {bookmarked ? 'Saved' : 'Save'}
+            </Button>
             {/* Social Share Buttons */}
             <SocialShareButtons
               prompt={prompt}

@@ -19,9 +19,10 @@ interface PromptViewProps {
   isLoading: boolean;
   error: Error | null;
   onUserClick?: (userId: string) => void;
+  onAuthRequired?: () => void;
 }
 
-export function PromptView({ prompts, isLoading, error, onUserClick }: PromptViewProps) {
+export function PromptView({ prompts, isLoading, error, onUserClick, onAuthRequired }: PromptViewProps) {
   const isAuthenticated = useIsAuthenticated();
   const isPremium = useIsPremium();
   const recordPromptView = useAppStore((state) => state.recordPromptView);
@@ -137,18 +138,17 @@ export function PromptView({ prompts, isLoading, error, onUserClick }: PromptVie
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {isAuthenticated && (
-            <DoodleUpload
-              promptId={todayPrompt.id}
-              promptTitle={todayPrompt.title}
-              onUploadSuccess={handleUploadSuccess}
-            />
-          )}
+          <DoodleUpload
+            promptId={todayPrompt.id}
+            promptTitle={todayPrompt.title}
+            onUploadSuccess={handleUploadSuccess}
+            onAuthRequired={onAuthRequired}
+          />
         </div>
       </div>
 
       {/* Main Prompt Card */}
-      <PromptCard prompt={todayPrompt} showShare={false} className="mb-4" />
+      <PromptCard prompt={todayPrompt} showShare={false} className="mb-4" onAuthRequired={onAuthRequired} />
 
       {/* Social Share Section */}
       <div className="mb-8 pb-4 border-b">
@@ -178,6 +178,7 @@ export function PromptView({ prompts, isLoading, error, onUserClick }: PromptVie
               columns={3}
               emptyMessage="No doodles shared yet. Be the first!"
               onUserClick={onUserClick}
+              onAuthRequired={onAuthRequired}
             />
           </CardContent>
         </Card>
@@ -216,6 +217,7 @@ export function PromptView({ prompts, isLoading, error, onUserClick }: PromptVie
                 prompt={prompt}
                 variant="compact"
                 onClick={() => handlePromptClick(prompt)}
+                onAuthRequired={onAuthRequired}
               />
             ))}
           </div>
@@ -234,6 +236,7 @@ export function PromptView({ prompts, isLoading, error, onUserClick }: PromptVie
         prompt={selectedPrompt}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
+        onAuthRequired={onAuthRequired}
       />
     </div>
   );

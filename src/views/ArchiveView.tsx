@@ -34,6 +34,7 @@ interface ArchiveViewProps {
   error: Error | null;
   onUpgrade: () => void;
   initialPromptId?: string;
+  onAuthRequired?: () => void;
 }
 
 export function ArchiveView({
@@ -42,6 +43,7 @@ export function ArchiveView({
   error,
   onUpgrade,
   initialPromptId,
+  onAuthRequired,
 }: ArchiveViewProps) {
   const isPremium = useIsPremium();
   const getAppSettings = useAppStore((state) => state.getAppSettings);
@@ -315,6 +317,7 @@ export function ArchiveView({
                 onClick={isPromptAccessible(prompt) ? () => handlePromptClick(prompt) : undefined}
                 onTagClick={handleTagClick}
                 onCategoryClick={handleCategoryClick}
+                onAuthRequired={onAuthRequired}
               />
             </div>
           ))}
@@ -328,6 +331,7 @@ export function ArchiveView({
         onOpenChange={setDialogOpen}
         onTagClick={handleTagClick}
         onCategoryClick={handleCategoryClick}
+        onAuthRequired={onAuthRequired}
       />
     </div>
   );

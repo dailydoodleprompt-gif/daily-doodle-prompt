@@ -10,6 +10,7 @@ interface FollowButtonProps {
   variant?: 'default' | 'outline' | 'ghost';
   showIcon?: boolean;
   className?: string;
+  onAuthRequired?: () => void;
 }
 
 export function FollowButton({
@@ -19,6 +20,7 @@ export function FollowButton({
   variant = 'default',
   showIcon = true,
   className,
+  onAuthRequired,
 }: FollowButtonProps) {
   const currentUser = useUser();
   const isAuthenticated = useIsAuthenticated();
@@ -27,12 +29,18 @@ export function FollowButton({
   const unfollowUser = useAppStore((state) => state.unfollowUser);
 
   // Can't follow yourself
-  if (!isAuthenticated || currentUser?.id === userId) {
+  if (currentUser?.id === userId) {
     return null;
   }
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+
+    // Prompt login if not authenticated
+    if (!isAuthenticated) {
+      onAuthRequired?.();
+      return;
+    }
 
     if (isFollowing) {
       unfollowUser(userId);

@@ -10,11 +10,13 @@ import { Bookmark, Archive } from 'lucide-react';
 interface BookmarksViewProps {
   prompts: Prompt[];
   onBrowseArchive: () => void;
+  onAuthRequired?: () => void;
 }
 
 export function BookmarksView({
   prompts,
   onBrowseArchive,
+  onAuthRequired,
 }: BookmarksViewProps) {
   const bookmarks = useBookmarks();
   const [selectedPrompt, setSelectedPrompt] = useState<Prompt | null>(null);
@@ -71,6 +73,7 @@ export function BookmarksView({
             prompt={prompt}
             variant="compact"
             onClick={() => handlePromptClick(prompt)}
+            onAuthRequired={onAuthRequired}
           />
         ))}
       </div>
@@ -80,6 +83,7 @@ export function BookmarksView({
         prompt={selectedPrompt}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
+        onAuthRequired={onAuthRequired}
       />
     </div>
   );

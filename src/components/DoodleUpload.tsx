@@ -21,12 +21,13 @@ interface DoodleUploadProps {
   promptId: string;
   promptTitle: string;
   onUploadSuccess?: () => void;
+  onAuthRequired?: () => void;
 }
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
 
-export function DoodleUpload({ promptId, promptTitle, onUploadSuccess }: DoodleUploadProps) {
+export function DoodleUpload({ promptId, promptTitle, onUploadSuccess, onAuthRequired }: DoodleUploadProps) {
   const [open, setOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -114,18 +115,22 @@ export function DoodleUpload({ promptId, promptTitle, onUploadSuccess }: DoodleU
     }
   };
 
-  // Not authenticated - prompt to sign in (show toast on click)
+  // Not authenticated - prompt to sign in
   if (!isAuthenticated) {
     const handleSignInPrompt = () => {
-      toast.info('Sign in Required', {
-        description: 'Create a free account to upload doodles.',
-      });
+      if (onAuthRequired) {
+        onAuthRequired();
+      } else {
+        toast.info('Sign in Required', {
+          description: 'Create a free account to upload doodles.',
+        });
+      }
     };
 
     return (
       <Button variant="outline" onClick={handleSignInPrompt} className="gap-2">
-        <Lock className="h-4 w-4" />
-        Sign in to Upload
+        <Upload className="h-4 w-4" />
+        Upload Doodle
       </Button>
     );
   }

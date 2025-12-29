@@ -46,9 +46,10 @@ interface DoodleFeedProps {
   className?: string;
   onUserClick?: (userId: string) => void;
   onPromptClick?: (promptId: string) => void;
+  onAuthRequired?: () => void;
 }
 
-export function DoodleFeed({ prompts, className, onUserClick, onPromptClick }: DoodleFeedProps) {
+export function DoodleFeed({ prompts, className, onUserClick, onPromptClick, onAuthRequired }: DoodleFeedProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [doodleToDelete, setDoodleToDelete] = useState<{ id: string; isAdmin: boolean } | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -170,6 +171,7 @@ export function DoodleFeed({ prompts, className, onUserClick, onPromptClick }: D
                       onPromptClick={onPromptClick}
                       isAdmin={isAdmin}
                       onDeleteClick={openDeleteDialog}
+                      onAuthRequired={onAuthRequired}
                     />
                   )}
                 </div>
@@ -263,9 +265,10 @@ interface DoodleFeedItemProps {
   onPromptClick?: (promptId: string) => void;
   isAdmin?: boolean;
   onDeleteClick?: (doodleId: string, asAdmin: boolean) => void;
+  onAuthRequired?: () => void;
 }
 
-function DoodleFeedItem({ doodle, onUserClick, onPromptClick, isAdmin, onDeleteClick }: DoodleFeedItemProps) {
+function DoodleFeedItem({ doodle, onUserClick, onPromptClick, isAdmin, onDeleteClick, onAuthRequired }: DoodleFeedItemProps) {
   const user = useUser();
   const isOwn = doodle.user_id === user?.id;
   const username = doodle.user_username || 'Artist';
@@ -357,6 +360,7 @@ function DoodleFeedItem({ doodle, onUserClick, onPromptClick, isAdmin, onDeleteC
             likesCount={doodle.likes_count}
             isOwnDoodle={isOwn}
             size="sm"
+            onAuthRequired={onAuthRequired}
           />
         </div>
       </div>

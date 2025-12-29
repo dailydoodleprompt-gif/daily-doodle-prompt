@@ -11,6 +11,7 @@ interface LikeButtonProps {
   size?: 'sm' | 'default';
   className?: string;
   onLikeChange?: (newCount: number, isLiked: boolean) => void;
+  onAuthRequired?: () => void;
 }
 
 export function LikeButton({
@@ -20,6 +21,7 @@ export function LikeButton({
   size = 'default',
   className,
   onLikeChange,
+  onAuthRequired,
 }: LikeButtonProps) {
   const isAuthenticated = useIsAuthenticated();
   const user = useUser();
@@ -46,7 +48,14 @@ export function LikeButton({
 
   const handleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!isAuthenticated || isOwnDoodle) return;
+
+    // Prompt login if not authenticated
+    if (!isAuthenticated) {
+      onAuthRequired?.();
+      return;
+    }
+
+    if (isOwnDoodle) return;
 
     // Trigger animation
     setIsAnimating(true);
@@ -72,22 +81,35 @@ export function LikeButton({
         // Badge is already awarded in likeDoodle, but we ensure UI feedback
       }
     }
-  }, [isAuthenticated, isOwnDoodle, isLiked, doodleId, displayCount, likeDoodle, unlikeDoodle, onLikeChange, hasBadge]);
+  }, [isAuthenticated, isOwnDoodle, isLiked, doodleId, displayCount, likeDoodle, unlikeDoodle, onLikeChange, hasBadge, onAuthRequired]);
 
   const iconSize = size === 'sm' ? 'h-3 w-3' : 'h-4 w-4';
   const buttonSize = size === 'sm' ? 'h-7 px-2 text-xs' : 'h-9 px-3';
+
+  // Don't render for own doodles - they can't like their own
+  if (isOwnDoodle) {
+    return (
+      <Button
+        variant="ghost"
+        size="sm"
+        disabled
+        className={cn('gap-1.5', buttonSize, 'cursor-default opacity-70', className)}
+      >
+        <Heart className={cn(iconSize)} />
+        <span>{displayCount}</span>
+      </Button>
+    );
+  }
 
   return (
     <Button
       variant="ghost"
       size="sm"
       onClick={handleClick}
-      disabled={!isAuthenticated || isOwnDoodle}
       className={cn(
         'gap-1.5',
         buttonSize,
         isLiked && 'text-red-500 hover:text-red-600',
-        isOwnDoodle && 'cursor-default opacity-70',
         className
       )}
     >

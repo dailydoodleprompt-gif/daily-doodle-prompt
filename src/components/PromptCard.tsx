@@ -31,6 +31,7 @@ interface PromptCardProps {
   onCategoryClick?: (category: string) => void;
   isLocked?: boolean;
   className?: string;
+  onAuthRequired?: () => void;
 }
 
 export function PromptCard({
@@ -44,6 +45,7 @@ export function PromptCard({
   onCategoryClick,
   isLocked = false,
   className,
+  onAuthRequired,
 }: PromptCardProps) {
   const { user, addBookmark, removeBookmark, isBookmarked, getAppSettings } = useAppStore();
   const bookmarked = isBookmarked(prompt.id);
@@ -51,7 +53,10 @@ export function PromptCard({
   const tagsEnabled = getAppSettings().tags_enabled;
 
   const handleBookmarkClick = () => {
-    if (!user) return;
+    if (!user) {
+      onAuthRequired?.();
+      return;
+    }
 
     if (bookmarked) {
       removeBookmark(prompt.id);
@@ -194,7 +199,7 @@ export function PromptCard({
             )}
           </div>
           <div className="flex items-center gap-2">
-            {showBookmark && user && (
+            {showBookmark && (
               <Button
                 variant="ghost"
                 size="icon"
