@@ -4,6 +4,7 @@ import { PromptCard } from '@/components/PromptCard';
 import { PromptDetailDialog } from '@/components/PromptDetailDialog';
 import { SocialShareButtons } from '@/components/SocialShareButtons';
 import { DoodleUpload } from '@/components/DoodleUpload';
+import { DoodleUploadSuccessDialog } from '@/components/DoodleUploadSuccessDialog';
 import { DoodleGallery } from '@/components/DoodleGallery';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -11,7 +12,6 @@ import { Separator } from '@/components/ui/separator';
 import { useAppStore, useIsAuthenticated, useIsPremium } from '@/store/app-store';
 import { Calendar, AlertCircle, Image, Sparkles } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { toast } from 'sonner';
 import { getTodayEST, getDateOffsetFromBase, formatPromptDateDisplay } from '@/lib/timezone';
 
 interface PromptViewProps {
@@ -30,6 +30,10 @@ export function PromptView({ prompts, isLoading, error, onUserClick, onAuthRequi
   const [selectedPrompt, setSelectedPrompt] = useState<Prompt | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+
+  // Success dialog state (lifted from DoodleUpload to avoid race condition)
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [uploadedDoodleData, setUploadedDoodleData] = useState<{ imageUrl: string; promptTitle: string } | null>(null);
 
   const handlePromptClick = (prompt: Prompt) => {
     setSelectedPrompt(prompt);
@@ -118,9 +122,10 @@ export function PromptView({ prompts, isLoading, error, onUserClick, onAuthRequi
   // Get doodles for today's prompt
   const promptDoodles = todayPrompt ? getPromptDoodles(todayPrompt.id) : [];
 
-  const handleUploadSuccess = () => {
+  const handleUploadSuccess = (data: { imageUrl: string; promptTitle: string }) => {
+    setUploadedDoodleData(data);
+    setShowSuccessDialog(true);
     setRefreshKey((k) => k + 1);
-    toast.success('Doodle uploaded successfully!');
   };
 
   return (
@@ -237,6 +242,14 @@ export function PromptView({ prompts, isLoading, error, onUserClick, onAuthRequi
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         onAuthRequired={onAuthRequired}
+      />
+
+      {/* Doodle Upload Success Dialog */}
+      <DoodleUploadSuccessDialog
+        open={showSuccessDialog}
+        onOpenChange={setShowSuccessDialog}
+        imageUrl={uploadedDoodleData?.imageUrl || ''}
+        promptTitle={uploadedDoodleData?.promptTitle || ''}
       />
     </div>
   );
