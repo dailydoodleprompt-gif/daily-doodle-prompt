@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -7,14 +6,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import {
-  Twitter,
-  Facebook,
-  Link2,
-  Check,
-  PartyPopper,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { PartyPopper } from 'lucide-react';
 
 interface DoodleUploadSuccessDialogProps {
   open: boolean;
@@ -29,40 +21,7 @@ export function DoodleUploadSuccessDialog({
   imageUrl,
   promptTitle,
 }: DoodleUploadSuccessDialogProps) {
-  const [copied, setCopied] = useState(false);
-
-  // Debug logging
-  console.log('[DoodleUploadSuccessDialog] Render:', { open, imageUrl, promptTitle });
-
-  const shareText = `I just completed today's doodle prompt: "${promptTitle}" on Daily Doodle Prompt! 🎨\n\nJoin me:`;
-  const shareUrl = 'https://www.dailydoodleprompt.com';
-
-  const handleTwitterShare = () => {
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-      `${shareText} ${shareUrl}`
-    )}`;
-    window.open(twitterUrl, '_blank', 'width=550,height=420');
-  };
-
-  const handleFacebookShare = () => {
-    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-      shareUrl
-    )}&quote=${encodeURIComponent(shareText)}`;
-    window.open(facebookUrl, '_blank', 'width=550,height=420');
-  };
-
-  const handleCopyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy link:', err);
-    }
-  };
-
   const handleClose = () => {
-    setCopied(false);
     onOpenChange(false);
   };
 
@@ -97,72 +56,18 @@ export function DoodleUploadSuccessDialog({
         )}
 
         {/* Prompt Title */}
-        <p className="text-center text-sm text-muted-foreground mb-4">
+        <p className="text-center text-sm text-muted-foreground">
           <span className="font-medium text-foreground">{promptTitle}</span>
         </p>
 
-        {/* Share Section */}
-        <div className="space-y-3">
-          <p className="text-center text-sm font-medium">
-            Share your achievement!
-          </p>
-
-          <div className="flex justify-center gap-3">
-            {/* Twitter/X */}
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={handleTwitterShare}
-              className="flex-1 gap-2 hover:bg-[#1DA1F2]/10 hover:text-[#1DA1F2] hover:border-[#1DA1F2]"
-            >
-              <Twitter className="h-5 w-5" />
-              Twitter
-            </Button>
-
-            {/* Facebook */}
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={handleFacebookShare}
-              className="flex-1 gap-2 hover:bg-[#4267B2]/10 hover:text-[#4267B2] hover:border-[#4267B2]"
-            >
-              <Facebook className="h-5 w-5" />
-              Facebook
-            </Button>
-
-            {/* Copy Link */}
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={handleCopyLink}
-              className={cn(
-                'flex-1 gap-2',
-                copied && 'bg-green-50 text-green-600 border-green-500 dark:bg-green-900/20'
-              )}
-            >
-              {copied ? (
-                <>
-                  <Check className="h-5 w-5" />
-                  Copied!
-                </>
-              ) : (
-                <>
-                  <Link2 className="h-5 w-5" />
-                  Copy
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-
         {/* Close Button */}
-        <div className="mt-4 pt-4 border-t">
+        <div className="mt-4">
           <Button
-            variant="ghost"
+            variant="default"
             onClick={handleClose}
-            className="w-full text-muted-foreground"
+            className="w-full"
           >
-            Maybe later
+            Done
           </Button>
         </div>
       </DialogContent>
