@@ -7,14 +7,12 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { DoodleImage } from '@/components/DoodleImage';
 import {
   Twitter,
   Facebook,
   Link2,
   Check,
   PartyPopper,
-  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -86,15 +84,17 @@ export function DoodleUploadSuccessDialog({
         </DialogHeader>
 
         {/* Doodle Preview */}
-        <div className="flex justify-center my-4">
-          <div className="relative w-48 h-48 rounded-lg overflow-hidden border-2 border-primary/20 shadow-lg">
-            <DoodleImage
-              src={imageUrl}
-              alt={promptTitle}
-              className="w-full h-full"
-            />
+        {imageUrl && (
+          <div className="flex justify-center my-4">
+            <div className="relative w-48 h-48 rounded-lg overflow-hidden border-2 border-primary/20 shadow-lg">
+              <img
+                src={imageUrl}
+                alt={promptTitle}
+                className="w-full h-full object-cover"
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Prompt Title */}
         <p className="text-center text-sm text-muted-foreground mb-4">
