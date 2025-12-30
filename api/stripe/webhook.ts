@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
 import { Redis } from '@upstash/redis';
+import { createClient } from '@supabase/supabase-js';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2025-11-17.clover',
@@ -8,6 +9,27 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
 
 // Upstash/Vercel KV (REST) client
 const kv = Redis.fromEnv();
+
+// Supabase client with service role for webhook operations
+function getSupabaseAdmin() {
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    console.error('[Webhook] ❌ Missing Supabase env vars:', {
+      hasUrl: !!supabaseUrl,
+      hasServiceKey: !!supabaseServiceKey,
+    });
+    return null;
+  }
+
+  return createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
+}
 
 // IMPORTANT: Stripe needs the raw body
 export const config = {
@@ -47,7 +69,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!webhookSecret) {
-    console.error('❌ STRIPE_WEBHOOK_SECRET missing in env');
+    console.error('[Webhook] ❌ STRIPE_WEBHOOK_SECRET missing in env');
     return res.status(500).json({ error: 'Webhook secret not configured' });
   }
 
@@ -62,9 +84,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const rawBody = await getRawBody(req);
     event = stripe.webhooks.constructEvent(rawBody, String(sig), webhookSecret);
   } catch (err: any) {
-    console.error('❌ Signature verification failed:', err?.message || err);
+    console.error('[Webhook] ❌ Signature verification failed:', err?.message || err);
     return res.status(400).json({ error: 'Invalid signature' });
   }
+
+  console.log(`[Webhook] Received ${event.type} (${event.id})`);
 
   // ✅ Idempotency guard #1: event-level de-dupe
   // If Stripe retries the SAME event.id, we instantly ACK it.
@@ -73,12 +97,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const firstTimeForEvent = await claimOnce(eventKey);
 
     if (!firstTimeForEvent) {
-      console.log(`↩️ Duplicate Stripe event ignored: ${event.id} (${event.type})`);
+      console.log(`[Webhook] ↩️ Duplicate Stripe event ignored: ${event.id} (${event.type})`);
       return res.status(200).json({ received: true, duplicate: true });
     }
   } catch (err: any) {
     // If we cannot de-dupe (KV outage), we should 500 so Stripe retries later
-    console.error('❌ Failed to claim idempotency event key:', err?.message || err, {
+    console.error('[Webhook] ❌ Failed to claim idempotency event key:', err?.message || err, {
       eventType: event.type,
       eventId: event.id,
     });
@@ -93,12 +117,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         // Prefer client_reference_id, fall back to metadata
         const userId = session.client_reference_id || session.metadata?.userId || null;
-
         const userEmail = session.customer_email || session.metadata?.userEmail || null;
+        const stripeCustomerId = typeof session.customer === 'string' ? session.customer : null;
+
+        console.log('[Webhook] Processing checkout.session.completed:', {
+          sessionId: session.id,
+          userId,
+          userEmail,
+          stripeCustomerId,
+          amount: session.amount_total,
+        });
 
         if (!userId) {
           // Don't 500 Stripe for missing metadata — log and ack
-          console.warn('⚠️ checkout.session.completed missing userId. session:', session.id);
+          console.warn('[Webhook] ⚠️ checkout.session.completed missing userId. session:', session.id);
           return res.status(200).json({ received: true, warning: 'missing_userId' });
         }
 
@@ -108,27 +140,100 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const firstTimeForSession = await claimOnce(sessionProcessedKey);
 
         if (!firstTimeForSession) {
-          console.log(`↩️ Duplicate checkout session ignored: ${session.id} (user ${userId})`);
+          console.log(`[Webhook] ↩️ Duplicate checkout session ignored: ${session.id} (user ${userId})`);
           return res.status(200).json({ received: true, duplicateSession: true });
         }
 
+        // ============================================
+        // STEP 1: Update Supabase profiles table FIRST
+        // ============================================
+        const supabase = getSupabaseAdmin();
+        if (!supabase) {
+          console.error('[Webhook] ❌ Supabase client not available');
+          return res.status(500).json({ error: 'Database not configured' });
+        }
+
+        const now = new Date().toISOString();
+
+        // Update premium status in profiles table
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            is_premium: true,
+            stripe_customer_id: stripeCustomerId,
+            updated_at: now,
+          })
+          .eq('id', userId);
+
+        if (updateError) {
+          console.error('[Webhook] ❌ Database update failed:', {
+            code: updateError.code,
+            message: updateError.message,
+            details: updateError.details,
+            userId,
+          });
+          // Return 500 so Stripe retries the webhook
+          return res.status(500).json({
+            error: 'Database update failed',
+            details: updateError.message,
+          });
+        }
+
+        console.log('[Webhook] ✅ Premium status updated for user:', userId);
+
+        // ============================================
+        // STEP 2: Award premium_patron badge
+        // ============================================
+        const { error: badgeError } = await supabase
+          .from('user_badges')
+          .insert({
+            user_id: userId,
+            badge_id: 'premium_patron',
+            earned_at: now,
+          });
+
+        if (badgeError) {
+          // Check if it's a duplicate key error (badge already exists)
+          if (badgeError.code === '23505') {
+            console.log('[Webhook] ℹ️ premium_patron badge already exists for user:', userId);
+          } else {
+            // Log but don't fail - premium is already activated
+            console.warn('[Webhook] ⚠️ Badge award failed:', {
+              code: badgeError.code,
+              message: badgeError.message,
+              userId,
+            });
+          }
+        } else {
+          console.log('[Webhook] ✅ premium_patron badge awarded to user:', userId);
+        }
+
+        // ============================================
+        // STEP 3: Store audit record in KV (backup)
+        // ============================================
         const record = {
           userId,
           userEmail,
           stripeSessionId: session.id,
-          stripeCustomerId: session.customer ?? null,
+          stripeCustomerId,
           paymentIntent: session.payment_intent ?? null,
           amountTotal: session.amount_total ?? null,
           currency: session.currency ?? null,
-          purchasedAt: new Date().toISOString(),
+          purchasedAt: now,
           sourceEvent: event.id,
+          supabaseUpdated: true,
         };
 
-        // ✅ Durable writes (source of truth + session audit trail)
-        await kv.set(`user:${userId}:premium`, record);
-        await kv.set(`stripe:session:${session.id}`, record);
+        try {
+          await kv.set(`user:${userId}:premium`, record);
+          await kv.set(`stripe:session:${session.id}`, record);
+          console.log('[Webhook] ✅ Audit record stored in KV');
+        } catch (kvErr: any) {
+          // Log but don't fail - Supabase is the source of truth
+          console.warn('[Webhook] ⚠️ KV storage failed (non-critical):', kvErr?.message || kvErr);
+        }
 
-        console.log('✅ Persisted premium purchase for user:', userId);
+        console.log('[Webhook] ✅ Webhook processed successfully for user:', userId);
         break;
       }
 
@@ -136,21 +241,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // PaymentIntent events do NOT include your userId metadata in your current flow.
         // We ACK them so Stripe stops retrying, and rely on checkout.session.completed for persistence.
         const pi = event.data.object as Stripe.PaymentIntent;
-        console.log('ℹ️ payment_intent.succeeded received:', pi.id);
+        console.log('[Webhook] ℹ️ payment_intent.succeeded received:', pi.id);
         break;
       }
 
       default: {
         // Acknowledge everything else
+        console.log(`[Webhook] ℹ️ Unhandled event type: ${event.type}`);
         break;
       }
     }
 
     return res.status(200).json({ received: true });
   } catch (err: any) {
-    console.error('❌ Webhook handler crashed:', err?.message || err, {
+    console.error('[Webhook] ❌ Webhook handler crashed:', err?.message || err, {
       eventType: event.type,
       eventId: event.id,
+      stack: err?.stack,
     });
 
     // Important: returning 500 means Stripe will retry the event
