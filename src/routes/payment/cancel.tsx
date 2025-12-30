@@ -15,6 +15,11 @@ function PaymentCancelRoute() {
           return;
         }
 
+        if (view === 'prompt') {
+          window.location.href = '/prompt';
+          return;
+        }
+
         // Safe fallback
         window.location.href = '/';
       }}
