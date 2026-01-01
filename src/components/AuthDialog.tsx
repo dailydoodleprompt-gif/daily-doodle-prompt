@@ -17,6 +17,7 @@ import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Loader2, Pencil, Eye, EyeOff } from 'lucide-react';
+import { containsProfanity } from '@/lib/profanity-filter';
 import { supabase } from '@/sdk/core/supabase';
 
 const loginSchema = z.object({
@@ -30,7 +31,11 @@ const signupSchema = z.object({
     .string()
     .min(3, 'Username must be at least 3 characters')
     .max(20, 'Username must be at most 20 characters')
-    .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
+    .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores')
+    .refine(
+      (val) => !containsProfanity(val),
+      'Username contains inappropriate content'
+    ),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {

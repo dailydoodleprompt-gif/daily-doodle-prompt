@@ -16,6 +16,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useUser } from '@/store/app-store';
 import { AlertCircle, Loader2, User, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { containsProfanity } from '@/lib/profanity-filter';
 import { supabase } from '@/sdk/core/supabase';
 
 const usernameSchema = z.object({
@@ -26,6 +27,10 @@ const usernameSchema = z.object({
     .regex(
       /^[a-zA-Z0-9_]+$/,
       'Username can only contain letters, numbers, and underscores'
+    )
+    .refine(
+      (val) => !containsProfanity(val),
+      'Username contains inappropriate content'
     ),
 });
 
