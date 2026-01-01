@@ -1,5 +1,4 @@
-// @ts-nocheck
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAppStore, useUser, useIsAdmin } from '@/store/app-store';
 import { type Doodle } from '@/types';
 import { LikeButton } from '@/components/LikeButton';
@@ -80,9 +79,9 @@ export function DoodleGallery({
   const toggleDoodleVisibility = useAppStore((state) => state.toggleDoodleVisibility);
 
   // Sync local doodles with props
-  useState(() => {
+  useEffect(() => {
     setLocalDoodles(doodles);
-  });
+  }, [doodles]);
 
   const columnClasses = {
     2: 'grid-cols-2',

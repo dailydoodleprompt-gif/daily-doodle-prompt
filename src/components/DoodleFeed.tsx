@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useMemo } from 'react';
 import { useAppStore, useUser, useIsAdmin } from '@/store/app-store';
 import { type Doodle } from '@/types';
