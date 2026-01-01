@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -302,6 +303,9 @@ export function DoodleGallery({
                 {selectedDoodle?.prompt_title}
               </button>
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              Detailed view of doodle for {selectedDoodle?.prompt_title}
+            </DialogDescription>
           </DialogHeader>
 
           {selectedDoodle && (
