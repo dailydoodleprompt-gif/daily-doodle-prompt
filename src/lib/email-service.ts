@@ -1,6 +1,8 @@
 // src/lib/email-service.ts
 // REAL production email service using /api/send-email
 
+import { getAuthToken } from '@/sdk/core/auth';
+
 export interface EmailParams {
   to: string;
   subject: string;
@@ -20,9 +22,18 @@ export async function sendEmail(
   params: EmailParams,
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    const token = getAuthToken();
+    if (!token) {
+      console.warn('[EMAIL SERVICE] No auth token available');
+      return { success: false, error: 'Authentication required' };
+    }
+
     const response = await fetch('/api/send-email', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
       body: JSON.stringify({
         to: params.to,
         subject: params.subject,

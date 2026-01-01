@@ -1,9 +1,42 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { createClient } from '@supabase/supabase-js';
+
+function getBearerToken(req: VercelRequest): string | null {
+  const header =
+    (req.headers.authorization as string | undefined) ||
+    (req.headers.Authorization as string | undefined);
+  if (!header) return null;
+  const match = header.match(/^Bearer\s+(.+)$/i);
+  return match?.[1] ?? null;
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
     return;
+  }
+
+  // Security: Require authentication to prevent abuse
+  const token = getBearerToken(req);
+  if (!token) {
+    res.status(401).json({ error: 'Authentication required' });
+    return;
+  }
+
+  // Validate the token
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+
+  if (supabaseUrl && supabaseAnonKey) {
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+
+    const { error: authError } = await supabase.auth.getUser(token);
+    if (authError) {
+      res.status(401).json({ error: 'Invalid token' });
+      return;
+    }
   }
 
   try {
@@ -16,6 +49,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!to || !subject || !text) {
       res.status(400).json({ error: 'Missing required fields' });
+      return;
+    }
+
+    // Security: Only allow sending to the configured admin email
+    const allowedRecipient = process.env.SUPPORT_INBOX_EMAIL || process.env.VITE_SUPPORT_INBOX_EMAIL;
+    if (!allowedRecipient || to !== allowedRecipient) {
+      res.status(403).json({ error: 'Recipient not allowed' });
       return;
     }
 

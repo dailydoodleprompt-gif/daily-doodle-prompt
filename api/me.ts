@@ -66,22 +66,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const {
       username,
-      is_premium,
-      is_admin,
-      stripe_customer_id,
-      stripe_session_id,
       avatar_type,
       avatar_icon,
       current_title,
       viewed_badges
     } = req.body;
 
+    // Security: Only allow users to update safe fields
+    // is_premium, is_admin, stripe_* fields should ONLY be set by server-side code (webhooks, admin)
     const updates: any = {};
     if (username !== undefined) updates.username = username;
-    if (is_premium !== undefined) updates.is_premium = is_premium;
-    if (is_admin !== undefined) updates.is_admin = is_admin;
-    if (stripe_customer_id !== undefined) updates.stripe_customer_id = stripe_customer_id;
-    if (stripe_session_id !== undefined) updates.stripe_session_id = stripe_session_id;
     if (avatar_type !== undefined) updates.avatar_type = avatar_type;
     if (avatar_icon !== undefined) updates.avatar_icon = avatar_icon;
     if (current_title !== undefined) updates.current_title = current_title;
