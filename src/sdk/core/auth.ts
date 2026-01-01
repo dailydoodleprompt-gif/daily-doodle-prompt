@@ -84,8 +84,6 @@ const useAuthStore = create<AuthStore>((set, get): AuthStore => ({
 
   // Validate token by making a request to the /me endpoint
   validateToken: async (token: string): Promise<boolean> => {
-    console.log("Validating token...", { API_BASE_URL });
-
     if (!API_BASE_URL) {
       console.error("API_BASE_URL is not set");
       return false;
@@ -100,7 +98,6 @@ const useAuthStore = create<AuthStore>((set, get): AuthStore => ({
         },
       });
 
-      console.log("Token validation response:", response.status, response.ok);
       return response.ok;
     } catch (error) {
       console.warn("Token validation failed:", error);
@@ -205,7 +202,6 @@ const useAuthStore = create<AuthStore>((set, get): AuthStore => ({
   },
 
   initialize: async (): Promise<void> => {
-    console.log("Auth initialization started");
     try {
       await initializeFromStorage(get, set);
       await initializeFromUrl(get);
@@ -217,18 +213,10 @@ const useAuthStore = create<AuthStore>((set, get): AuthStore => ({
 
       if (currentStatus === "loading") {
         if (existingToken) {
-          console.log(
-            "Auth initialization complete – token found, setting to authenticated",
-          );
           set({ status: "authenticated" });
         } else {
-          console.log(
-            "Auth initialization complete – no token, setting to unauthenticated",
-          );
           set({ status: "unauthenticated" });
         }
-      } else {
-        console.log("Auth initialization complete – status:", currentStatus);
       }
     } catch (error) {
       console.error("Auth initialization failed:", error);
@@ -251,16 +239,13 @@ async function initializeFromStorage(
   get: () => AuthStore,
   set: (state: Partial<AuthStore>) => void,
 ): Promise<void> {
-  console.log("🟢 STORAGE INIT START");
-
   try {
     // First, try to get session from Supabase directly
     const { data: { session }, error } = await supabase.auth.getSession();
-    
+
     if (session?.access_token && !error) {
-      console.log("🟢 SUPABASE SESSION FOUND");
       const isValid = await get().validateToken(session.access_token);
-      
+
       if (isValid) {
         persistTokenEverywhere(session.access_token);
         set({
@@ -268,14 +253,12 @@ async function initializeFromStorage(
           status: "authenticated",
           parentOrigin: "supabase",
         });
-        console.log("✅ AUTH RESTORED (supabase session)");
         return;
       }
     }
 
     // Fallback to existing logic (canonical key)
     const rawSession = localStorage.getItem("dailydoodle_session_persist");
-    console.log("🟢 CANONICAL SESSION:", rawSession);
 
     if (rawSession) {
       const session = JSON.parse(rawSession);
@@ -283,7 +266,6 @@ async function initializeFromStorage(
         session?.token || session?.accessToken || session?.authToken || null;
 
       if (!restoredToken) {
-        console.log("⚠️ CANONICAL SESSION FOUND BUT NO TOKEN — clearing");
         localStorage.removeItem("dailydoodle_session_persist");
         set({ status: "unauthenticated", token: null });
         return;
@@ -291,7 +273,6 @@ async function initializeFromStorage(
 
       const isValid = await get().validateToken(restoredToken);
       if (!isValid) {
-        console.log("⚠️ CANONICAL TOKEN INVALID — clearing");
         localStorage.removeItem("dailydoodle_session_persist");
         set({ status: "unauthenticated", token: null });
         return;
@@ -302,24 +283,19 @@ async function initializeFromStorage(
         status: "authenticated",
         parentOrigin: "persist",
       });
-
-      console.log("✅ AUTH RESTORED (canonical)");
       return;
     }
 
     // Last fallback: try importing from Supabase storage
     const supaToken = readSupabaseAccessTokenFromStorage();
-    console.log("🟡 SUPABASE IMPORT TOKEN PRESENT:", !!supaToken);
 
     if (!supaToken) {
-      console.log("⚠️ NO STORED SESSION FOUND (canonical or supabase)");
       set({ status: "unauthenticated", token: null });
       return;
     }
 
     const isValid = await get().validateToken(supaToken);
     if (!isValid) {
-      console.log("⚠️ SUPABASE TOKEN INVALID — NOT IMPORTING");
       set({ status: "unauthenticated", token: null });
       return;
     }
@@ -331,16 +307,12 @@ async function initializeFromStorage(
       status: "authenticated",
       parentOrigin: "supabase-import",
     });
-
-    console.log("✅ AUTH RESTORED (imported from supabase storage)");
   } catch (error) {
-    console.error("❌ STORAGE INIT FAILED:", error);
+    console.error("Storage init failed:", error);
     try {
       localStorage.removeItem("dailydoodle_session_persist");
     } catch {}
     set({ status: "unauthenticated", token: null });
-  } finally {
-    console.log("🔴 STORAGE INIT END");
   }
 }
 
@@ -425,9 +397,8 @@ async function initializeFromUrl(get: () => AuthStore): Promise<void> {
 function setupMessageListener(get: () => AuthStore): void {
   // Only listen for Creao auth messages if we're NOT forcing real auth
   const useRealAuth = import.meta.env.VITE_USE_REAL_AUTH === 'true';
-  
+
   if (useRealAuth) {
-    console.log("🔒 Real auth mode enabled - ignoring Creao demo auth");
     return;
   }
 
@@ -487,7 +458,6 @@ export function useCreaoAuth() {
 
 export async function initializeAuthIntegration(): Promise<void> {
   await ensureInitialized();
-  console.log("Auth integration initialized");
 }
 
 export function getAuthToken(): string | null {

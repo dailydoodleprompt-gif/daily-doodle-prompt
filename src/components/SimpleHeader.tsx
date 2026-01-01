@@ -45,33 +45,17 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
 
     async function loadUser() {
       try {
-        console.log('[SimpleHeader] Loading user...');
-        
         const { data: { session }, error } = await supabase.auth.getSession();
-        
-        console.log('[SimpleHeader] Session check:', {
-          hasSession: !!session,
-          hasToken: !!session?.access_token,
-          error: error?.message
-        });
-        
+
         if (!mounted) return;
-        
+
         if (session?.access_token) {
-          console.log('[SimpleHeader] Fetching user profile...');
           const response = await fetch('/api/me', {
             headers: { Authorization: `Bearer ${session.access_token}` },
           });
 
           if (response.ok) {
             const data = await response.json();
-            console.log('[SimpleHeader] User loaded:', data.email);
-            console.log('[SimpleHeader] Profile data from API:', {
-              avatar_type: data.avatar_type,
-              avatar_icon: data.avatar_icon,
-              current_title: data.current_title,
-              viewed_badges: data.viewed_badges
-            });
 
             if (mounted) {
               // Set user in app store - include avatar and title fields!
@@ -97,19 +81,17 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
               await loadUserData(data.id);
             }
           } else {
-            console.error('[SimpleHeader] Failed to fetch user:', response.status);
             if (mounted) {
               clearUserData();
             }
           }
         } else {
-          console.log('[SimpleHeader] No session found');
           if (mounted) {
             clearUserData();
           }
         }
       } catch (error) {
-        console.error('[SimpleHeader] Error loading user:', error);
+        console.error('Error loading user:', error);
         if (mounted) {
           clearUserData();
         }
@@ -125,7 +107,6 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('[SimpleHeader] Auth state changed:', event, !!session);
       if (mounted) {
         if (event === 'SIGNED_OUT') {
           clearUserData();
@@ -145,7 +126,6 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
   const isPremium = user?.is_premium || false;
 
   const handleLogout = async () => {
-    console.log('[SimpleHeader] Logging out...');
     await supabase.auth.signOut();
     clearUserData();
     onNavigate('landing');

@@ -13,17 +13,6 @@ function initializeCreaoSDK() {
 	const config = parseCurrentUrl();
 	window.APP_CONFIG = config;
 
-	console.log("App Configuration:", {
-		userId: config.userId,
-		projectId: config.projectId,
-		taskId: config.taskId,
-		workspaceId: config.workspaceId,
-		uploadFolder: config.uploadFolder,
-		baseUrl: config.baseUrl,
-		isValidBuildUrl: config.isValidBuildUrl,
-		currentUrl: window.location.href,
-	});
-
 	Promise.resolve().then(() => {
 		initializeAuthIntegration();
 	});

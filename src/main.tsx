@@ -6,14 +6,9 @@ import ReactDOM from "react-dom/client";
 import { routeTree } from "./routeTree.gen";
 import reportWebVitals from "./sdk/core/internal/reportWebVitals.ts";
 import "./styles.css";
-// Initialize Creao platform SDK
+// Initialize app config
 import { APP_CONFIG } from "./sdk/core/global.ts";
-export { APP_CONFIG }; // for backward compatibility
-// Run auth migration BEFORE anything else
-import { migrateToSupabaseAuth, shouldRunMigration } from "./lib/auth-migration";
-if (shouldRunMigration()) {
-  migrateToSupabaseAuth();
-}
+export { APP_CONFIG };
 
 // Create a QueryClient instance
 const queryClient = new QueryClient({
