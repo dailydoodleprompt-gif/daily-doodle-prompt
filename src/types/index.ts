@@ -156,6 +156,7 @@ export interface UserPreferences {
   push_notification_time: string; // HH:mm format
   email_notifications_enabled: boolean;
   theme_mode: 'light' | 'dark' | 'system';
+  blur_doodles: boolean; // Hide other users' artwork until clicked to reveal
   has_completed_onboarding: boolean;
   created_at: string;
   updated_at: string;

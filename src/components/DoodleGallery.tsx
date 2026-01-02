@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useAppStore, useUser, useIsAdmin } from '@/store/app-store';
+import { useAppStore, useUser, useIsAdmin, usePreferences } from '@/store/app-store';
 import { type Doodle } from '@/types';
 import { LikeButton } from '@/components/LikeButton';
 import { DoodleImage } from '@/components/DoodleImage';
+import { BlurredDoodle } from '@/components/BlurredDoodle';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -79,8 +80,16 @@ export function DoodleGallery({
 
   const user = useUser();
   const isAdmin = useIsAdmin();
+  const preferences = usePreferences();
   const deleteDoodle = useAppStore((state) => state.deleteDoodle);
   const toggleDoodleVisibility = useAppStore((state) => state.toggleDoodleVisibility);
+
+  // Track which doodles have been revealed (when blur is enabled)
+  const [revealedDoodles, setRevealedDoodles] = useState<Set<string>>(new Set());
+
+  const handleRevealDoodle = (doodleId: string) => {
+    setRevealedDoodles(prev => new Set(prev).add(doodleId));
+  };
 
   // Sync local doodles with props
   useEffect(() => {
@@ -158,19 +167,37 @@ export function DoodleGallery({
       <div className={cn('grid gap-4', columnClasses[columns], className)}>
         {doodles.map((doodle) => {
           const isOwn = doodle.user_id === user?.id;
+          const shouldBlur = preferences?.blur_doodles && !isOwn && !revealedDoodles.has(doodle.id);
 
           return (
             <Card
               key={doodle.id}
               className="overflow-hidden group cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => setSelectedDoodle(doodle)}
+              onClick={() => {
+                // If blurred, reveal it first; otherwise open detail dialog
+                if (shouldBlur) {
+                  handleRevealDoodle(doodle.id);
+                } else {
+                  setSelectedDoodle(doodle);
+                }
+              }}
             >
               <div className="relative aspect-square bg-muted flex items-center justify-center">
-                <DoodleImage
-                  src={doodle.image_url}
-                  alt={doodle.caption || doodle.prompt_title}
-                  className="w-full h-full"
-                />
+                {shouldBlur ? (
+                  <BlurredDoodle
+                    imageUrl={doodle.image_url}
+                    alt={doodle.caption || doodle.prompt_title}
+                    className="w-full h-full"
+                    isBlurred={true}
+                    onReveal={() => handleRevealDoodle(doodle.id)}
+                  />
+                ) : (
+                  <DoodleImage
+                    src={doodle.image_url}
+                    alt={doodle.caption || doodle.prompt_title}
+                    className="w-full h-full"
+                  />
+                )}
 
                 {/* Visibility Badge */}
                 {isOwn && !doodle.is_public && (

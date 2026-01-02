@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/select';
 import { useAppStore, usePreferences, useUser } from '@/store/app-store';
 import { TitleSelector } from '@/components/TitleSelector';
-import { Bell, Sun, Mail, HelpCircle, FileText, Shield, ArrowLeft, Key, Loader2, CheckCircle2, AlertCircle, User } from 'lucide-react';
+import { Bell, Sun, Mail, HelpCircle, FileText, Shield, ArrowLeft, Key, Loader2, CheckCircle2, AlertCircle, User, EyeOff } from 'lucide-react';
 import { type UserPreferences } from '@/types';
 import { supabase } from '@/sdk/core/supabase';
 
@@ -480,7 +480,7 @@ export function SettingsView({ onBack, onForgotPassword, onUpgrade }: SettingsVi
           </CardTitle>
           <CardDescription>Customize how the app looks</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label>Theme</Label>
@@ -501,6 +501,27 @@ export function SettingsView({ onBack, onForgotPassword, onUpgrade }: SettingsVi
                 <SelectItem value="system">System</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <Separator />
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="blur-doodles" className="flex items-center gap-2">
+                <EyeOff className="h-4 w-4" />
+                Blur Other Users' Artwork
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Hide doodles from other users until you click to reveal them
+              </p>
+            </div>
+            <Switch
+              id="blur-doodles"
+              checked={preferences.blur_doodles ?? false}
+              onCheckedChange={(checked) =>
+                handleToggle('blur_doodles', checked)
+              }
+            />
           </div>
         </CardContent>
       </Card>

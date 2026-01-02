@@ -648,6 +648,7 @@ export const useAppStore = create<AppState>()(
           push_notification_time: '09:00',
           email_notifications_enabled: true,
           theme_mode: 'system',
+          blur_doodles: false,
           has_completed_onboarding: false,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),

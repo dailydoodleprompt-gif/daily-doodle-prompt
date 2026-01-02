@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
-import { useAppStore, useUser, useIsAdmin } from '@/store/app-store';
+import { useAppStore, useUser, useIsAdmin, usePreferences } from '@/store/app-store';
 import { type Doodle } from '@/types';
 import { type Prompt } from '@/hooks/use-google-sheets';
 import { LikeButton } from '@/components/LikeButton';
 import { DoodleImage } from '@/components/DoodleImage';
+import { BlurredDoodle } from '@/components/BlurredDoodle';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -59,9 +60,17 @@ export function DoodleFeed({ prompts, className, onUserClick, onPromptClick, onA
 
   const user = useUser();
   const isAdmin = useIsAdmin();
+  const preferences = usePreferences();
   const getFeed = useAppStore((state) => state.getFeed);
   const getFollowingCount = useAppStore((state) => state.getFollowingCount);
   const deleteDoodle = useAppStore((state) => state.deleteDoodle);
+
+  // Track which doodles have been revealed (when blur is enabled)
+  const [revealedDoodles, setRevealedDoodles] = useState<Set<string>>(new Set());
+
+  const handleRevealDoodle = (doodleId: string) => {
+    setRevealedDoodles(prev => new Set(prev).add(doodleId));
+  };
 
   const openDeleteDialog = (doodleId: string, asAdmin: boolean) => {
     setDoodleToDelete({ id: doodleId, isAdmin: asAdmin });
@@ -185,6 +194,8 @@ export function DoodleFeed({ prompts, className, onUserClick, onPromptClick, onA
                       onDeleteClick={openDeleteDialog}
                       onReportClick={openReportDialog}
                       onAuthRequired={onAuthRequired}
+                      shouldBlur={preferences?.blur_doodles && (item.data as Doodle).user_id !== user?.id && !revealedDoodles.has((item.data as Doodle).id)}
+                      onReveal={() => handleRevealDoodle((item.data as Doodle).id)}
                     />
                   )}
                 </div>
@@ -290,9 +301,11 @@ interface DoodleFeedItemProps {
   onDeleteClick?: (doodleId: string, asAdmin: boolean) => void;
   onReportClick?: (doodleId: string) => void;
   onAuthRequired?: () => void;
+  shouldBlur?: boolean;
+  onReveal?: () => void;
 }
 
-function DoodleFeedItem({ doodle, onUserClick, onPromptClick, isAdmin, onDeleteClick, onReportClick, onAuthRequired }: DoodleFeedItemProps) {
+function DoodleFeedItem({ doodle, onUserClick, onPromptClick, isAdmin, onDeleteClick, onReportClick, onAuthRequired, shouldBlur, onReveal }: DoodleFeedItemProps) {
   const user = useUser();
   const isOwn = doodle.user_id === user?.id;
   const username = doodle.user_username || 'Artist';
@@ -365,20 +378,36 @@ function DoodleFeedItem({ doodle, onUserClick, onPromptClick, isAdmin, onDeleteC
             </div>
           </div>
 
-          {/* Doodle Preview - Click to view full prompt details */}
+          {/* Doodle Preview - Click to view full prompt details (or reveal if blurred) */}
           <button
             type="button"
-            onClick={() => onPromptClick?.(doodle.prompt_id)}
+            onClick={() => {
+              if (shouldBlur) {
+                onReveal?.();
+              } else {
+                onPromptClick?.(doodle.prompt_id);
+              }
+            }}
             className={cn(
               "relative max-w-[300px] rounded-lg overflow-hidden mb-2 block w-full",
-              onPromptClick && "cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+              !shouldBlur && onPromptClick && "cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
             )}
           >
-            <DoodleImage
-              src={doodle.image_url}
-              alt={doodle.caption || doodle.prompt_title}
-              className="w-full"
-            />
+            {shouldBlur ? (
+              <BlurredDoodle
+                imageUrl={doodle.image_url}
+                alt={doodle.caption || doodle.prompt_title}
+                className="w-full"
+                isBlurred={true}
+                onReveal={onReveal}
+              />
+            ) : (
+              <DoodleImage
+                src={doodle.image_url}
+                alt={doodle.caption || doodle.prompt_title}
+                className="w-full"
+              />
+            )}
           </button>
 
           {/* Prompt title as clickable link */}
