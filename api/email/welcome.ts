@@ -68,10 +68,11 @@ const getWelcomeEmailHTML = (username: string) => `
     </p>
 
     <p style="color: #737373; font-size: 14px; line-height: 20px; margin: 16px 0; text-align: center;">
-      Not interested in these emails?
-      <a href="https://dailydoodleprompt.com/settings" style="color: #6366f1; text-decoration: underline;">
-        Update your preferences
+      Manage your email preferences in
+      <a href="https://dailydoodleprompt.com" style="color: #6366f1; text-decoration: underline;">
+        Account Settings
       </a>
+      after logging in.
     </p>
   </div>
 </body>
