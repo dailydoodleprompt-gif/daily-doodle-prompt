@@ -30,6 +30,21 @@ import {
   Orbit,
   Shrub,
   Flower,
+  // Seasonal icons
+  Clover,
+  Globe,
+  Star,
+  Ghost,
+  Leaf,
+  Gift,
+  PartyPopper,
+  Snowflake,
+  Wind,
+  CloudRain,
+  Sun,
+  Palmtree,
+  Sunrise,
+  Moon,
 } from 'lucide-react';
 
 const badgeIcons: Record<BadgeType, typeof Flame> = {
@@ -62,6 +77,28 @@ const badgeIcons: Record<BadgeType, typeof Flame> = {
   'warm_fuzzies': Heart,
   'somebody_likes_me': HeartHandshake,
   'idea_fairy': Lightbulb,
+  // Seasonal - Holiday badges
+  'valentines_2026': Heart,
+  'lucky_creator_2026': Clover,
+  'earth_day_2026': Globe,
+  'independence_2026': Star,
+  'spooky_season_2026': Ghost,
+  'thanksgiving_2026': Leaf,
+  'holiday_spirit_2026': Gift,
+  'new_year_spark_2027': PartyPopper,
+  // Seasonal - Monthly challenge badges
+  'january_champion_2026': Snowflake,
+  'february_faithful_2026': Heart,
+  'march_maestro_2026': Wind,
+  'april_artist_2026': CloudRain,
+  'may_maven_2026': Flower,
+  'june_genius_2026': Sun,
+  'july_journeyer_2026': Palmtree,
+  'august_ace_2026': Sunrise,
+  'september_star_2026': Leaf,
+  'october_original_2026': Moon,
+  'november_notable_2026': Leaf,
+  'december_dedicator_2026': Snowflake,
 };
 
 const badgeColors: Record<BadgeType, string> = {
@@ -94,6 +131,28 @@ const badgeColors: Record<BadgeType, string> = {
   'warm_fuzzies': 'from-rose-400 to-red-500 text-white',
   'somebody_likes_me': 'from-pink-400 to-rose-500 text-white',
   'idea_fairy': 'from-yellow-300 to-amber-400 text-white',
+  // Seasonal - Holiday badges (Legendary)
+  'valentines_2026': 'from-pink-500 to-red-600 text-white',
+  'lucky_creator_2026': 'from-emerald-500 to-green-600 text-white',
+  'earth_day_2026': 'from-green-500 to-teal-600 text-white',
+  'independence_2026': 'from-blue-500 to-red-500 text-white',
+  'spooky_season_2026': 'from-orange-500 to-purple-600 text-white',
+  'thanksgiving_2026': 'from-amber-500 to-orange-600 text-white',
+  'holiday_spirit_2026': 'from-red-500 to-green-600 text-white',
+  'new_year_spark_2027': 'from-yellow-400 to-amber-500 text-white',
+  // Seasonal - Monthly challenge badges (Epic)
+  'january_champion_2026': 'from-blue-400 to-cyan-500 text-white',
+  'february_faithful_2026': 'from-pink-400 to-red-500 text-white',
+  'march_maestro_2026': 'from-green-400 to-emerald-500 text-white',
+  'april_artist_2026': 'from-sky-400 to-blue-500 text-white',
+  'may_maven_2026': 'from-pink-400 to-rose-500 text-white',
+  'june_genius_2026': 'from-yellow-400 to-orange-500 text-white',
+  'july_journeyer_2026': 'from-cyan-400 to-teal-500 text-white',
+  'august_ace_2026': 'from-orange-400 to-amber-500 text-white',
+  'september_star_2026': 'from-amber-400 to-orange-500 text-white',
+  'october_original_2026': 'from-purple-500 to-indigo-600 text-white',
+  'november_notable_2026': 'from-orange-500 to-red-500 text-white',
+  'december_dedicator_2026': 'from-blue-500 to-indigo-600 text-white',
 };
 
 interface BadgeItemProps {

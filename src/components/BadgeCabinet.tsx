@@ -1,7 +1,14 @@
 import { useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useBadges, useAppStore } from '@/store/app-store';
-import { type BadgeType, BADGE_INFO } from '@/types';
+import {
+  type BadgeType,
+  BADGE_INFO,
+  isBadgeAvailable,
+  isBadgeMissed,
+  isBadgeUpcoming,
+  getDaysUntilBadge,
+} from '@/types';
 import {
   Tooltip,
   TooltipContent,
@@ -41,6 +48,23 @@ import {
   Orbit,
   Shrub,
   Flower,
+  // Seasonal badge icons
+  Clover,
+  Globe,
+  Star,
+  Ghost,
+  Leaf,
+  Gift,
+  PartyPopper,
+  Snowflake,
+  Wind,
+  CloudRain,
+  Sun,
+  Palmtree,
+  Sunrise,
+  Moon,
+  Clock,
+  Lock,
 } from 'lucide-react';
 
 const badgeIcons: Record<BadgeType, typeof Flame> = {
@@ -73,6 +97,28 @@ const badgeIcons: Record<BadgeType, typeof Flame> = {
   'warm_fuzzies': Heart,
   'somebody_likes_me': HeartHandshake,
   'idea_fairy': Lightbulb,
+  // Seasonal - Holiday badges (icons as fallback, emoji shown primarily)
+  'valentines_2026': Heart,
+  'lucky_creator_2026': Clover,
+  'earth_day_2026': Globe,
+  'independence_2026': Star,
+  'spooky_season_2026': Ghost,
+  'thanksgiving_2026': Leaf,
+  'holiday_spirit_2026': Gift,
+  'new_year_spark_2027': PartyPopper,
+  // Seasonal - Monthly challenge badges
+  'january_champion_2026': Snowflake,
+  'february_faithful_2026': Heart,
+  'march_maestro_2026': Wind,
+  'april_artist_2026': CloudRain,
+  'may_maven_2026': Flower,
+  'june_genius_2026': Sun,
+  'july_journeyer_2026': Palmtree,
+  'august_ace_2026': Sunrise,
+  'september_star_2026': Leaf,
+  'october_original_2026': Moon,
+  'november_notable_2026': Leaf,
+  'december_dedicator_2026': Snowflake,
 };
 
 const badgeColors: Record<BadgeType, string> = {
@@ -105,6 +151,28 @@ const badgeColors: Record<BadgeType, string> = {
   'warm_fuzzies': 'from-rose-400 to-red-500',
   'somebody_likes_me': 'from-pink-400 to-rose-500',
   'idea_fairy': 'from-yellow-300 to-amber-400',
+  // Seasonal - Holiday badges (Legendary - golden/special colors)
+  'valentines_2026': 'from-pink-500 to-red-600',
+  'lucky_creator_2026': 'from-emerald-500 to-green-600',
+  'earth_day_2026': 'from-green-500 to-teal-600',
+  'independence_2026': 'from-blue-500 to-red-500',
+  'spooky_season_2026': 'from-orange-500 to-purple-600',
+  'thanksgiving_2026': 'from-amber-500 to-orange-600',
+  'holiday_spirit_2026': 'from-red-500 to-green-600',
+  'new_year_spark_2027': 'from-yellow-400 to-amber-500',
+  // Seasonal - Monthly challenge badges (Epic - seasonal colors)
+  'january_champion_2026': 'from-blue-400 to-cyan-500',
+  'february_faithful_2026': 'from-pink-400 to-red-500',
+  'march_maestro_2026': 'from-green-400 to-emerald-500',
+  'april_artist_2026': 'from-sky-400 to-blue-500',
+  'may_maven_2026': 'from-pink-400 to-rose-500',
+  'june_genius_2026': 'from-yellow-400 to-orange-500',
+  'july_journeyer_2026': 'from-cyan-400 to-teal-500',
+  'august_ace_2026': 'from-orange-400 to-amber-500',
+  'september_star_2026': 'from-amber-400 to-orange-500',
+  'october_original_2026': 'from-purple-500 to-indigo-600',
+  'november_notable_2026': 'from-orange-500 to-red-500',
+  'december_dedicator_2026': 'from-blue-500 to-indigo-600',
 };
 
 const badgeColorRings: Record<BadgeType, { bg: string; ring: string }> = {
@@ -137,6 +205,28 @@ const badgeColorRings: Record<BadgeType, { bg: string; ring: string }> = {
   'warm_fuzzies': { bg: 'from-rose-400 to-red-500', ring: 'ring-rose-500/50' },
   'somebody_likes_me': { bg: 'from-pink-400 to-rose-500', ring: 'ring-pink-500/50' },
   'idea_fairy': { bg: 'from-yellow-300 to-amber-400', ring: 'ring-yellow-400/50' },
+  // Seasonal - Holiday badges (Legendary)
+  'valentines_2026': { bg: 'from-pink-500 to-red-600', ring: 'ring-pink-500/50' },
+  'lucky_creator_2026': { bg: 'from-emerald-500 to-green-600', ring: 'ring-emerald-500/50' },
+  'earth_day_2026': { bg: 'from-green-500 to-teal-600', ring: 'ring-green-500/50' },
+  'independence_2026': { bg: 'from-blue-500 to-red-500', ring: 'ring-blue-500/50' },
+  'spooky_season_2026': { bg: 'from-orange-500 to-purple-600', ring: 'ring-orange-500/50' },
+  'thanksgiving_2026': { bg: 'from-amber-500 to-orange-600', ring: 'ring-amber-500/50' },
+  'holiday_spirit_2026': { bg: 'from-red-500 to-green-600', ring: 'ring-red-500/50' },
+  'new_year_spark_2027': { bg: 'from-yellow-400 to-amber-500', ring: 'ring-yellow-500/50' },
+  // Seasonal - Monthly challenge badges (Epic)
+  'january_champion_2026': { bg: 'from-blue-400 to-cyan-500', ring: 'ring-blue-500/50' },
+  'february_faithful_2026': { bg: 'from-pink-400 to-red-500', ring: 'ring-pink-500/50' },
+  'march_maestro_2026': { bg: 'from-green-400 to-emerald-500', ring: 'ring-green-500/50' },
+  'april_artist_2026': { bg: 'from-sky-400 to-blue-500', ring: 'ring-sky-500/50' },
+  'may_maven_2026': { bg: 'from-pink-400 to-rose-500', ring: 'ring-pink-500/50' },
+  'june_genius_2026': { bg: 'from-yellow-400 to-orange-500', ring: 'ring-yellow-500/50' },
+  'july_journeyer_2026': { bg: 'from-cyan-400 to-teal-500', ring: 'ring-cyan-500/50' },
+  'august_ace_2026': { bg: 'from-orange-400 to-amber-500', ring: 'ring-orange-500/50' },
+  'september_star_2026': { bg: 'from-amber-400 to-orange-500', ring: 'ring-amber-500/50' },
+  'october_original_2026': { bg: 'from-purple-500 to-indigo-600', ring: 'ring-purple-500/50' },
+  'november_notable_2026': { bg: 'from-orange-500 to-red-500', ring: 'ring-orange-500/50' },
+  'december_dedicator_2026': { bg: 'from-blue-500 to-indigo-600', ring: 'ring-blue-500/50' },
 };
 
 // All badges in achievement-progress order (easier to harder)
@@ -172,6 +262,28 @@ const allBadgesOrdered: BadgeType[] = [
   // Special achievements
   'idea_fairy',
   'premium_patron',
+  // Seasonal - Holiday badges (Legendary, year-specific)
+  'valentines_2026',
+  'lucky_creator_2026',
+  'earth_day_2026',
+  'independence_2026',
+  'spooky_season_2026',
+  'thanksgiving_2026',
+  'holiday_spirit_2026',
+  'new_year_spark_2027',
+  // Seasonal - Monthly challenge badges (Epic, year-specific)
+  'january_champion_2026',
+  'february_faithful_2026',
+  'march_maestro_2026',
+  'april_artist_2026',
+  'may_maven_2026',
+  'june_genius_2026',
+  'july_journeyer_2026',
+  'august_ace_2026',
+  'september_star_2026',
+  'october_original_2026',
+  'november_notable_2026',
+  'december_dedicator_2026',
 ];
 
 interface BadgeItemProps {
@@ -181,11 +293,20 @@ interface BadgeItemProps {
   isNew: boolean;
   size?: 'sm' | 'md';
   onClick: () => void;
+  earnedBadges: BadgeType[];
 }
 
-function BadgeItem({ badgeType, earned, earnedAt, isNew, size = 'md', onClick }: BadgeItemProps) {
+function BadgeItem({ badgeType, earned, earnedAt, isNew, size = 'md', onClick, earnedBadges }: BadgeItemProps) {
   const info = BADGE_INFO[badgeType];
   const Icon = badgeIcons[badgeType];
+  const isSeasonal = info.category === 'seasonal';
+  const hasEmoji = !!info.emoji;
+
+  // Seasonal badge status
+  const missed = isSeasonal && !earned && isBadgeMissed(badgeType, earnedBadges);
+  const upcoming = isSeasonal && !earned && isBadgeUpcoming(badgeType);
+  const available = isSeasonal && !earned && isBadgeAvailable(badgeType);
+  const daysUntil = upcoming ? getDaysUntilBadge(badgeType) : null;
 
   const sizeClasses = size === 'sm'
     ? 'w-12 h-12'
@@ -194,6 +315,17 @@ function BadgeItem({ badgeType, earned, earnedAt, isNew, size = 'md', onClick }:
   const iconClasses = size === 'sm'
     ? 'w-6 h-6'
     : 'w-7 h-7 sm:w-8 sm:h-8';
+
+  const emojiClasses = size === 'sm'
+    ? 'text-xl'
+    : 'text-2xl sm:text-3xl';
+
+  // Rarity badge colors
+  const rarityBorderClass = info.rarity === 'legendary'
+    ? 'ring-2 ring-yellow-400 ring-offset-2 ring-offset-background'
+    : info.rarity === 'epic'
+    ? 'ring-2 ring-purple-400 ring-offset-2 ring-offset-background'
+    : '';
 
   return (
     <TooltipProvider>
@@ -205,20 +337,65 @@ function BadgeItem({ badgeType, earned, earnedAt, isNew, size = 'md', onClick }:
               'relative rounded-full flex items-center justify-center transition-all cursor-pointer hover:scale-110',
               sizeClasses,
               earned
-                ? cn('bg-gradient-to-br shadow-lg text-white', badgeColors[badgeType])
+                ? cn('bg-gradient-to-br shadow-lg text-white', badgeColors[badgeType], rarityBorderClass)
+                : missed
+                ? 'bg-muted/30 text-muted-foreground/30 opacity-50'
+                : upcoming
+                ? 'bg-muted/50 text-muted-foreground/40 border-2 border-dashed border-muted-foreground/30'
                 : 'bg-muted/50 text-muted-foreground/40 grayscale hover:grayscale-0'
             )}
           >
-            <Icon className={iconClasses} />
+            {hasEmoji ? (
+              <span className={cn(emojiClasses, !earned && 'grayscale opacity-50')}>
+                {info.emoji}
+              </span>
+            ) : (
+              <Icon className={iconClasses} />
+            )}
+
+            {/* New badge indicator */}
             {earned && isNew && (
               <div className="absolute -top-0.5 -right-0.5 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-background animate-pulse" />
+            )}
+
+            {/* Missed badge indicator */}
+            {missed && (
+              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 bg-red-500/90 text-white text-[8px] font-bold rounded-full uppercase tracking-wide">
+                Missed
+              </div>
+            )}
+
+            {/* Upcoming badge indicator */}
+            {upcoming && (
+              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-0.5 px-1.5 py-0.5 bg-blue-500/90 text-white text-[8px] font-bold rounded-full">
+                <Clock className="w-2 h-2" />
+                {daysUntil && daysUntil <= 30 ? `${daysUntil}d` : 'Soon'}
+              </div>
+            )}
+
+            {/* Available now indicator for seasonal */}
+            {available && isSeasonal && (
+              <div className="absolute -top-0.5 -right-0.5 w-3 h-3 sm:w-4 sm:h-4 bg-amber-500 rounded-full border-2 border-background animate-pulse" />
             )}
           </button>
         </TooltipTrigger>
         <TooltipContent className="max-w-xs p-3">
           <div className="space-y-1.5">
-            <p className="font-semibold text-foreground">{info.name}</p>
+            <div className="flex items-center gap-2">
+              <p className="font-semibold text-foreground">{info.name}</p>
+              {info.rarity === 'legendary' && (
+                <span className="px-1.5 py-0.5 text-[10px] font-bold uppercase bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 rounded">
+                  Legendary
+                </span>
+              )}
+              {info.rarity === 'epic' && (
+                <span className="px-1.5 py-0.5 text-[10px] font-bold uppercase bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded">
+                  Epic
+                </span>
+              )}
+            </div>
             <p className="text-sm text-foreground/80">{info.description}</p>
+
             {earned && earnedAt && (
               <p className="text-xs text-green-600 dark:text-green-400 font-medium">
                 Earned on{' '}
@@ -229,9 +406,35 @@ function BadgeItem({ badgeType, earned, earnedAt, isNew, size = 'md', onClick }:
                 })}
               </p>
             )}
-            {!earned && (
+
+            {missed && (
+              <p className="text-xs text-red-600 dark:text-red-400 font-medium">
+                This limited-time badge is no longer available
+              </p>
+            )}
+
+            {upcoming && (
+              <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                Available starting {new Date(info.availableFrom!).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                })}
+                {daysUntil && ` (${daysUntil} days)`}
+              </p>
+            )}
+
+            {available && isSeasonal && (
+              <p className="text-xs text-amber-600 dark:text-amber-400 font-medium animate-pulse">
+                Available NOW until {new Date(info.availableUntil!).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                })}!
+              </p>
+            )}
+
+            {!earned && !missed && !upcoming && !available && (
               <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
-                Click to preview • Not yet earned
+                Click to preview - Not yet earned
               </p>
             )}
           </div>
@@ -332,6 +535,7 @@ export function BadgeCabinet({ className, compact = false }: BadgeCabinetProps) 
                 isNew={!!earnedBadgeMap[badgeType] && !viewedBadges.includes(badgeType)}
                 size={compact ? 'sm' : 'md'}
                 onClick={() => handleBadgeClick(badgeType)}
+                earnedBadges={badges.map(b => b.badge_type)}
               />
             ))}
           </div>
@@ -339,70 +543,151 @@ export function BadgeCabinet({ className, compact = false }: BadgeCabinetProps) 
       </Card>
 
       {/* Badge Detail Dialog */}
-{selectedBadge && selectedBadgeInfo && selectedBadgeIcon && selectedBadgeColors && (
-  <Dialog open={!!selectedBadge} onOpenChange={handleCloseDialog}>
-    <DialogContent className="sm:max-w-md text-center">
-      <DialogHeader>
-        <DialogTitle className="text-2xl text-center">
-          {isSelectedEarned ? 'Badge Earned!' : 'Badge Preview'}
-        </DialogTitle>
-        <DialogDescription className="text-center">
-          {isSelectedEarned 
-            ? "You've unlocked this achievement!"
-            : "Keep going to unlock this badge!"}
-        </DialogDescription>
-      </DialogHeader>
+{selectedBadge && selectedBadgeInfo && selectedBadgeIcon && selectedBadgeColors && (() => {
+  const isSeasonal = selectedBadgeInfo.category === 'seasonal';
+  const hasEmoji = !!selectedBadgeInfo.emoji;
+  const earnedBadgeTypes = badges.map(b => b.badge_type);
+  const missed = isSeasonal && !isSelectedEarned && isBadgeMissed(selectedBadge, earnedBadgeTypes);
+  const upcoming = isSeasonal && !isSelectedEarned && isBadgeUpcoming(selectedBadge);
+  const available = isSeasonal && !isSelectedEarned && isBadgeAvailable(selectedBadge);
+  const daysUntil = upcoming ? getDaysUntilBadge(selectedBadge) : null;
 
-      <div className="flex flex-col items-center py-6 space-y-4">
-        {/* Badge Display */}
-        <div
-          className={cn(
-            'relative w-32 h-32 rounded-full flex items-center justify-center',
-            'bg-gradient-to-br text-white shadow-2xl ring-8',
-            selectedBadgeColors.bg,
-            selectedBadgeColors.ring,
-            !isSelectedEarned && 'opacity-50 grayscale'
-          )}
-        >
-          {/* Render the icon component */}
-          {(() => {
-            const IconComponent = selectedBadgeIcon;
-            return <IconComponent className="w-16 h-16" />;
-          })()}
+  // Rarity ring for legendary/epic
+  const rarityRingClass = selectedBadgeInfo.rarity === 'legendary'
+    ? 'ring-yellow-400'
+    : selectedBadgeInfo.rarity === 'epic'
+    ? 'ring-purple-400'
+    : selectedBadgeColors.ring;
 
-          {/* Sparkle effects for earned badges */}
-          {isSelectedEarned && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Sparkles className="absolute w-6 h-6 text-yellow-300 -top-2 -left-2 animate-pulse" />
-              <Sparkles className="absolute w-4 h-4 text-yellow-300 top-0 -right-1 animate-pulse" style={{ animationDelay: '100ms' }} />
-              <Sparkles className="absolute w-5 h-5 text-yellow-300 -bottom-1 right-0 animate-pulse" style={{ animationDelay: '200ms' }} />
+  return (
+    <Dialog open={!!selectedBadge} onOpenChange={handleCloseDialog}>
+      <DialogContent className="sm:max-w-md text-center">
+        <DialogHeader>
+          <DialogTitle className="text-2xl text-center">
+            {isSelectedEarned ? 'Badge Earned!' : missed ? 'Badge Missed' : 'Badge Preview'}
+          </DialogTitle>
+          <DialogDescription className="text-center">
+            {isSelectedEarned
+              ? "You've unlocked this achievement!"
+              : missed
+              ? "This limited-time badge is no longer available"
+              : upcoming
+              ? `Available starting ${new Date(selectedBadgeInfo.availableFrom!).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+              : available
+              ? "Available now - don't miss it!"
+              : "Keep going to unlock this badge!"}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex flex-col items-center py-6 space-y-4">
+          {/* Rarity badge */}
+          {selectedBadgeInfo.rarity && (
+            <div className={cn(
+              "px-3 py-1 text-xs font-bold uppercase rounded-full",
+              selectedBadgeInfo.rarity === 'legendary' && "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400",
+              selectedBadgeInfo.rarity === 'epic' && "bg-purple-500/20 text-purple-600 dark:text-purple-400"
+            )}>
+              {selectedBadgeInfo.rarity}
             </div>
           )}
+
+          {/* Badge Display */}
+          <div
+            className={cn(
+              'relative w-32 h-32 rounded-full flex items-center justify-center',
+              'bg-gradient-to-br text-white shadow-2xl ring-8',
+              selectedBadgeColors.bg,
+              rarityRingClass,
+              !isSelectedEarned && 'opacity-50 grayscale',
+              missed && 'opacity-30'
+            )}
+          >
+            {/* Render emoji or icon */}
+            {hasEmoji ? (
+              <span className={cn("text-5xl", !isSelectedEarned && "grayscale")}>
+                {selectedBadgeInfo.emoji}
+              </span>
+            ) : (() => {
+              const IconComponent = selectedBadgeIcon;
+              return <IconComponent className="w-16 h-16" />;
+            })()}
+
+            {/* Sparkle effects for earned badges */}
+            {isSelectedEarned && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Sparkles className="absolute w-6 h-6 text-yellow-300 -top-2 -left-2 animate-pulse" />
+                <Sparkles className="absolute w-4 h-4 text-yellow-300 top-0 -right-1 animate-pulse" style={{ animationDelay: '100ms' }} />
+                <Sparkles className="absolute w-5 h-5 text-yellow-300 -bottom-1 right-0 animate-pulse" style={{ animationDelay: '200ms' }} />
+              </div>
+            )}
+
+            {/* Lock icon for missed badges */}
+            {missed && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Lock className="w-12 h-12 text-red-500/80" />
+              </div>
+            )}
+          </div>
+
+          {/* Badge Info */}
+          <div className="space-y-2">
+            <h3 className="text-xl font-bold">{selectedBadgeInfo.name}</h3>
+            <p className="text-muted-foreground">{selectedBadgeInfo.description}</p>
+
+            {isSelectedEarned && selectedEarnedAt && (
+              <p className="text-sm text-green-600 dark:text-green-400 font-medium">
+                Earned on{' '}
+                {new Date(selectedEarnedAt).toLocaleDateString('en-US', {
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+              </p>
+            )}
+
+            {missed && (
+              <p className="text-sm text-red-600 dark:text-red-400 font-medium">
+                This badge was only available until{' '}
+                {new Date(selectedBadgeInfo.availableUntil!).toLocaleDateString('en-US', {
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+              </p>
+            )}
+
+            {upcoming && (
+              <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">
+                Coming{' '}
+                {new Date(selectedBadgeInfo.availableFrom!).toLocaleDateString('en-US', {
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+                {daysUntil && ` (${daysUntil} days)`}
+              </p>
+            )}
+
+            {available && (
+              <p className="text-sm text-amber-600 dark:text-amber-400 font-medium animate-pulse">
+                Available until{' '}
+                {new Date(selectedBadgeInfo.availableUntil!).toLocaleDateString('en-US', {
+                  month: 'long',
+                  day: 'numeric',
+                })}
+                !
+              </p>
+            )}
+          </div>
         </div>
 
-        {/* Badge Info */}
-        <div className="space-y-2">
-          <h3 className="text-xl font-bold">{selectedBadgeInfo.name}</h3>
-          <p className="text-muted-foreground">{selectedBadgeInfo.description}</p>
-          {isSelectedEarned && selectedEarnedAt && (
-            <p className="text-sm text-green-600 dark:text-green-400 font-medium">
-              Earned on{' '}
-              {new Date(selectedEarnedAt).toLocaleDateString('en-US', {
-                month: 'long',
-                day: 'numeric',
-                year: 'numeric',
-              })}
-            </p>
-          )}
-        </div>
-      </div>
-
-      <Button onClick={handleCloseDialog} className="w-full">
-        {isSelectedEarned ? 'Awesome!' : 'Got it!'}
-      </Button>
-    </DialogContent>
-  </Dialog>
-)}
+        <Button onClick={handleCloseDialog} className="w-full">
+          {isSelectedEarned ? 'Awesome!' : missed ? 'Maybe Next Year' : 'Got it!'}
+        </Button>
+      </DialogContent>
+    </Dialog>
+  );
+})()}
     </>
   );
 }

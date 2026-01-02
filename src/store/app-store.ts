@@ -29,6 +29,8 @@ import {
   DEFAULT_TITLES,
   SECRET_TITLES,
   ADMIN_TITLE,
+  BADGE_INFO,
+  isBadgeAvailable,
 } from '@/types';
 import {
   getTodayEST,
@@ -1466,6 +1468,66 @@ if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')
 
         if (consecutiveUploadDays >= 7 && !get().hasBadge('daily_doodler')) {
           get().awardBadge('daily_doodler');
+        }
+
+        // Check for seasonal badges (holiday badges - upload on specific day)
+        console.log('[uploadDoodle] Checking seasonal badges...');
+        const seasonalHolidayBadges: BadgeType[] = [
+          'valentines_2026',
+          'lucky_creator_2026',
+          'earth_day_2026',
+          'independence_2026',
+          'spooky_season_2026',
+          'thanksgiving_2026',
+          'holiday_spirit_2026',
+          'new_year_spark_2027',
+        ];
+
+        for (const badgeType of seasonalHolidayBadges) {
+          if (isBadgeAvailable(badgeType) && !get().hasBadge(badgeType)) {
+            console.log(`[uploadDoodle] Awarding holiday badge: ${badgeType}`);
+            get().awardBadge(badgeType);
+          }
+        }
+
+        // Check for monthly challenge badges (15 uploads in the month)
+        const monthlyBadges: { month: number; year: number; badge: BadgeType }[] = [
+          { month: 1, year: 2026, badge: 'january_champion_2026' },
+          { month: 2, year: 2026, badge: 'february_faithful_2026' },
+          { month: 3, year: 2026, badge: 'march_maestro_2026' },
+          { month: 4, year: 2026, badge: 'april_artist_2026' },
+          { month: 5, year: 2026, badge: 'may_maven_2026' },
+          { month: 6, year: 2026, badge: 'june_genius_2026' },
+          { month: 7, year: 2026, badge: 'july_journeyer_2026' },
+          { month: 8, year: 2026, badge: 'august_ace_2026' },
+          { month: 9, year: 2026, badge: 'september_star_2026' },
+          { month: 10, year: 2026, badge: 'october_original_2026' },
+          { month: 11, year: 2026, badge: 'november_notable_2026' },
+          { month: 12, year: 2026, badge: 'december_dedicator_2026' },
+        ];
+
+        const currentDate = new Date();
+        const currentMonth = currentDate.getMonth() + 1; // 1-indexed
+        const currentYear = currentDate.getFullYear();
+
+        const monthlyBadge = monthlyBadges.find(
+          (mb) => mb.month === currentMonth && mb.year === currentYear
+        );
+
+        if (monthlyBadge && !get().hasBadge(monthlyBadge.badge)) {
+          // Count doodles uploaded this month
+          const monthStart = new Date(currentYear, currentMonth - 1, 1);
+          const monthEnd = new Date(currentYear, currentMonth, 0, 23, 59, 59);
+
+          const monthlyDoodles = userDoodles.filter((d) => {
+            const doodleDate = new Date(d.created_at);
+            return doodleDate >= monthStart && doodleDate <= monthEnd;
+          });
+
+          if (monthlyDoodles.length >= 15) {
+            console.log(`[uploadDoodle] Awarding monthly badge: ${monthlyBadge.badge} (${monthlyDoodles.length} doodles this month)`);
+            get().awardBadge(monthlyBadge.badge);
+          }
         }
 
         console.log('[uploadDoodle] Checking secret titles...');

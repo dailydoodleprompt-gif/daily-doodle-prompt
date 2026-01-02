@@ -183,7 +183,98 @@ export interface Streak {
 }
 
 // Badge categories
-export type BadgeCategory = 'membership' | 'streak' | 'collection' | 'sharing' | 'creative' | 'social';
+export type BadgeCategory = 'membership' | 'streak' | 'collection' | 'sharing' | 'creative' | 'social' | 'seasonal';
+
+// Badge rarity levels
+export type BadgeRarity = 'common' | 'rare' | 'epic' | 'legendary';
+
+// Helper function to check if a seasonal badge is currently available
+export function isBadgeAvailable(badgeType: BadgeType): boolean {
+  const badge = BADGE_INFO[badgeType];
+  if (!badge.availableFrom) return true; // Always available (non-seasonal)
+
+  const now = new Date();
+  const today = now.toISOString().split('T')[0]; // YYYY-MM-DD
+
+  const from = badge.availableFrom;
+  const until = badge.availableUntil;
+
+  if (until) {
+    // Time-limited badge - check if today is within the range
+    return today >= from && today <= until;
+  }
+
+  return today >= from; // Available from date onward
+}
+
+// Check if a seasonal badge's availability period has passed
+export function isBadgeMissed(badgeType: BadgeType, earnedBadges: BadgeType[]): boolean {
+  const badge = BADGE_INFO[badgeType];
+  if (!badge.availableUntil) return false; // No end date means not missable
+  if (earnedBadges.includes(badgeType)) return false; // Already earned
+
+  const now = new Date();
+  const until = new Date(badge.availableUntil);
+  // Add a day to include the full end date
+  until.setDate(until.getDate() + 1);
+
+  return now > until;
+}
+
+// Check if a seasonal badge is upcoming (not yet available)
+export function isBadgeUpcoming(badgeType: BadgeType): boolean {
+  const badge = BADGE_INFO[badgeType];
+  if (!badge.availableFrom) return false; // No start date means always available
+
+  const today = new Date().toISOString().split('T')[0];
+  return today < badge.availableFrom;
+}
+
+// Get days until a badge becomes available
+export function getDaysUntilBadge(badgeType: BadgeType): number | null {
+  const badge = BADGE_INFO[badgeType];
+  if (!badge.availableFrom) return null;
+
+  const now = new Date();
+  const from = new Date(badge.availableFrom);
+  const diffTime = from.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  return diffDays > 0 ? diffDays : null;
+}
+
+// Get all seasonal badges organized by status
+export function getSeasonalBadgesStatus(earnedBadges: BadgeType[]) {
+  const seasonalBadges = (Object.keys(BADGE_INFO) as BadgeType[]).filter(
+    (badgeType) => BADGE_INFO[badgeType].category === 'seasonal'
+  );
+
+  const available: BadgeType[] = [];
+  const upcoming: BadgeType[] = [];
+  const missed: BadgeType[] = [];
+  const earned: BadgeType[] = [];
+
+  seasonalBadges.forEach((badgeType) => {
+    if (earnedBadges.includes(badgeType)) {
+      earned.push(badgeType);
+    } else if (isBadgeMissed(badgeType, earnedBadges)) {
+      missed.push(badgeType);
+    } else if (isBadgeUpcoming(badgeType)) {
+      upcoming.push(badgeType);
+    } else if (isBadgeAvailable(badgeType)) {
+      available.push(badgeType);
+    }
+  });
+
+  // Sort upcoming by availability date
+  upcoming.sort((a, b) => {
+    const aFrom = BADGE_INFO[a].availableFrom || '';
+    const bFrom = BADGE_INFO[b].availableFrom || '';
+    return aFrom.localeCompare(bFrom);
+  });
+
+  return { available, upcoming, missed, earned };
+}
 
 // Badge types - comprehensive list for gamification
 export type BadgeType =
@@ -215,7 +306,29 @@ export type BadgeType =
   // Social badges
   | 'warm_fuzzies'             // First like given
   | 'somebody_likes_me'        // First like received
-  | 'idea_fairy';              // Submitted a prompt idea
+  | 'idea_fairy'               // Submitted a prompt idea
+  // Seasonal - Holiday badges (2026)
+  | 'valentines_2026'          // Valentine's Day 2026
+  | 'lucky_creator_2026'       // St. Patrick's Day 2026
+  | 'earth_day_2026'           // Earth Day 2026
+  | 'independence_2026'        // July 4th 2026
+  | 'spooky_season_2026'       // Halloween 2026
+  | 'thanksgiving_2026'        // Thanksgiving 2026
+  | 'holiday_spirit_2026'      // Christmas 2026
+  | 'new_year_spark_2027'      // New Year's Day 2027
+  // Seasonal - Monthly challenge badges (2026)
+  | 'january_champion_2026'
+  | 'february_faithful_2026'
+  | 'march_maestro_2026'
+  | 'april_artist_2026'
+  | 'may_maven_2026'
+  | 'june_genius_2026'
+  | 'july_journeyer_2026'
+  | 'august_ace_2026'
+  | 'september_star_2026'
+  | 'october_original_2026'
+  | 'november_notable_2026'
+  | 'december_dedicator_2026';
 
 export interface Badge {
   id: string;
@@ -231,6 +344,11 @@ export interface BadgeInfo {
   description: string;
   icon: string;
   category: BadgeCategory;
+  // Seasonal badge properties
+  rarity?: BadgeRarity;
+  emoji?: string; // For seasonal badges that use emoji instead of lucide icons
+  availableFrom?: string; // YYYY-MM-DD
+  availableUntil?: string; // YYYY-MM-DD
 }
 
 export const BADGE_INFO: Record<BadgeType, Omit<BadgeInfo, 'type'>> = {
@@ -382,6 +500,211 @@ export const BADGE_INFO: Record<BadgeType, Omit<BadgeInfo, 'type'>> = {
     description: 'Submitted a creative prompt idea',
     icon: 'lightbulb',
     category: 'social',
+  },
+
+  // ===== SEASONAL BADGES =====
+  // Holiday Badges (2026) - Legendary rarity, single-day availability
+  'valentines_2026': {
+    name: "Valentine's Artist '26",
+    description: "Uploaded a doodle on Valentine's Day 2026",
+    icon: 'heart',
+    emoji: '💝',
+    category: 'seasonal',
+    rarity: 'legendary',
+    availableFrom: '2026-02-14',
+    availableUntil: '2026-02-14',
+  },
+  'lucky_creator_2026': {
+    name: "Lucky Creator '26",
+    description: "Uploaded a doodle on St. Patrick's Day 2026",
+    icon: 'clover',
+    emoji: '🍀',
+    category: 'seasonal',
+    rarity: 'legendary',
+    availableFrom: '2026-03-17',
+    availableUntil: '2026-03-17',
+  },
+  'earth_day_2026': {
+    name: "Earth Artist '26",
+    description: "Uploaded a doodle on Earth Day 2026",
+    icon: 'globe',
+    emoji: '🌍',
+    category: 'seasonal',
+    rarity: 'legendary',
+    availableFrom: '2026-04-22',
+    availableUntil: '2026-04-22',
+  },
+  'independence_2026': {
+    name: "Freedom Creator '26",
+    description: "Uploaded a doodle on Independence Day 2026",
+    icon: 'star',
+    emoji: '🎆',
+    category: 'seasonal',
+    rarity: 'legendary',
+    availableFrom: '2026-07-04',
+    availableUntil: '2026-07-04',
+  },
+  'spooky_season_2026': {
+    name: "Spooky Season '26",
+    description: "Uploaded a doodle on Halloween 2026",
+    icon: 'ghost',
+    emoji: '🎃',
+    category: 'seasonal',
+    rarity: 'legendary',
+    availableFrom: '2026-10-31',
+    availableUntil: '2026-10-31',
+  },
+  'thanksgiving_2026': {
+    name: "Grateful Artist '26",
+    description: "Uploaded a doodle on Thanksgiving 2026",
+    icon: 'leaf',
+    emoji: '🦃',
+    category: 'seasonal',
+    rarity: 'legendary',
+    availableFrom: '2026-11-26',
+    availableUntil: '2026-11-26',
+  },
+  'holiday_spirit_2026': {
+    name: "Holiday Spirit '26",
+    description: "Uploaded a doodle on Christmas 2026",
+    icon: 'gift',
+    emoji: '🎄',
+    category: 'seasonal',
+    rarity: 'legendary',
+    availableFrom: '2026-12-25',
+    availableUntil: '2026-12-25',
+  },
+  'new_year_spark_2027': {
+    name: "New Year Spark '27",
+    description: "Uploaded a doodle on New Year's Day 2027",
+    icon: 'party-popper',
+    emoji: '🎉',
+    category: 'seasonal',
+    rarity: 'legendary',
+    availableFrom: '2027-01-01',
+    availableUntil: '2027-01-01',
+  },
+
+  // Monthly Challenge Badges (2026) - Epic rarity, upload 15 doodles in the month
+  'january_champion_2026': {
+    name: "January Champion '26",
+    description: "Uploaded 15 doodles in January 2026",
+    icon: 'snowflake',
+    emoji: '❄️',
+    category: 'seasonal',
+    rarity: 'epic',
+    availableFrom: '2026-01-01',
+    availableUntil: '2026-01-31',
+  },
+  'february_faithful_2026': {
+    name: "February Faithful '26",
+    description: "Uploaded 15 doodles in February 2026",
+    icon: 'heart',
+    emoji: '💖',
+    category: 'seasonal',
+    rarity: 'epic',
+    availableFrom: '2026-02-01',
+    availableUntil: '2026-02-28',
+  },
+  'march_maestro_2026': {
+    name: "March Maestro '26",
+    description: "Uploaded 15 doodles in March 2026",
+    icon: 'wind',
+    emoji: '🌸',
+    category: 'seasonal',
+    rarity: 'epic',
+    availableFrom: '2026-03-01',
+    availableUntil: '2026-03-31',
+  },
+  'april_artist_2026': {
+    name: "April Artist '26",
+    description: "Uploaded 15 doodles in April 2026",
+    icon: 'cloud-rain',
+    emoji: '🌷',
+    category: 'seasonal',
+    rarity: 'epic',
+    availableFrom: '2026-04-01',
+    availableUntil: '2026-04-30',
+  },
+  'may_maven_2026': {
+    name: "May Maven '26",
+    description: "Uploaded 15 doodles in May 2026",
+    icon: 'flower',
+    emoji: '🌺',
+    category: 'seasonal',
+    rarity: 'epic',
+    availableFrom: '2026-05-01',
+    availableUntil: '2026-05-31',
+  },
+  'june_genius_2026': {
+    name: "June Genius '26",
+    description: "Uploaded 15 doodles in June 2026",
+    icon: 'sun',
+    emoji: '☀️',
+    category: 'seasonal',
+    rarity: 'epic',
+    availableFrom: '2026-06-01',
+    availableUntil: '2026-06-30',
+  },
+  'july_journeyer_2026': {
+    name: "July Journeyer '26",
+    description: "Uploaded 15 doodles in July 2026",
+    icon: 'palmtree',
+    emoji: '🏖️',
+    category: 'seasonal',
+    rarity: 'epic',
+    availableFrom: '2026-07-01',
+    availableUntil: '2026-07-31',
+  },
+  'august_ace_2026': {
+    name: "August Ace '26",
+    description: "Uploaded 15 doodles in August 2026",
+    icon: 'sunset',
+    emoji: '🌅',
+    category: 'seasonal',
+    rarity: 'epic',
+    availableFrom: '2026-08-01',
+    availableUntil: '2026-08-31',
+  },
+  'september_star_2026': {
+    name: "September Star '26",
+    description: "Uploaded 15 doodles in September 2026",
+    icon: 'leaf',
+    emoji: '🍂',
+    category: 'seasonal',
+    rarity: 'epic',
+    availableFrom: '2026-09-01',
+    availableUntil: '2026-09-30',
+  },
+  'october_original_2026': {
+    name: "October Original '26",
+    description: "Uploaded 15 doodles in October 2026",
+    icon: 'moon',
+    emoji: '🎃',
+    category: 'seasonal',
+    rarity: 'epic',
+    availableFrom: '2026-10-01',
+    availableUntil: '2026-10-31',
+  },
+  'november_notable_2026': {
+    name: "November Notable '26",
+    description: "Uploaded 15 doodles in November 2026",
+    icon: 'leaf',
+    emoji: '🍁',
+    category: 'seasonal',
+    rarity: 'epic',
+    availableFrom: '2026-11-01',
+    availableUntil: '2026-11-30',
+  },
+  'december_dedicator_2026': {
+    name: "December Dedicator '26",
+    description: "Uploaded 15 doodles in December 2026",
+    icon: 'snowflake',
+    emoji: '⛄',
+    category: 'seasonal',
+    rarity: 'epic',
+    availableFrom: '2026-12-01',
+    availableUntil: '2026-12-31',
   },
 };
 

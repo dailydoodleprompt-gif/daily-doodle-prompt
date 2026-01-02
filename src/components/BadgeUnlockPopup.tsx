@@ -32,6 +32,21 @@ import {
   Orbit,
   Shrub,
   Flower,
+  // Seasonal icons
+  Clover,
+  Globe,
+  Star,
+  Ghost,
+  Leaf,
+  Gift,
+  PartyPopper,
+  Snowflake,
+  Wind,
+  CloudRain,
+  Sun,
+  Palmtree,
+  Sunrise,
+  Moon,
 } from 'lucide-react';
 
 const badgeIcons: Record<BadgeType, typeof Flame> = {
@@ -64,6 +79,28 @@ const badgeIcons: Record<BadgeType, typeof Flame> = {
   'warm_fuzzies': Heart,
   'somebody_likes_me': HeartHandshake,
   'idea_fairy': Lightbulb,
+  // Seasonal - Holiday badges
+  'valentines_2026': Heart,
+  'lucky_creator_2026': Clover,
+  'earth_day_2026': Globe,
+  'independence_2026': Star,
+  'spooky_season_2026': Ghost,
+  'thanksgiving_2026': Leaf,
+  'holiday_spirit_2026': Gift,
+  'new_year_spark_2027': PartyPopper,
+  // Seasonal - Monthly challenge badges
+  'january_champion_2026': Snowflake,
+  'february_faithful_2026': Heart,
+  'march_maestro_2026': Wind,
+  'april_artist_2026': CloudRain,
+  'may_maven_2026': Flower,
+  'june_genius_2026': Sun,
+  'july_journeyer_2026': Palmtree,
+  'august_ace_2026': Sunrise,
+  'september_star_2026': Leaf,
+  'october_original_2026': Moon,
+  'november_notable_2026': Leaf,
+  'december_dedicator_2026': Snowflake,
 };
 
 const badgeColors: Record<BadgeType, { bg: string; ring: string }> = {
@@ -96,6 +133,28 @@ const badgeColors: Record<BadgeType, { bg: string; ring: string }> = {
   'warm_fuzzies': { bg: 'from-rose-400 to-red-500', ring: 'ring-rose-500/50' },
   'somebody_likes_me': { bg: 'from-pink-400 to-rose-500', ring: 'ring-pink-500/50' },
   'idea_fairy': { bg: 'from-yellow-300 to-amber-400', ring: 'ring-yellow-400/50' },
+  // Seasonal - Holiday badges (Legendary)
+  'valentines_2026': { bg: 'from-pink-500 to-red-600', ring: 'ring-pink-500/50' },
+  'lucky_creator_2026': { bg: 'from-emerald-500 to-green-600', ring: 'ring-emerald-500/50' },
+  'earth_day_2026': { bg: 'from-green-500 to-teal-600', ring: 'ring-green-500/50' },
+  'independence_2026': { bg: 'from-blue-500 to-red-500', ring: 'ring-blue-500/50' },
+  'spooky_season_2026': { bg: 'from-orange-500 to-purple-600', ring: 'ring-orange-500/50' },
+  'thanksgiving_2026': { bg: 'from-amber-500 to-orange-600', ring: 'ring-amber-500/50' },
+  'holiday_spirit_2026': { bg: 'from-red-500 to-green-600', ring: 'ring-red-500/50' },
+  'new_year_spark_2027': { bg: 'from-yellow-400 to-amber-500', ring: 'ring-yellow-500/50' },
+  // Seasonal - Monthly challenge badges (Epic)
+  'january_champion_2026': { bg: 'from-blue-400 to-cyan-500', ring: 'ring-blue-500/50' },
+  'february_faithful_2026': { bg: 'from-pink-400 to-red-500', ring: 'ring-pink-500/50' },
+  'march_maestro_2026': { bg: 'from-green-400 to-emerald-500', ring: 'ring-green-500/50' },
+  'april_artist_2026': { bg: 'from-sky-400 to-blue-500', ring: 'ring-sky-500/50' },
+  'may_maven_2026': { bg: 'from-pink-400 to-rose-500', ring: 'ring-pink-500/50' },
+  'june_genius_2026': { bg: 'from-yellow-400 to-orange-500', ring: 'ring-yellow-500/50' },
+  'july_journeyer_2026': { bg: 'from-cyan-400 to-teal-500', ring: 'ring-cyan-500/50' },
+  'august_ace_2026': { bg: 'from-orange-400 to-amber-500', ring: 'ring-orange-500/50' },
+  'september_star_2026': { bg: 'from-amber-400 to-orange-500', ring: 'ring-amber-500/50' },
+  'october_original_2026': { bg: 'from-purple-500 to-indigo-600', ring: 'ring-purple-500/50' },
+  'november_notable_2026': { bg: 'from-orange-500 to-red-500', ring: 'ring-orange-500/50' },
+  'december_dedicator_2026': { bg: 'from-blue-500 to-indigo-600', ring: 'ring-blue-500/50' },
 };
 
 export function BadgeUnlockPopup() {
