@@ -2,6 +2,9 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
 import { Redis } from '@upstash/redis';
 import { createClient } from '@supabase/supabase-js';
+import { Resend } from 'resend';
+import { render } from '@react-email/render';
+import { PremiumConfirmationEmail } from '../../src/emails/PremiumConfirmationEmail';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2025-11-17.clover',
@@ -231,6 +234,63 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         } catch (kvErr: any) {
           // Log but don't fail - Supabase is the source of truth
           console.warn('[Webhook] ⚠️ KV storage failed (non-critical):', kvErr?.message || kvErr);
+        }
+
+        // ============================================
+        // STEP 4: Send premium confirmation email
+        // ============================================
+        if (userEmail) {
+          try {
+            const resendApiKey = process.env.RESEND_API_KEY;
+            if (resendApiKey) {
+              const resend = new Resend(resendApiKey);
+
+              // Get username for personalization
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('username')
+                .eq('id', userId)
+                .single();
+
+              const username = profile?.username || 'Artist';
+              const purchaseDate = new Date().toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              });
+              const amount = session.amount_total
+                ? `$${(session.amount_total / 100).toFixed(2)}`
+                : '$4.99';
+
+              const html = await render(PremiumConfirmationEmail({
+                username,
+                purchaseDate,
+                amount,
+              }));
+
+              const fromEmail = process.env.EMAIL_FROM || 'Daily Doodle Prompt <onboarding@resend.dev>';
+
+              const { error: emailError } = await resend.emails.send({
+                from: fromEmail,
+                to: userEmail,
+                subject: 'Welcome to Premium!',
+                html: html,
+              });
+
+              if (emailError) {
+                console.warn('[Webhook] ⚠️ Premium confirmation email failed:', emailError);
+              } else {
+                console.log('[Webhook] ✅ Premium confirmation email sent to:', userEmail);
+              }
+            } else {
+              console.warn('[Webhook] ⚠️ RESEND_API_KEY not configured, skipping email');
+            }
+          } catch (emailErr: any) {
+            // Log but don't fail - premium is already activated
+            console.warn('[Webhook] ⚠️ Email send error (non-critical):', emailErr?.message || emailErr);
+          }
+        } else {
+          console.warn('[Webhook] ⚠️ No email address available for confirmation email');
         }
 
         console.log('[Webhook] ✅ Webhook processed successfully for user:', userId);

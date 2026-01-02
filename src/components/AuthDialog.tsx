@@ -125,7 +125,7 @@ export function AuthDialog({
     setError(null);
 
     try {
-      const { error: signUpError } = await supabase.auth.signUp({
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
@@ -140,9 +140,22 @@ export function AuthDialog({
         return;
       }
 
+      // Send welcome email (fire and forget - don't block signup)
+      if (authData.session?.access_token) {
+        fetch('/api/email/welcome', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authData.session.access_token}`,
+          },
+        }).catch((err) => {
+          console.error('Failed to send welcome email:', err);
+        });
+      }
+
       setError(null);
       alert('Account created! Please check your email to confirm your account.');
-      
+
       onOpenChange(false);
       signupForm.reset();
       onAuthSuccess?.();
