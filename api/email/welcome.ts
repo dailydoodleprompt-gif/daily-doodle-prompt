@@ -137,7 +137,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const username = profile?.username || authData.user.user_metadata?.username || 'Artist';
 
-    const fromEmail = process.env.EMAIL_FROM || 'Daily Doodle Prompt <onboarding@resend.dev>';
+    const fromEmail = process.env.EMAIL_FROM || 'Daily Doodle Prompt <hello@dailydoodleprompt.com>';
 
     // Send email with inline HTML
     const { data: emailResult, error: emailError } = await resend.emails.send({

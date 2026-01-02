@@ -334,7 +334,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 ? `$${(session.amount_total / 100).toFixed(2)}`
                 : '$4.99';
 
-              const fromEmail = process.env.EMAIL_FROM || 'Daily Doodle Prompt <onboarding@resend.dev>';
+              const fromEmail = process.env.EMAIL_FROM || 'Daily Doodle Prompt <hello@dailydoodleprompt.com>';
 
               const { error: emailError } = await resend.emails.send({
                 from: fromEmail,
