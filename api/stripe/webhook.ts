@@ -4,7 +4,7 @@ import { Redis } from '@upstash/redis';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import { render } from '@react-email/render';
-import { PremiumConfirmationEmail } from '../../src/emails/PremiumConfirmationEmail';
+import { PremiumConfirmationEmail } from '../emails/PremiumConfirmationEmail';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2025-11-17.clover',

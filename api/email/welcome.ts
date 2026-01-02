@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Resend } from 'resend';
 import { render } from '@react-email/render';
 import { createClient } from '@supabase/supabase-js';
-import { WelcomeEmail } from '../../src/emails/WelcomeEmail';
+import { WelcomeEmail } from '../emails/WelcomeEmail';
 
 function getBearerToken(req: VercelRequest): string | null {
   const header =

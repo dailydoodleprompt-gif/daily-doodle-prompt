@@ -4,10 +4,10 @@ import { render } from '@react-email/render';
 import { createClient } from '@supabase/supabase-js';
 
 // Import email templates
-import { WelcomeEmail } from '../../src/emails/WelcomeEmail';
-import { PremiumConfirmationEmail } from '../../src/emails/PremiumConfirmationEmail';
-import { BadgeUnlockEmail } from '../../src/emails/BadgeUnlockEmail';
-import { ReengagementEmail } from '../../src/emails/ReengagementEmail';
+import { WelcomeEmail } from '../emails/WelcomeEmail';
+import { PremiumConfirmationEmail } from '../emails/PremiumConfirmationEmail';
+import { BadgeUnlockEmail } from '../emails/BadgeUnlockEmail';
+import { ReengagementEmail } from '../emails/ReengagementEmail';
 
 type EmailType = 'welcome' | 'premium_confirmation' | 'badge_unlock' | 'reengagement';
 
