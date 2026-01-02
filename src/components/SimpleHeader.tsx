@@ -106,10 +106,56 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
     loadUser();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (mounted) {
         if (event === 'SIGNED_OUT') {
           clearUserData();
+        } else if (event === 'SIGNED_IN' && session) {
+          // Check if this is a new user signup (profile created within last 60 seconds)
+          const welcomeEmailKey = `welcome_email_sent_${session.user.id}`;
+          const alreadySent = localStorage.getItem(welcomeEmailKey);
+
+          if (!alreadySent) {
+            // Check if user profile was just created (new signup)
+            try {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('created_at')
+                .eq('id', session.user.id)
+                .single();
+
+              if (profile?.created_at) {
+                const createdAt = new Date(profile.created_at);
+                const now = new Date();
+                const secondsSinceCreation = (now.getTime() - createdAt.getTime()) / 1000;
+
+                // If profile was created within the last 60 seconds, this is a new signup
+                if (secondsSinceCreation < 60) {
+                  console.log('[Auth] New user detected, sending welcome email');
+
+                  // Mark as sent immediately to prevent duplicates
+                  localStorage.setItem(welcomeEmailKey, 'true');
+
+                  // Send welcome email (fire and forget)
+                  fetch('/api/email/welcome', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${session.access_token}`,
+                    },
+                  }).then(() => {
+                    console.log('[Auth] Welcome email request sent');
+                  }).catch((err) => {
+                    console.error('[Auth] Failed to send welcome email:', err);
+                  });
+                }
+              }
+            } catch (err) {
+              console.error('[Auth] Error checking user profile:', err);
+            }
+          }
+
+          loadUser();
         } else {
           loadUser();
         }
