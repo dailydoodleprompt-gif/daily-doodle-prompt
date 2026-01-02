@@ -3,12 +3,84 @@ import Stripe from 'stripe';
 import { Redis } from '@upstash/redis';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
-import { render } from '@react-email/render';
-import { PremiumConfirmationEmail } from '../emails/PremiumConfirmationEmail';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2025-11-17.clover',
 });
+
+// Inline HTML template for premium confirmation email
+const getPremiumConfirmationEmailHTML = (username: string, purchaseDate: string, amount: string) => `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Ubuntu, sans-serif; background-color: #fdf8ee; padding: 20px; margin: 0;">
+  <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px 20px; border-radius: 8px; margin-top: 40px; margin-bottom: 40px;">
+    <div style="text-align: center; margin: 0 0 32px;">
+      <div style="font-size: 64px; margin: 0 0 16px;">&#128081;</div>
+      <h1 style="color: #1a1a1a; font-size: 28px; font-weight: bold; margin: 0 0 20px; text-align: center;">
+        Welcome to Premium!
+      </h1>
+    </div>
+
+    <p style="color: #404040; font-size: 16px; line-height: 24px; margin: 16px 0;">
+      Hi ${username},
+    </p>
+
+    <p style="color: #404040; font-size: 16px; line-height: 24px; margin: 16px 0;">
+      Thank you for supporting Daily Doodle Prompt! Your premium access is now active.
+    </p>
+
+    <div style="background-color: #f9fafb; border-radius: 8px; padding: 24px; margin: 24px 0; border: 1px solid #e5e7eb;">
+      <p style="color: #1a1a1a; font-size: 18px; font-weight: bold; margin: 0 0 16px;">
+        Purchase Details
+      </p>
+      <p style="color: #404040; font-size: 14px; line-height: 24px; margin: 8px 0;">
+        <strong>Product:</strong> Lifetime Premium Access
+      </p>
+      <p style="color: #404040; font-size: 14px; line-height: 24px; margin: 8px 0;">
+        <strong>Amount:</strong> ${amount}
+      </p>
+      <p style="color: #404040; font-size: 14px; line-height: 24px; margin: 8px 0;">
+        <strong>Date:</strong> ${purchaseDate}
+      </p>
+      <p style="color: #404040; font-size: 14px; line-height: 24px; margin: 8px 0;">
+        <strong>Status:</strong> Active
+      </p>
+    </div>
+
+    <p style="color: #404040; font-size: 16px; line-height: 24px; margin: 16px 0;">
+      <strong>Your Premium Features:</strong>
+    </p>
+
+    <p style="color: #404040; font-size: 16px; line-height: 28px; margin: 16px 0; padding-left: 20px;">
+      - Unlimited doodle uploads<br>
+      - Unlock all 23 badges<br>
+      - Ad-free experience<br>
+      - Support indie development<br>
+      - Lifetime access - yours forever!
+    </p>
+
+    <div style="text-align: center; margin: 32px 0;">
+      <a href="https://dailydoodleprompt.com" style="background-color: #6366f1; border-radius: 6px; color: #ffffff; font-size: 16px; font-weight: bold; text-decoration: none; padding: 12px 32px; display: inline-block;">
+        Start Creating
+      </a>
+    </div>
+
+    <p style="color: #404040; font-size: 16px; line-height: 24px; margin: 16px 0;">
+      A Stripe receipt has been sent separately to your email.
+    </p>
+
+    <p style="color: #404040; font-size: 16px; line-height: 24px; margin: 32px 0 16px;">
+      Thank you for your support!<br>
+      The Daily Doodle Prompt Team
+    </p>
+  </div>
+</body>
+</html>
+`;
 
 // Upstash/Vercel KV (REST) client
 const kv = Redis.fromEnv();
@@ -262,19 +334,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 ? `$${(session.amount_total / 100).toFixed(2)}`
                 : '$4.99';
 
-              const html = await render(PremiumConfirmationEmail({
-                username,
-                purchaseDate,
-                amount,
-              }));
-
               const fromEmail = process.env.EMAIL_FROM || 'Daily Doodle Prompt <onboarding@resend.dev>';
 
               const { error: emailError } = await resend.emails.send({
                 from: fromEmail,
                 to: userEmail,
                 subject: 'Welcome to Premium!',
-                html: html,
+                html: getPremiumConfirmationEmailHTML(username, purchaseDate, amount),
               });
 
               if (emailError) {
