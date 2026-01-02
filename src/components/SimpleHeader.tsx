@@ -42,42 +42,64 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
   // Check auth status on mount and listen for changes
   useEffect(() => {
     let mounted = true;
-    let loadingTimeout: ReturnType<typeof setTimeout> | null = null;
 
-    async function loadUser() {
-      console.log('[SimpleHeader] Starting loadUser...');
+    // If we already have a hydrated user from Zustand, use it immediately!
+    // This makes page refresh instant instead of waiting for getSession()
+    if (user) {
+      console.log('[SimpleHeader] Using hydrated user:', user.email);
+      setIsLoading(false);
 
-      // Safety timeout - ALWAYS stop loading after 10 seconds
-      loadingTimeout = setTimeout(() => {
-        if (mounted) {
-          console.warn('[SimpleHeader] Auth loading timeout - forcing completion');
-          setIsLoading(false);
+      // Verify session in background (non-blocking) - refresh user data silently
+      (async () => {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session && mounted) {
+            console.log('[SimpleHeader] Background check: session expired, logging out');
+            clearUserData();
+          } else if (session && mounted) {
+            // Session valid - refresh user data in background
+            try {
+              await loadUserData(user.id);
+              console.log('[SimpleHeader] Background data refresh complete');
+            } catch (err) {
+              console.warn('[SimpleHeader] Background data refresh failed:', err);
+            }
+          }
+        } catch (err) {
+          console.warn('[SimpleHeader] Background session check failed:', err);
         }
-      }, 10000);
+      })();
+
+      return; // Don't run the full loadUser flow
+    }
+
+    // Only do full auth check if no hydrated user
+    async function loadUser() {
+      console.log('[SimpleHeader] No hydrated user, checking session...');
 
       try {
-        console.log('[SimpleHeader] Getting Supabase session...');
-        const { data: { session }, error } = await supabase.auth.getSession();
-        console.log('[SimpleHeader] Session result:', { hasSession: !!session, hasToken: !!session?.access_token, error });
+        // Add timeout race to prevent hanging
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Session check timeout')), 3000)
+        );
 
-        if (!mounted) {
-          console.log('[SimpleHeader] Component unmounted, aborting');
-          return;
-        }
+        const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]);
+        console.log('[SimpleHeader] Session result:', { hasSession: !!session, error });
+
+        if (!mounted) return;
 
         if (session?.access_token) {
-          console.log('[SimpleHeader] Fetching user profile from /api/me...');
+          console.log('[SimpleHeader] Fetching user profile...');
           const response = await fetch('/api/me', {
             headers: { Authorization: `Bearer ${session.access_token}` },
           });
-          console.log('[SimpleHeader] /api/me response status:', response.status);
 
           if (response.ok) {
             const data = await response.json();
-            console.log('[SimpleHeader] User data received:', { id: data.id, email: data.email });
+            console.log('[SimpleHeader] User data received:', data.email);
 
             if (mounted) {
-              // Set user in app store - include avatar and title fields!
               setUser({
                 id: data.id,
                 email: data.email,
@@ -91,50 +113,32 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
                 updated_at: data.updated_at || new Date().toISOString(),
               });
 
-              // Set viewed badges from Supabase
               if (data.viewed_badges && Array.isArray(data.viewed_badges)) {
                 setViewedBadges(data.viewed_badges);
               }
 
-              // Load user's badges, stats, etc. from Supabase (source of truth)
-              console.log('[SimpleHeader] Loading user data...');
               try {
                 await loadUserData(data.id);
-                console.log('[SimpleHeader] User data loaded successfully');
               } catch (loadErr) {
                 console.error('[SimpleHeader] loadUserData failed:', loadErr);
-                // Don't clear user data, just log the error - user is still authenticated
               }
             }
           } else {
-            console.log('[SimpleHeader] /api/me failed, clearing user data');
-            if (mounted) {
-              clearUserData();
-            }
+            console.log('[SimpleHeader] /api/me failed');
+            if (mounted) clearUserData();
           }
         } else {
-          console.log('[SimpleHeader] No valid session, clearing user data');
-          if (mounted) {
-            clearUserData();
-          }
+          console.log('[SimpleHeader] No valid session');
+          if (mounted) clearUserData();
         }
       } catch (error) {
-        console.error('[SimpleHeader] Error loading user:', error);
-        if (mounted) {
-          clearUserData();
-        }
+        console.error('[SimpleHeader] Auth check failed:', error);
+        if (mounted) clearUserData();
       } finally {
-        console.log('[SimpleHeader] loadUser complete, setting isLoading=false');
-        if (loadingTimeout) {
-          clearTimeout(loadingTimeout);
-        }
-        if (mounted) {
-          setIsLoading(false);
-        }
+        if (mounted) setIsLoading(false);
       }
     }
 
-    // Initial load
     loadUser();
 
     // Listen for auth changes
@@ -196,11 +200,10 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
 
     return () => {
       mounted = false;
-      if (loadingTimeout) {
-        clearTimeout(loadingTimeout);
-      }
       subscription.unsubscribe();
     };
+    // Note: We intentionally don't include `user` in deps to avoid re-running on user changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setUser, loadUserData, clearUserData, setViewedBadges]);
 
   const isAuthenticated = !!user;
