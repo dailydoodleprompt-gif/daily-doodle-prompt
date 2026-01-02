@@ -129,12 +129,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const resend = new Resend(resendApiKey);
 
-    // Get username from profile
+    // Get username and email preferences from profile
     const { data: profile } = await supabase
       .from('profiles')
-      .select('username')
+      .select('username, email_notifications')
       .eq('id', authData.user.id)
       .single();
+
+    // Check if user has disabled email notifications (default to true if not set)
+    if (profile?.email_notifications === false) {
+      console.log('[WelcomeEmail] User has disabled email notifications, skipping');
+      res.status(200).json({ success: true, skipped: true, reason: 'email_notifications_disabled' });
+      return;
+    }
 
     const username = profile?.username || authData.user.user_metadata?.username || 'Artist';
 

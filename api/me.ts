@@ -69,7 +69,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       avatar_type,
       avatar_icon,
       current_title,
-      viewed_badges
+      viewed_badges,
+      email_notifications
     } = req.body;
 
     // Security: Only allow users to update safe fields
@@ -80,6 +81,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (avatar_icon !== undefined) updates.avatar_icon = avatar_icon;
     if (current_title !== undefined) updates.current_title = current_title;
     if (viewed_badges !== undefined) updates.viewed_badges = viewed_badges;
+    if (email_notifications !== undefined) updates.email_notifications = email_notifications;
 
     console.log("[API /api/me PATCH] Updates to apply:", JSON.stringify(updates));
 
@@ -145,6 +147,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     avatar_icon: profile.avatar_icon ?? null,
     current_title: profile.current_title ?? null,
     viewed_badges: profile.viewed_badges ?? [],
+    email_notifications: profile.email_notifications ?? true,
     created_at: profile.created_at,
     updated_at: profile.updated_at,
   });

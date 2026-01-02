@@ -33,6 +33,7 @@ User profile information and settings.
 | is_admin | boolean | NO | false | Admin privileges |
 | stripe_customer_id | text | YES | null | Stripe customer ID for payments |
 | viewed_badges | text[] | YES | '{}' | Array of badge IDs user has viewed |
+| email_notifications | boolean | YES | true | User opt-in for email notifications |
 | created_at | timestamptz | NO | now() | Account creation timestamp |
 | updated_at | timestamptz | NO | now() | Last update timestamp |
 

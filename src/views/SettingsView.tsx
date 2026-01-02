@@ -116,8 +116,27 @@ export function SettingsView({ onBack, onForgotPassword, onUpgrade }: SettingsVi
   const canChangePassword = user && !user.oauth_provider;
   const isOAuthUser = user?.oauth_provider != null;
 
-  const handleToggle = (key: keyof UserPreferences, value: boolean) => {
+  const handleToggle = async (key: keyof UserPreferences, value: boolean) => {
     updatePreferences({ [key]: value });
+
+    // Sync email notifications preference to database
+    if (key === 'email_notifications_enabled') {
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData.session) {
+          await fetch('/api/me', {
+            method: 'PATCH',
+            headers: {
+              'Authorization': `Bearer ${sessionData.session.access_token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email_notifications: value }),
+          });
+        }
+      } catch (err) {
+        console.error('Failed to sync email preference to database:', err);
+      }
+    }
   };
 
   const handleThemeChange = (value: string) => {
@@ -435,7 +454,10 @@ export function SettingsView({ onBack, onForgotPassword, onUpgrade }: SettingsVi
                 Email Notifications
               </Label>
               <p className="text-sm text-muted-foreground">
-                Receive weekly digest and special announcements
+                Receive welcome messages, badge unlocks, and activity updates
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Note: Purchase receipts will always be sent regardless of this setting.
               </p>
             </div>
             <Switch
