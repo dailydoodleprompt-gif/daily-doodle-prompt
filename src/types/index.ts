@@ -188,7 +188,7 @@ export type BadgeCategory = 'membership' | 'streak' | 'collection' | 'sharing' |
 // Badge rarity levels
 export type BadgeRarity = 'common' | 'rare' | 'epic' | 'legendary';
 
-// Helper function to check if a seasonal badge is currently available
+// Helper function to check if a seasonal badge is currently available (for awarding)
 export function isBadgeAvailable(badgeType: BadgeType): boolean {
   const badge = BADGE_INFO[badgeType];
   if (!badge.availableFrom) return true; // Always available (non-seasonal)
@@ -207,73 +207,64 @@ export function isBadgeAvailable(badgeType: BadgeType): boolean {
   return today >= from; // Available from date onward
 }
 
-// Check if a seasonal badge's availability period has passed
-export function isBadgeMissed(badgeType: BadgeType, earnedBadges: BadgeType[]): boolean {
+// Check if a badge should be VISIBLE in the badge collection UI
+// Per alpha feedback:
+// - Legendary (holiday) badges: HIDDEN until earned (surprise!)
+// - Epic (monthly) badges: Only visible during active month
+// - All earned badges: Always visible
+export function isBadgeVisible(badgeType: BadgeType, earnedBadges: BadgeType[]): boolean {
   const badge = BADGE_INFO[badgeType];
-  if (!badge.availableUntil) return false; // No end date means not missable
-  if (earnedBadges.includes(badgeType)) return false; // Already earned
 
+  // Non-seasonal badges are always visible
+  if (badge.category !== 'seasonal') return true;
+
+  // If user has earned it, always visible
+  if (earnedBadges.includes(badgeType)) return true;
+
+  // Legendary (holiday) badges: NEVER visible until earned - they're surprises!
+  if (badge.rarity === 'legendary') {
+    return false;
+  }
+
+  // Epic (monthly) badges: Only visible during active period
+  if (badge.rarity === 'epic') {
+    if (!badge.availableFrom || !badge.availableUntil) return false;
+    return isBadgeAvailable(badgeType);
+  }
+
+  return false;
+}
+
+// Get days remaining in current month (for monthly badge progress)
+export function getDaysRemainingInMonth(): number {
   const now = new Date();
-  const until = new Date(badge.availableUntil);
-  // Add a day to include the full end date
-  until.setDate(until.getDate() + 1);
-
-  return now > until;
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  return lastDay.getDate() - now.getDate();
 }
 
-// Check if a seasonal badge is upcoming (not yet available)
-export function isBadgeUpcoming(badgeType: BadgeType): boolean {
-  const badge = BADGE_INFO[badgeType];
-  if (!badge.availableFrom) return false; // No start date means always available
+// Get the currently active monthly badge (if any)
+export function getActiveMonthlyBadge(): BadgeType | null {
+  const monthlyBadges: BadgeType[] = [
+    'january_champion_2026',
+    'february_faithful_2026',
+    'march_maestro_2026',
+    'april_artist_2026',
+    'may_maven_2026',
+    'june_genius_2026',
+    'july_journeyer_2026',
+    'august_ace_2026',
+    'september_star_2026',
+    'october_original_2026',
+    'november_notable_2026',
+    'december_dedicator_2026',
+  ];
 
-  const today = new Date().toISOString().split('T')[0];
-  return today < badge.availableFrom;
-}
-
-// Get days until a badge becomes available
-export function getDaysUntilBadge(badgeType: BadgeType): number | null {
-  const badge = BADGE_INFO[badgeType];
-  if (!badge.availableFrom) return null;
-
-  const now = new Date();
-  const from = new Date(badge.availableFrom);
-  const diffTime = from.getTime() - now.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-  return diffDays > 0 ? diffDays : null;
-}
-
-// Get all seasonal badges organized by status
-export function getSeasonalBadgesStatus(earnedBadges: BadgeType[]) {
-  const seasonalBadges = (Object.keys(BADGE_INFO) as BadgeType[]).filter(
-    (badgeType) => BADGE_INFO[badgeType].category === 'seasonal'
-  );
-
-  const available: BadgeType[] = [];
-  const upcoming: BadgeType[] = [];
-  const missed: BadgeType[] = [];
-  const earned: BadgeType[] = [];
-
-  seasonalBadges.forEach((badgeType) => {
-    if (earnedBadges.includes(badgeType)) {
-      earned.push(badgeType);
-    } else if (isBadgeMissed(badgeType, earnedBadges)) {
-      missed.push(badgeType);
-    } else if (isBadgeUpcoming(badgeType)) {
-      upcoming.push(badgeType);
-    } else if (isBadgeAvailable(badgeType)) {
-      available.push(badgeType);
+  for (const badge of monthlyBadges) {
+    if (isBadgeAvailable(badge)) {
+      return badge;
     }
-  });
-
-  // Sort upcoming by availability date
-  upcoming.sort((a, b) => {
-    const aFrom = BADGE_INFO[a].availableFrom || '';
-    const bFrom = BADGE_INFO[b].availableFrom || '';
-    return aFrom.localeCompare(bFrom);
-  });
-
-  return { available, upcoming, missed, earned };
+  }
+  return null;
 }
 
 // Badge types - comprehensive list for gamification

@@ -4,10 +4,8 @@ import { useBadges, useAppStore } from '@/store/app-store';
 import {
   type BadgeType,
   BADGE_INFO,
-  isBadgeAvailable,
-  isBadgeMissed,
-  isBadgeUpcoming,
-  getDaysUntilBadge,
+  isBadgeVisible,
+  getDaysRemainingInMonth,
 } from '@/types';
 import {
   Tooltip,
@@ -63,8 +61,6 @@ import {
   Palmtree,
   Sunrise,
   Moon,
-  Clock,
-  Lock,
 } from 'lucide-react';
 
 const badgeIcons: Record<BadgeType, typeof Flame> = {
@@ -293,20 +289,15 @@ interface BadgeItemProps {
   isNew: boolean;
   size?: 'sm' | 'md';
   onClick: () => void;
-  earnedBadges: BadgeType[];
+  monthlyProgress?: { current: number; total: number }; // For active monthly badges
 }
 
-function BadgeItem({ badgeType, earned, earnedAt, isNew, size = 'md', onClick, earnedBadges }: BadgeItemProps) {
+function BadgeItem({ badgeType, earned, earnedAt, isNew, size = 'md', onClick, monthlyProgress }: BadgeItemProps) {
   const info = BADGE_INFO[badgeType];
   const Icon = badgeIcons[badgeType];
-  const isSeasonal = info.category === 'seasonal';
   const hasEmoji = !!info.emoji;
-
-  // Seasonal badge status
-  const missed = isSeasonal && !earned && isBadgeMissed(badgeType, earnedBadges);
-  const upcoming = isSeasonal && !earned && isBadgeUpcoming(badgeType);
-  const available = isSeasonal && !earned && isBadgeAvailable(badgeType);
-  const daysUntil = upcoming ? getDaysUntilBadge(badgeType) : null;
+  const isMonthlyChallenge = info.category === 'seasonal' && info.rarity === 'epic' && !earned;
+  const daysRemaining = isMonthlyChallenge ? getDaysRemainingInMonth() : 0;
 
   const sizeClasses = size === 'sm'
     ? 'w-12 h-12'
@@ -320,12 +311,14 @@ function BadgeItem({ badgeType, earned, earnedAt, isNew, size = 'md', onClick, e
     ? 'text-xl'
     : 'text-2xl sm:text-3xl';
 
-  // Rarity badge colors
-  const rarityBorderClass = info.rarity === 'legendary'
-    ? 'ring-2 ring-yellow-400 ring-offset-2 ring-offset-background'
-    : info.rarity === 'epic'
-    ? 'ring-2 ring-purple-400 ring-offset-2 ring-offset-background'
-    : '';
+  // Rarity badge colors - only show for earned badges
+  const rarityBorderClass = earned ? (
+    info.rarity === 'legendary'
+      ? 'ring-2 ring-yellow-400 ring-offset-2 ring-offset-background'
+      : info.rarity === 'epic'
+      ? 'ring-2 ring-purple-400 ring-offset-2 ring-offset-background'
+      : ''
+  ) : '';
 
   return (
     <TooltipProvider>
@@ -338,10 +331,6 @@ function BadgeItem({ badgeType, earned, earnedAt, isNew, size = 'md', onClick, e
               sizeClasses,
               earned
                 ? cn('bg-gradient-to-br shadow-lg text-white', badgeColors[badgeType], rarityBorderClass)
-                : missed
-                ? 'bg-muted/30 text-muted-foreground/30 opacity-50'
-                : upcoming
-                ? 'bg-muted/50 text-muted-foreground/40 border-2 border-dashed border-muted-foreground/30'
                 : 'bg-muted/50 text-muted-foreground/40 grayscale hover:grayscale-0'
             )}
           >
@@ -358,24 +347,9 @@ function BadgeItem({ badgeType, earned, earnedAt, isNew, size = 'md', onClick, e
               <div className="absolute -top-0.5 -right-0.5 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-background animate-pulse" />
             )}
 
-            {/* Missed badge indicator */}
-            {missed && (
-              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 bg-red-500/90 text-white text-[8px] font-bold rounded-full uppercase tracking-wide">
-                Missed
-              </div>
-            )}
-
-            {/* Upcoming badge indicator */}
-            {upcoming && (
-              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-0.5 px-1.5 py-0.5 bg-blue-500/90 text-white text-[8px] font-bold rounded-full">
-                <Clock className="w-2 h-2" />
-                {daysUntil && daysUntil <= 30 ? `${daysUntil}d` : 'Soon'}
-              </div>
-            )}
-
-            {/* Available now indicator for seasonal */}
-            {available && isSeasonal && (
-              <div className="absolute -top-0.5 -right-0.5 w-3 h-3 sm:w-4 sm:h-4 bg-amber-500 rounded-full border-2 border-background animate-pulse" />
+            {/* Monthly challenge active indicator */}
+            {isMonthlyChallenge && monthlyProgress && (
+              <div className="absolute -top-0.5 -right-0.5 w-3 h-3 sm:w-4 sm:h-4 bg-purple-500 rounded-full border-2 border-background animate-pulse" />
             )}
           </button>
         </TooltipTrigger>
@@ -383,12 +357,12 @@ function BadgeItem({ badgeType, earned, earnedAt, isNew, size = 'md', onClick, e
           <div className="space-y-1.5">
             <div className="flex items-center gap-2">
               <p className="font-semibold text-foreground">{info.name}</p>
-              {info.rarity === 'legendary' && (
+              {earned && info.rarity === 'legendary' && (
                 <span className="px-1.5 py-0.5 text-[10px] font-bold uppercase bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 rounded">
                   Legendary
                 </span>
               )}
-              {info.rarity === 'epic' && (
+              {earned && info.rarity === 'epic' && (
                 <span className="px-1.5 py-0.5 text-[10px] font-bold uppercase bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded">
                   Epic
                 </span>
@@ -407,32 +381,28 @@ function BadgeItem({ badgeType, earned, earnedAt, isNew, size = 'md', onClick, e
               </p>
             )}
 
-            {missed && (
-              <p className="text-xs text-red-600 dark:text-red-400 font-medium">
-                This limited-time badge is no longer available
-              </p>
+            {/* Monthly challenge progress */}
+            {isMonthlyChallenge && monthlyProgress && (
+              <div className="space-y-1.5 pt-1">
+                <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">
+                  Monthly Challenge Active!
+                </p>
+                <div className="text-xs text-muted-foreground">
+                  {monthlyProgress.current}/{monthlyProgress.total} doodles uploaded
+                </div>
+                <div className="w-full bg-muted rounded-full h-1.5">
+                  <div
+                    className="bg-purple-500 h-1.5 rounded-full transition-all"
+                    style={{ width: `${Math.min(100, (monthlyProgress.current / monthlyProgress.total) * 100)}%` }}
+                  />
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  {daysRemaining} days remaining
+                </p>
+              </div>
             )}
 
-            {upcoming && (
-              <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-                Available starting {new Date(info.availableFrom!).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                })}
-                {daysUntil && ` (${daysUntil} days)`}
-              </p>
-            )}
-
-            {available && isSeasonal && (
-              <p className="text-xs text-amber-600 dark:text-amber-400 font-medium animate-pulse">
-                Available NOW until {new Date(info.availableUntil!).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                })}!
-              </p>
-            )}
-
-            {!earned && !missed && !upcoming && !available && (
+            {!earned && !isMonthlyChallenge && (
               <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
                 Click to preview - Not yet earned
               </p>
@@ -453,8 +423,12 @@ export function BadgeCabinet({ className, compact = false }: BadgeCabinetProps) 
   const badges = useBadges();
   const markBadgeAsViewed = useAppStore((state) => state.markBadgeAsViewed);
   const viewedBadges = useAppStore((state) => state.viewedBadges);
-  
+  const getDoodles = useAppStore((state) => state.getDoodles);
+  const user = useAppStore((state) => state.user);
+
   const [selectedBadge, setSelectedBadge] = useState<BadgeType | null>(null);
+
+  const earnedBadgeTypes = useMemo(() => badges.map(b => b.badge_type), [badges]);
 
   const earnedBadgeMap = useMemo(() => {
     const map: Record<string, string> = {};
@@ -464,20 +438,44 @@ export function BadgeCabinet({ className, compact = false }: BadgeCabinetProps) 
     return map;
   }, [badges]);
 
+  // Filter badges using visibility rules - hide secret badges and inactive seasonal badges
+  const visibleBadges = useMemo(() => {
+    return allBadgesOrdered.filter((badgeType) =>
+      isBadgeVisible(badgeType, earnedBadgeTypes)
+    );
+  }, [earnedBadgeTypes]);
+
+  // Calculate monthly doodle progress for the active monthly challenge
+  const monthlyProgress = useMemo(() => {
+    if (!user) return null;
+    const userDoodles = getDoodles(user.id);
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+    const monthlyDoodles = userDoodles.filter((d) => {
+      const doodleDate = new Date(d.created_at);
+      return doodleDate >= monthStart && doodleDate <= monthEnd;
+    });
+
+    return { current: monthlyDoodles.length, total: 15 };
+  }, [user, getDoodles]);
+
   const stats = useMemo(() => {
-    const total = allBadgesOrdered.length;
+    // Only count visible badges in the total
+    const total = visibleBadges.length;
     const earned = badges.filter((b) =>
-      allBadgesOrdered.includes(b.badge_type)
+      visibleBadges.includes(b.badge_type)
     ).length;
     return { total, earned };
-  }, [badges]);
+  }, [badges, visibleBadges]);
 
   // Sort: earned badges first (by earned date), then unearned
   const sortedBadges = useMemo(() => {
     const earned: { type: BadgeType; earnedAt: string }[] = [];
     const unearned: BadgeType[] = [];
 
-    allBadgesOrdered.forEach((badgeType) => {
+    visibleBadges.forEach((badgeType) => {
       if (earnedBadgeMap[badgeType]) {
         earned.push({ type: badgeType, earnedAt: earnedBadgeMap[badgeType] });
       } else {
@@ -489,7 +487,7 @@ export function BadgeCabinet({ className, compact = false }: BadgeCabinetProps) 
     earned.sort((a, b) => new Date(b.earnedAt).getTime() - new Date(a.earnedAt).getTime());
 
     return [...earned.map((e) => e.type), ...unearned];
-  }, [earnedBadgeMap]);
+  }, [earnedBadgeMap, visibleBadges]);
 
   const handleBadgeClick = (badgeType: BadgeType) => {
     setSelectedBadge(badgeType);
@@ -526,62 +524,66 @@ export function BadgeCabinet({ className, compact = false }: BadgeCabinetProps) 
             "flex flex-wrap gap-2 sm:gap-3",
             compact ? "justify-start" : "justify-center"
           )}>
-            {sortedBadges.map((badgeType) => (
-              <BadgeItem
-                key={badgeType}
-                badgeType={badgeType}
-                earned={!!earnedBadgeMap[badgeType]}
-                earnedAt={earnedBadgeMap[badgeType]}
-                isNew={!!earnedBadgeMap[badgeType] && !viewedBadges.includes(badgeType)}
-                size={compact ? 'sm' : 'md'}
-                onClick={() => handleBadgeClick(badgeType)}
-                earnedBadges={badges.map(b => b.badge_type)}
-              />
-            ))}
+            {sortedBadges.map((badgeType) => {
+              const info = BADGE_INFO[badgeType];
+              const isActiveMonthlyChallenge =
+                info.category === 'seasonal' &&
+                info.rarity === 'epic' &&
+                !earnedBadgeMap[badgeType];
+
+              return (
+                <BadgeItem
+                  key={badgeType}
+                  badgeType={badgeType}
+                  earned={!!earnedBadgeMap[badgeType]}
+                  earnedAt={earnedBadgeMap[badgeType]}
+                  isNew={!!earnedBadgeMap[badgeType] && !viewedBadges.includes(badgeType)}
+                  size={compact ? 'sm' : 'md'}
+                  onClick={() => handleBadgeClick(badgeType)}
+                  monthlyProgress={isActiveMonthlyChallenge ? monthlyProgress ?? undefined : undefined}
+                />
+              );
+            })}
           </div>
         </CardContent>
       </Card>
 
       {/* Badge Detail Dialog */}
 {selectedBadge && selectedBadgeInfo && selectedBadgeIcon && selectedBadgeColors && (() => {
-  const isSeasonal = selectedBadgeInfo.category === 'seasonal';
   const hasEmoji = !!selectedBadgeInfo.emoji;
-  const earnedBadgeTypes = badges.map(b => b.badge_type);
-  const missed = isSeasonal && !isSelectedEarned && isBadgeMissed(selectedBadge, earnedBadgeTypes);
-  const upcoming = isSeasonal && !isSelectedEarned && isBadgeUpcoming(selectedBadge);
-  const available = isSeasonal && !isSelectedEarned && isBadgeAvailable(selectedBadge);
-  const daysUntil = upcoming ? getDaysUntilBadge(selectedBadge) : null;
+  const isMonthlyChallenge =
+    selectedBadgeInfo.category === 'seasonal' &&
+    selectedBadgeInfo.rarity === 'epic' &&
+    !isSelectedEarned;
 
-  // Rarity ring for legendary/epic
-  const rarityRingClass = selectedBadgeInfo.rarity === 'legendary'
-    ? 'ring-yellow-400'
-    : selectedBadgeInfo.rarity === 'epic'
-    ? 'ring-purple-400'
-    : selectedBadgeColors.ring;
+  // Rarity ring for earned legendary/epic badges
+  const rarityRingClass = isSelectedEarned ? (
+    selectedBadgeInfo.rarity === 'legendary'
+      ? 'ring-yellow-400'
+      : selectedBadgeInfo.rarity === 'epic'
+      ? 'ring-purple-400'
+      : selectedBadgeColors.ring
+  ) : selectedBadgeColors.ring;
 
   return (
     <Dialog open={!!selectedBadge} onOpenChange={handleCloseDialog}>
       <DialogContent className="sm:max-w-md text-center">
         <DialogHeader>
           <DialogTitle className="text-2xl text-center">
-            {isSelectedEarned ? 'Badge Earned!' : missed ? 'Badge Missed' : 'Badge Preview'}
+            {isSelectedEarned ? 'Badge Earned!' : 'Badge Preview'}
           </DialogTitle>
           <DialogDescription className="text-center">
             {isSelectedEarned
               ? "You've unlocked this achievement!"
-              : missed
-              ? "This limited-time badge is no longer available"
-              : upcoming
-              ? `Available starting ${new Date(selectedBadgeInfo.availableFrom!).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
-              : available
-              ? "Available now - don't miss it!"
+              : isMonthlyChallenge
+              ? "Complete the monthly challenge to earn this badge!"
               : "Keep going to unlock this badge!"}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col items-center py-6 space-y-4">
-          {/* Rarity badge */}
-          {selectedBadgeInfo.rarity && (
+          {/* Rarity badge - only show for earned badges */}
+          {isSelectedEarned && selectedBadgeInfo.rarity && (
             <div className={cn(
               "px-3 py-1 text-xs font-bold uppercase rounded-full",
               selectedBadgeInfo.rarity === 'legendary' && "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400",
@@ -598,8 +600,7 @@ export function BadgeCabinet({ className, compact = false }: BadgeCabinetProps) 
               'bg-gradient-to-br text-white shadow-2xl ring-8',
               selectedBadgeColors.bg,
               rarityRingClass,
-              !isSelectedEarned && 'opacity-50 grayscale',
-              missed && 'opacity-30'
+              !isSelectedEarned && 'opacity-50 grayscale'
             )}
           >
             {/* Render emoji or icon */}
@@ -620,13 +621,6 @@ export function BadgeCabinet({ className, compact = false }: BadgeCabinetProps) 
                 <Sparkles className="absolute w-5 h-5 text-yellow-300 -bottom-1 right-0 animate-pulse" style={{ animationDelay: '200ms' }} />
               </div>
             )}
-
-            {/* Lock icon for missed badges */}
-            {missed && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Lock className="w-12 h-12 text-red-500/80" />
-              </div>
-            )}
           </div>
 
           {/* Badge Info */}
@@ -645,44 +639,31 @@ export function BadgeCabinet({ className, compact = false }: BadgeCabinetProps) 
               </p>
             )}
 
-            {missed && (
-              <p className="text-sm text-red-600 dark:text-red-400 font-medium">
-                This badge was only available until{' '}
-                {new Date(selectedBadgeInfo.availableUntil!).toLocaleDateString('en-US', {
-                  month: 'long',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
-              </p>
-            )}
-
-            {upcoming && (
-              <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">
-                Coming{' '}
-                {new Date(selectedBadgeInfo.availableFrom!).toLocaleDateString('en-US', {
-                  month: 'long',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
-                {daysUntil && ` (${daysUntil} days)`}
-              </p>
-            )}
-
-            {available && (
-              <p className="text-sm text-amber-600 dark:text-amber-400 font-medium animate-pulse">
-                Available until{' '}
-                {new Date(selectedBadgeInfo.availableUntil!).toLocaleDateString('en-US', {
-                  month: 'long',
-                  day: 'numeric',
-                })}
-                !
-              </p>
+            {/* Monthly challenge progress in dialog */}
+            {isMonthlyChallenge && monthlyProgress && (
+              <div className="space-y-2 pt-2">
+                <p className="text-sm text-purple-600 dark:text-purple-400 font-medium">
+                  Monthly Challenge Active!
+                </p>
+                <div className="text-sm text-muted-foreground">
+                  {monthlyProgress.current}/{monthlyProgress.total} doodles uploaded
+                </div>
+                <div className="w-full bg-muted rounded-full h-2">
+                  <div
+                    className="bg-purple-500 h-2 rounded-full transition-all"
+                    style={{ width: `${Math.min(100, (monthlyProgress.current / monthlyProgress.total) * 100)}%` }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {getDaysRemainingInMonth()} days remaining this month
+                </p>
+              </div>
             )}
           </div>
         </div>
 
         <Button onClick={handleCloseDialog} className="w-full">
-          {isSelectedEarned ? 'Awesome!' : missed ? 'Maybe Next Year' : 'Got it!'}
+          {isSelectedEarned ? 'Awesome!' : 'Got it!'}
         </Button>
       </DialogContent>
     </Dialog>

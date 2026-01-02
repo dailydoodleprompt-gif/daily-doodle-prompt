@@ -185,6 +185,18 @@ export function BadgeUnlockPopup() {
     return null;
   }
 
+  // Check badge type for special celebration messaging
+  const isSecretHolidayBadge = info.category === 'seasonal' && info.rarity === 'legendary';
+  const isMonthlyChallenge = info.category === 'seasonal' && info.rarity === 'epic';
+  const hasEmoji = !!info.emoji;
+
+  // Special ring colors for rarity
+  const rarityRingClass = isSecretHolidayBadge
+    ? 'ring-yellow-400'
+    : isMonthlyChallenge
+    ? 'ring-purple-400'
+    : colors.ring;
+
   const handleClose = () => {
     clearNewlyEarnedBadge();
   };
@@ -194,14 +206,42 @@ export function BadgeUnlockPopup() {
       <DialogContent className="sm:max-w-md text-center">
         <DialogHeader>
           <DialogTitle className="text-2xl text-center">
-            Badge Unlocked!
+            {isSecretHolidayBadge ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="text-3xl">🎉</span>
+                SECRET BADGE UNLOCKED!
+                <span className="text-3xl">🎉</span>
+              </span>
+            ) : isMonthlyChallenge ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="text-3xl">🏆</span>
+                Monthly Challenge Complete!
+              </span>
+            ) : (
+              'Badge Unlocked!'
+            )}
           </DialogTitle>
           <DialogDescription className="text-center">
-            Congratulations! You&apos;ve earned a new badge!
+            {isSecretHolidayBadge
+              ? "You discovered a hidden holiday badge!"
+              : isMonthlyChallenge
+              ? "You completed the monthly doodle challenge!"
+              : "Congratulations! You've earned a new badge!"}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col items-center py-6 space-y-4">
+          {/* Rarity indicator for seasonal badges */}
+          {info.rarity && (
+            <div className={cn(
+              "px-3 py-1 text-xs font-bold uppercase rounded-full",
+              info.rarity === 'legendary' && "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400",
+              info.rarity === 'epic' && "bg-purple-500/20 text-purple-600 dark:text-purple-400"
+            )}>
+              {info.rarity}
+            </div>
+          )}
+
           {/* Animated Badge */}
           <div
             className={cn(
@@ -209,11 +249,15 @@ export function BadgeUnlockPopup() {
               'bg-gradient-to-br text-white shadow-2xl',
               'ring-8',
               colors.bg,
-              colors.ring,
+              rarityRingClass,
               isAnimating && 'animate-bounce'
             )}
           >
-            <Icon className="w-16 h-16" />
+            {hasEmoji ? (
+              <span className="text-5xl">{info.emoji}</span>
+            ) : (
+              <Icon className="w-16 h-16" />
+            )}
 
             {/* Sparkle effects */}
             <div className="absolute inset-0 flex items-center justify-center">
