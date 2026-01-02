@@ -260,6 +260,63 @@ Doodle likes (social engagement).
 
 ---
 
+### doodle_reports
+
+Content moderation reports submitted by users.
+
+**Purpose:** Allow users to report inappropriate content for admin review.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| id | uuid | NO | gen_random_uuid() | Primary key |
+| doodle_id | uuid | NO | - | Foreign key to doodles(id) |
+| reporter_id | uuid | NO | - | Foreign key to profiles(id), user who reported |
+| reason | text | NO | - | Report reason category |
+| details | text | YES | null | Optional additional context from reporter |
+| status | text | NO | 'pending' | Report status: 'pending', 'reviewed', 'actioned', 'dismissed' |
+| created_at | timestamptz | NO | now() | When report was submitted |
+| reviewed_at | timestamptz | YES | null | When admin reviewed |
+| reviewed_by | uuid | YES | null | Admin who reviewed |
+| resolution_notes | text | YES | null | Notes from admin review |
+
+**Indexes:**
+- PRIMARY KEY (id)
+- INDEX on doodle_id (for reports per doodle)
+- INDEX on reporter_id (for reports by user)
+- INDEX on status (for pending reports queue)
+- INDEX on created_at (for chronological order)
+
+**RLS Policies:**
+- Users can insert reports for doodles they don't own
+- Users cannot report their own doodles (CHECK constraint)
+- Users cannot view other users' reports
+- Admins can view and update all reports
+- Users can view their own submitted reports
+
+**Foreign Keys:**
+- doodle_id → doodles(id) ON DELETE CASCADE
+- reporter_id → profiles(id) ON DELETE CASCADE
+- reviewed_by → profiles(id) ON DELETE SET NULL
+
+**Constraints:**
+- CHECK (reporter_id != doodle.user_id) - Cannot report own doodles
+
+**Report Reasons:**
+- `inappropriate_content` - Nudity, violence, or other inappropriate material
+- `spam` - Promotional content, repetitive posts, or unrelated images
+- `harassment` - Targets, bullies, or harasses another person
+- `copyright` - Uses copyrighted material without permission
+- `off_topic` - Does not relate to the daily prompt
+- `other` - Another reason not listed above
+
+**Report Statuses:**
+- `pending` - Awaiting admin review
+- `reviewed` - Reviewed but no action taken
+- `actioned` - Content removed or user warned
+- `dismissed` - Report dismissed as invalid
+
+---
+
 ## Storage Buckets
 
 ### doodles
@@ -392,17 +449,17 @@ All tables have RLS enabled for security.
 │ is_premium  │     │ image_url   │     └─────────────┘
 │ is_admin    │     │ likes_count │
 └─────────────┘     └─────────────┘
-       │
-       │    ┌─────────────┐
-       ├───<│ user_badges │
-       │    │             │
-       │    │ user_id(PK) │
-       │    │ badge_id(PK)│
-       │    │ earned_at   │
-       │    └─────────────┘
-       │
-       │    ┌─────────────┐
-       ├───<│  bookmarks  │
+       │                   │
+       │    ┌─────────────┐│    ┌─────────────────┐
+       ├───<│ user_badges ││───<│  doodle_reports │
+       │    │             ││    │                 │
+       │    │ user_id(PK) ││    │ id (PK)         │
+       │    │ badge_id(PK)││    │ doodle_id (FK)  │
+       │    │ earned_at   ││    │ reporter_id (FK)│
+       │    └─────────────┘│    │ reason          │
+       │                   │    │ status          │
+       │    ┌─────────────┐│    │ reviewed_by (FK)│
+       ├───<│  bookmarks  │└────└─────────────────┘
        │    │             │
        │    │ user_id(PK) │
        │    │ prompt_id(PK)│

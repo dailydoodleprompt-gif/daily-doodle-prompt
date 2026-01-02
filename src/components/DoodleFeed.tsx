@@ -27,7 +27,9 @@ import {
   Image as ImageIcon,
   Trash2,
   Shield,
+  Flag,
 } from 'lucide-react';
+import { ReportDoodleDialog } from '@/components/ReportDoodleDialog';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { getTodayEST, formatShortDate, getDateOffsetFromBase } from '@/lib/timezone';
@@ -52,6 +54,8 @@ export function DoodleFeed({ prompts, className, onUserClick, onPromptClick, onA
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [doodleToDelete, setDoodleToDelete] = useState<{ id: string; isAdmin: boolean } | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [doodleToReport, setDoodleToReport] = useState<string | null>(null);
 
   const user = useUser();
   const isAdmin = useIsAdmin();
@@ -62,6 +66,15 @@ export function DoodleFeed({ prompts, className, onUserClick, onPromptClick, onA
   const openDeleteDialog = (doodleId: string, asAdmin: boolean) => {
     setDoodleToDelete({ id: doodleId, isAdmin: asAdmin });
     setDeleteDialogOpen(true);
+  };
+
+  const openReportDialog = (doodleId: string) => {
+    if (!user) {
+      onAuthRequired?.();
+      return;
+    }
+    setDoodleToReport(doodleId);
+    setReportDialogOpen(true);
   };
 
   const handleConfirmDelete = async () => {
@@ -170,6 +183,7 @@ export function DoodleFeed({ prompts, className, onUserClick, onPromptClick, onA
                       onPromptClick={onPromptClick}
                       isAdmin={isAdmin}
                       onDeleteClick={openDeleteDialog}
+                      onReportClick={openReportDialog}
                       onAuthRequired={onAuthRequired}
                     />
                   )}
@@ -204,6 +218,16 @@ export function DoodleFeed({ prompts, className, onUserClick, onPromptClick, onA
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Report Dialog */}
+      <ReportDoodleDialog
+        open={reportDialogOpen}
+        onOpenChange={setReportDialogOpen}
+        doodleId={doodleToReport || ''}
+        onReportSubmitted={() => {
+          setDoodleToReport(null);
+        }}
+      />
     </Card>
   );
 }
@@ -264,10 +288,11 @@ interface DoodleFeedItemProps {
   onPromptClick?: (promptId: string) => void;
   isAdmin?: boolean;
   onDeleteClick?: (doodleId: string, asAdmin: boolean) => void;
+  onReportClick?: (doodleId: string) => void;
   onAuthRequired?: () => void;
 }
 
-function DoodleFeedItem({ doodle, onUserClick, onPromptClick, isAdmin, onDeleteClick, onAuthRequired }: DoodleFeedItemProps) {
+function DoodleFeedItem({ doodle, onUserClick, onPromptClick, isAdmin, onDeleteClick, onReportClick, onAuthRequired }: DoodleFeedItemProps) {
   const user = useUser();
   const isOwn = doodle.user_id === user?.id;
   const username = doodle.user_username || 'Artist';
@@ -308,22 +333,36 @@ function DoodleFeedItem({ doodle, onUserClick, onPromptClick, isAdmin, onDeleteC
                 })}
               </span>
             </div>
-            {/* Delete button for owner or admin */}
-            {canDelete && onDeleteClick && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
-                onClick={() => onDeleteClick(doodle.id, !isOwn && !!isAdmin)}
-                title={isOwn ? 'Delete doodle' : 'Admin delete'}
-              >
-                {isOwn ? (
-                  <Trash2 className="h-4 w-4" />
-                ) : (
-                  <Shield className="h-4 w-4" />
-                )}
-              </Button>
-            )}
+            <div className="flex items-center gap-1">
+              {/* Report button for non-owners */}
+              {!isOwn && user && onReportClick && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => onReportClick(doodle.id)}
+                  title="Report doodle"
+                >
+                  <Flag className="h-4 w-4" />
+                </Button>
+              )}
+              {/* Delete button for owner or admin */}
+              {canDelete && onDeleteClick && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
+                  onClick={() => onDeleteClick(doodle.id, !isOwn && !!isAdmin)}
+                  title={isOwn ? 'Delete doodle' : 'Admin delete'}
+                >
+                  {isOwn ? (
+                    <Trash2 className="h-4 w-4" />
+                  ) : (
+                    <Shield className="h-4 w-4" />
+                  )}
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Doodle Preview - Click to view full prompt details */}

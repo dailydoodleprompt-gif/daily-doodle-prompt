@@ -39,7 +39,9 @@ import {
   Image as ImageIcon,
   User,
   Shield,
+  Flag,
 } from 'lucide-react';
+import { ReportDoodleDialog } from '@/components/ReportDoodleDialog';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -72,6 +74,8 @@ export function DoodleGallery({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [doodleToDelete, setDoodleToDelete] = useState<{ id: string; isAdmin: boolean } | null>(null);
   const [localDoodles, setLocalDoodles] = useState<Doodle[]>(doodles);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [doodleToReport, setDoodleToReport] = useState<string | null>(null);
 
   const user = useUser();
   const isAdmin = useIsAdmin();
@@ -103,6 +107,15 @@ export function DoodleGallery({
   const openDeleteDialog = (doodleId: string, asAdmin: boolean) => {
     setDoodleToDelete({ id: doodleId, isAdmin: asAdmin });
     setDeleteDialogOpen(true);
+  };
+
+  const openReportDialog = (doodleId: string) => {
+    if (!user) {
+      onAuthRequired?.();
+      return;
+    }
+    setDoodleToReport(doodleId);
+    setReportDialogOpen(true);
   };
 
   const handleConfirmDelete = async () => {
@@ -170,8 +183,8 @@ export function DoodleGallery({
                   </Badge>
                 )}
 
-                {/* Actions Menu - Show for owner OR admin */}
-                {(showActions && isOwn) || (isAdmin && doodle.is_public) ? (
+                {/* Actions Menu - Show for owner, admin, or any logged-in user (report) */}
+                {(showActions && isOwn) || (isAdmin && doodle.is_public) || (!isOwn && user && doodle.is_public) ? (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
@@ -229,6 +242,21 @@ export function DoodleGallery({
                           >
                             <Shield className="h-4 w-4 mr-2" />
                             Admin Delete
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                      {/* Report option for non-owners */}
+                      {!isOwn && user && (
+                        <>
+                          {(isOwn || isAdmin) && <DropdownMenuSeparator />}
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openReportDialog(doodle.id);
+                            }}
+                          >
+                            <Flag className="h-4 w-4 mr-2" />
+                            Report
                           </DropdownMenuItem>
                         </>
                       )}
@@ -366,6 +394,17 @@ export function DoodleGallery({
                 </div>
 
                 <div className="flex items-center gap-2">
+                  {/* Report button for non-owners */}
+                  {selectedDoodle.user_id !== user?.id && user && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => openReportDialog(selectedDoodle.id)}
+                    >
+                      <Flag className="h-4 w-4 mr-1" />
+                      Report
+                    </Button>
+                  )}
                   {/* Delete button in detail view for owner or admin */}
                   {(selectedDoodle.user_id === user?.id || isAdmin) && (
                     <Button
@@ -419,6 +458,16 @@ export function DoodleGallery({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Report Dialog */}
+      <ReportDoodleDialog
+        open={reportDialogOpen}
+        onOpenChange={setReportDialogOpen}
+        doodleId={doodleToReport || ''}
+        onReportSubmitted={() => {
+          setDoodleToReport(null);
+        }}
+      />
     </>
   );
 }

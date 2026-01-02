@@ -865,7 +865,7 @@ export interface PromptIdea {
   admin_notes?: string | null;
 }
 
-// Doodle Flag/Report
+// Doodle Flag/Report (legacy - links to support ticket system)
 export interface DoodleFlag {
   id: string;
   doodle_id: string;
@@ -873,6 +873,63 @@ export interface DoodleFlag {
   reason: string;
   created_at: string;
   ticket_id: string; // Links to support ticket system
+}
+
+// ===== DOODLE REPORTING SYSTEM =====
+// Report reasons for flagging inappropriate content
+export type DoodleReportReason =
+  | 'inappropriate_content'
+  | 'spam'
+  | 'harassment'
+  | 'copyright'
+  | 'off_topic'
+  | 'other';
+
+export const REPORT_REASONS: Record<DoodleReportReason, { label: string; description: string }> = {
+  inappropriate_content: {
+    label: 'Inappropriate Content',
+    description: 'Contains nudity, violence, or other inappropriate material',
+  },
+  spam: {
+    label: 'Spam',
+    description: 'Promotional content, repetitive posts, or unrelated images',
+  },
+  harassment: {
+    label: 'Harassment',
+    description: 'Targets, bullies, or harasses another person',
+  },
+  copyright: {
+    label: 'Copyright Violation',
+    description: 'Uses copyrighted material without permission',
+  },
+  off_topic: {
+    label: 'Off Topic',
+    description: 'Does not relate to the daily prompt',
+  },
+  other: {
+    label: 'Other',
+    description: 'Another reason not listed above',
+  },
+};
+
+// Report status for admin review workflow
+export type DoodleReportStatus = 'pending' | 'reviewed' | 'actioned' | 'dismissed';
+
+// Full doodle report for admin review
+export interface DoodleReport {
+  id: string;
+  doodle_id: string;
+  reporter_id: string;
+  reason: DoodleReportReason;
+  details?: string | null; // Optional additional context from reporter
+  status: DoodleReportStatus;
+  created_at: string;
+  reviewed_at?: string | null;
+  reviewed_by?: string | null; // Admin user ID
+  resolution_notes?: string | null;
+  // Embedded doodle info for display (populated at query time)
+  doodle?: Doodle;
+  reporter_username?: string;
 }
 
 // App state

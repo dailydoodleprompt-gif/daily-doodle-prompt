@@ -24,6 +24,9 @@ import type {
   Notification,
   PromptIdea,
   DoodleFlag,
+  DoodleReport,
+  DoodleReportReason,
+  DoodleReportStatus,
 } from '@/types';
 import {
   DEFAULT_TITLES,
@@ -48,6 +51,7 @@ const SHARES_STORAGE_KEY = 'dailydoodle_shares';
 const USER_STATS_STORAGE_KEY = 'dailydoodle_user_stats';
 const ADMIN_SETTINGS_STORAGE_KEY = 'dailydoodle_admin_settings';
 const USER_BADGES_STORAGE_KEY = 'dailydoodle_user_badges';
+const DOODLE_REPORTS_STORAGE_KEY = 'dailydoodle_doodle_reports';
 
 // Offensive words filter
 const OFFENSIVE_WORDS = [
@@ -271,6 +275,20 @@ function saveUserBadge(userId: string, badge: Badge): void {
 
 function loadUserBadges(userId: string): Badge[] {
   return getStoredUserBadges(userId);
+}
+
+// Doodle reports storage
+function getStoredDoodleReports(): DoodleReport[] {
+  try {
+    const stored = localStorage.getItem(DOODLE_REPORTS_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveDoodleReports(reports: DoodleReport[]): void {
+  localStorage.setItem(DOODLE_REPORTS_STORAGE_KEY, JSON.stringify(reports));
 }
 
 function generateId(): string {
@@ -529,6 +547,11 @@ interface AppState {
   // Doodle moderation
   flagDoodle: (doodleId: string, reason: string) => Promise<{ success: boolean; ticketId?: string; error?: string }>;
   getDoodleFlags: (doodleId?: string) => DoodleFlag[];
+
+  // Doodle reporting (new system)
+  submitDoodleReport: (doodleId: string, reason: DoodleReportReason, details?: string) => Promise<{ success: boolean; error?: string }>;
+  getDoodleReports: (status?: DoodleReportStatus) => DoodleReport[];
+  updateReportStatus: (reportId: string, status: DoodleReportStatus, resolutionNotes?: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 export const useAppStore = create<AppState>()(
@@ -2181,6 +2204,140 @@ if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')
           return flags.filter((f: any) => f.doodle_id === doodleId);
         }
         return flags;
+      },
+
+      // Doodle reporting (new system)
+      submitDoodleReport: async (doodleId, reason, details) => {
+        const { user } = get();
+        if (!user) {
+          return { success: false, error: 'Must be logged in to report content' };
+        }
+
+        // Check if user has already reported this doodle
+        const existingReports = getStoredDoodleReports();
+        const alreadyReported = existingReports.some(
+          r => r.doodle_id === doodleId && r.reporter_id === user.id && r.status === 'pending'
+        );
+        if (alreadyReported) {
+          return { success: false, error: 'You have already reported this doodle' };
+        }
+
+        // Get doodle info for the report
+        const doodles = getStoredDoodles();
+        const doodle = doodles.find(d => d.id === doodleId);
+        if (!doodle) {
+          return { success: false, error: 'Doodle not found' };
+        }
+
+        // Cannot report your own doodle
+        if (doodle.user_id === user.id) {
+          return { success: false, error: 'You cannot report your own doodle' };
+        }
+
+        const newReport: DoodleReport = {
+          id: generateId(),
+          doodle_id: doodleId,
+          reporter_id: user.id,
+          reason,
+          details: details || null,
+          status: 'pending',
+          created_at: new Date().toISOString(),
+          reporter_username: user.username,
+          doodle: doodle,
+        };
+
+        existingReports.push(newReport);
+        saveDoodleReports(existingReports);
+
+        // Also sync to Supabase (fire-and-forget)
+        (async () => {
+          try {
+            const { error } = await supabase.from('doodle_reports').insert({
+              id: newReport.id,
+              doodle_id: newReport.doodle_id,
+              reporter_id: newReport.reporter_id,
+              reason: newReport.reason,
+              details: newReport.details,
+              status: newReport.status,
+              created_at: newReport.created_at,
+            });
+            if (error) {
+              console.error('[submitDoodleReport] Failed to sync to Supabase:', error);
+            } else {
+              console.log('[submitDoodleReport] Report synced to Supabase');
+            }
+          } catch (err) {
+            console.error('[submitDoodleReport] Error syncing report:', err);
+          }
+        })();
+
+        return { success: true };
+      },
+
+      getDoodleReports: (status) => {
+        const { user } = get();
+        if (!user?.is_admin) return [];
+
+        const reports = getStoredDoodleReports();
+
+        // Enrich reports with doodle data
+        const doodles = getStoredDoodles();
+        const enrichedReports = reports.map(report => ({
+          ...report,
+          doodle: doodles.find(d => d.id === report.doodle_id),
+        }));
+
+        if (status) {
+          return enrichedReports.filter(r => r.status === status);
+        }
+        return enrichedReports;
+      },
+
+      updateReportStatus: async (reportId, status, resolutionNotes) => {
+        const { user } = get();
+        if (!user?.is_admin) {
+          return { success: false, error: 'Admin access required' };
+        }
+
+        const reports = getStoredDoodleReports();
+        const reportIndex = reports.findIndex(r => r.id === reportId);
+        if (reportIndex === -1) {
+          return { success: false, error: 'Report not found' };
+        }
+
+        reports[reportIndex] = {
+          ...reports[reportIndex],
+          status,
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: user.id,
+          resolution_notes: resolutionNotes || null,
+        };
+
+        saveDoodleReports(reports);
+
+        // Sync to Supabase (fire-and-forget)
+        (async () => {
+          try {
+            const { error } = await supabase
+              .from('doodle_reports')
+              .update({
+                status,
+                reviewed_at: reports[reportIndex].reviewed_at,
+                reviewed_by: user.id,
+                resolution_notes: resolutionNotes || null,
+              })
+              .eq('id', reportId);
+            if (error) {
+              console.error('[updateReportStatus] Failed to sync to Supabase:', error);
+            } else {
+              console.log('[updateReportStatus] Status update synced to Supabase');
+            }
+          } catch (err) {
+            console.error('[updateReportStatus] Error syncing status:', err);
+          }
+        })();
+
+        return { success: true };
       },
     }),
     {

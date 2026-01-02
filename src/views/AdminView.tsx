@@ -62,7 +62,12 @@ import {
   Settings,
   Tag,
   Image,
+  Flag,
+  CheckCircle,
+  XCircle,
+  Eye,
 } from 'lucide-react';
+import { type DoodleReport, type DoodleReportStatus, REPORT_REASONS } from '@/types';
 import { supabase } from '@/sdk/core/supabase';
 
 const resetPasswordSchema = z.object({
@@ -103,6 +108,8 @@ export function AdminView({ onBack }: AdminViewProps) {
   const updateAppSettings = useAppStore((state) => state.updateAppSettings);
   const getDoodles = useAppStore((state) => state.getDoodles);
   const deleteDoodle = useAppStore((state) => state.deleteDoodle);
+  const getDoodleReports = useAppStore((state) => state.getDoodleReports);
+  const updateReportStatus = useAppStore((state) => state.updateReportStatus);
 
   const [users, setUsers] = useState<UserToManage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -117,6 +124,11 @@ export function AdminView({ onBack }: AdminViewProps) {
   const [selectedUser, setSelectedUser] = useState<UserToManage | null>(null);
   const [selectedDoodleId, setSelectedDoodleId] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+
+  // Report review states
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [selectedReport, setSelectedReport] = useState<DoodleReport | null>(null);
+  const [reportFilter, setReportFilter] = useState<'pending' | 'all'>('pending');
 
   const resetPasswordForm = useForm<ResetPasswordFormData>({
     resolver: zodResolver(resetPasswordSchema),
@@ -307,6 +319,52 @@ export function AdminView({ onBack }: AdminViewProps) {
     setSuccessMessage(`Tags have been ${enabled ? 'enabled' : 'disabled'} globally.`);
   };
 
+  // Report handling functions
+  const handleReviewReport = (report: DoodleReport) => {
+    setSelectedReport(report);
+    setReviewDialogOpen(true);
+  };
+
+  const handleDismissReport = async () => {
+    if (!selectedReport) return;
+    setActionLoading(true);
+    try {
+      await updateReportStatus(selectedReport.id, 'dismissed', 'Report dismissed - no action taken');
+      setSuccessMessage('Report has been dismissed.');
+      setReviewDialogOpen(false);
+      setSelectedReport(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to dismiss report');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleActionReport = async () => {
+    if (!selectedReport) return;
+    setActionLoading(true);
+    try {
+      // Delete the reported doodle
+      deleteDoodle(selectedReport.doodle_id);
+      // Mark report as actioned
+      await updateReportStatus(selectedReport.id, 'actioned', 'Content removed');
+      setSuccessMessage('Doodle has been removed and report marked as actioned.');
+      setReviewDialogOpen(false);
+      setSelectedReport(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to action report');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Get reports based on filter
+  const reports = reportFilter === 'pending'
+    ? getDoodleReports('pending')
+    : getDoodleReports();
+
+  const pendingReportsCount = getDoodleReports('pending').length;
+
   // Clear success message after 5 seconds
   useEffect(() => {
     if (successMessage) {
@@ -446,6 +504,113 @@ export function AdminView({ onBack }: AdminViewProps) {
               onCheckedChange={handleToggleTags}
             />
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Content Reports */}
+      <Card className="mb-6">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Flag className="h-5 w-5" />
+                Content Reports
+                {pendingReportsCount > 0 && (
+                  <Badge variant="destructive">{pendingReportsCount}</Badge>
+                )}
+              </CardTitle>
+              <CardDescription>
+                Review and manage reported doodles
+              </CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant={reportFilter === 'pending' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setReportFilter('pending')}
+              >
+                Pending
+              </Button>
+              <Button
+                variant={reportFilter === 'all' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setReportFilter('all')}
+              >
+                All
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {reports.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              {reportFilter === 'pending' ? 'No pending reports' : 'No reports found'}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {reports.map((report) => (
+                <div
+                  key={report.id}
+                  className="flex items-start gap-4 p-4 rounded-lg border"
+                >
+                  {/* Doodle preview */}
+                  {report.doodle && (
+                    <div className="w-20 h-20 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                      <img
+                        src={report.doodle.image_url}
+                        alt="Reported doodle"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+
+                  {/* Report details */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge variant={report.status === 'pending' ? 'destructive' : 'secondary'}>
+                        {report.status}
+                      </Badge>
+                      <span className="text-sm text-muted-foreground">
+                        {REPORT_REASONS[report.reason]?.label || report.reason}
+                      </span>
+                    </div>
+                    {report.details && (
+                      <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                        {report.details}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      <span>
+                        Reported by: {report.reporter_username || 'Unknown'}
+                      </span>
+                      <span>
+                        {new Date(report.created_at).toLocaleDateString()}
+                      </span>
+                      {report.doodle && (
+                        <span>
+                          Creator: {report.doodle.user_username || 'Unknown'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  {report.status === 'pending' && (
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleReviewReport(report)}
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        Review
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -779,6 +944,109 @@ export function AdminView({ onBack }: AdminViewProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Review Report Dialog */}
+      <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Flag className="h-5 w-5" />
+              Review Report
+            </DialogTitle>
+            <DialogDescription>
+              Review this reported content and take appropriate action.
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedReport && (
+            <div className="space-y-4 py-4">
+              {/* Reported doodle preview */}
+              {selectedReport.doodle && (
+                <div className="rounded-lg overflow-hidden bg-muted">
+                  <img
+                    src={selectedReport.doodle.image_url}
+                    alt="Reported doodle"
+                    className="w-full max-h-64 object-contain"
+                  />
+                </div>
+              )}
+
+              {/* Report details */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">Reason:</span>
+                  <Badge>{REPORT_REASONS[selectedReport.reason]?.label || selectedReport.reason}</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {REPORT_REASONS[selectedReport.reason]?.description}
+                </p>
+              </div>
+
+              {selectedReport.details && (
+                <div className="space-y-1">
+                  <span className="font-medium text-sm">Reporter's notes:</span>
+                  <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
+                    {selectedReport.details}
+                  </p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Reporter:</span>
+                  <p className="font-medium">{selectedReport.reporter_username || 'Unknown'}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Creator:</span>
+                  <p className="font-medium">{selectedReport.doodle?.user_username || 'Unknown'}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Reported:</span>
+                  <p className="font-medium">{new Date(selectedReport.created_at).toLocaleString()}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Prompt:</span>
+                  <p className="font-medium truncate">{selectedReport.doodle?.prompt_title || 'Unknown'}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setReviewDialogOpen(false)}
+              disabled={actionLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={handleDismissReport}
+              disabled={actionLoading}
+            >
+              {actionLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <XCircle className="mr-2 h-4 w-4" />
+              )}
+              Dismiss Report
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleActionReport}
+              disabled={actionLoading}
+            >
+              {actionLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="mr-2 h-4 w-4" />
+              )}
+              Delete Doodle
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
