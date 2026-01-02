@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useOpenSheetPrompts } from '@/hooks/use-opensheet-prompts';
-import { useAppStore, useIsAuthenticated, useUser } from '@/store/app-store';
+import { useAppStore, useIsAuthenticated, useUser, useHasHydrated } from '@/store/app-store';
 import { SimpleHeader } from '@/components/SimpleHeader';
 import { Footer } from '@/components/Footer';
 import { AuthDialog } from '@/components/AuthDialog';
@@ -42,11 +42,12 @@ type Prompt = {
 };
 
 function App() {
+  const hasHydrated = useHasHydrated();
   const isAuthenticated = useIsAuthenticated();
   const user = useUser();
 
   // Debug auth state on every render
-  console.log('[App] Render - isAuthenticated:', isAuthenticated, 'user:', user?.email || 'null');
+  console.log('[App] Render - hasHydrated:', hasHydrated, 'isAuthenticated:', isAuthenticated, 'user:', user?.email || 'null');
 
   const [currentView, setCurrentView] = useState<string | null>(null);
   const [previousView, setPreviousView] = useState('landing');
@@ -87,13 +88,18 @@ function App() {
   }, []);
 
   useEffect(() => {
-    console.log('[App] Auth effect - currentView:', currentView, 'isAuthenticated:', isAuthenticated);
+    console.log('[App] Auth effect - hasHydrated:', hasHydrated, 'currentView:', currentView, 'isAuthenticated:', isAuthenticated);
+    // Wait for hydration before setting initial view
+    if (!hasHydrated) {
+      console.log('[App] Waiting for hydration, skipping view set');
+      return;
+    }
     if (!currentView) {
       const newView = isAuthenticated ? 'prompt' : 'landing';
       console.log('[App] Setting currentView to:', newView);
       setCurrentView(newView);
     }
-  }, [isAuthenticated, currentView]);
+  }, [hasHydrated, isAuthenticated, currentView]);
 
   const { data, isLoading, error } = useOpenSheetPrompts();
   const rawPrompts = (data as any[]) ?? [];
@@ -269,8 +275,21 @@ function App() {
     currentView !== null &&
     !['landing', 'payment-success', 'payment-cancel'].includes(currentView);
 
+  // Wait for hydration before rendering
+  if (!hasHydrated) {
+    console.log('[App] Waiting for hydration...');
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!currentView) {
-    console.log('[App] currentView is null, returning null');
+    console.log('[App] currentView is null after hydration, returning null');
     return null;
   }
 

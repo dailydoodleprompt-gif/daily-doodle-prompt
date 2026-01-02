@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { supabase } from '@/sdk/core/supabase';
@@ -553,6 +554,9 @@ interface AppState {
   getDoodleReports: (status?: DoodleReportStatus) => DoodleReport[];
   updateReportStatus: (reportId: string, status: DoodleReportStatus, resolutionNotes?: string) => Promise<{ success: boolean; error?: string }>;
 }
+
+// Track hydration state outside the store
+let hasHydrated = false;
 
 export const useAppStore = create<AppState>()(
   persist(
@@ -2348,12 +2352,23 @@ if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')
         preferences: state.preferences,
         streak: state.streak,
         badges: state.badges,
-        viewedBadges: state.viewedBadges, 
+        viewedBadges: state.viewedBadges,
         bookmarks: state.bookmarks,
         userStats: state.userStats,
         showOnboarding: state.showOnboarding,
         currentView: state.currentView,
       }),
+      onRehydrateStorage: () => {
+        console.log('[AppStore] Starting hydration...');
+        return (state, error) => {
+          if (error) {
+            console.error('[AppStore] Hydration error:', error);
+          } else {
+            console.log('[AppStore] Hydration complete, user:', state?.user?.email || 'null');
+          }
+          hasHydrated = true;
+        };
+      },
     }
   )
 );
@@ -2370,3 +2385,37 @@ export const useBookmarks = () => useAppStore((state) => state.bookmarks);
 export const useUserStats = () => useAppStore((state) => state.userStats);
 export const useNewlyEarnedBadge = () => useAppStore((state) => state.newlyEarnedBadge);
 export const useAppSettings = () => useAppStore((state) => state.getAppSettings());
+
+// Hydration hook - use this to wait for store rehydration before rendering
+export const useHasHydrated = () => {
+  const [hydrated, setHydrated] = useState(hasHydrated);
+
+  useEffect(() => {
+    // If already hydrated, we're done
+    if (hasHydrated) {
+      setHydrated(true);
+      return;
+    }
+
+    // Otherwise, check periodically until hydrated (max 5 seconds)
+    const checkInterval = setInterval(() => {
+      if (hasHydrated) {
+        setHydrated(true);
+        clearInterval(checkInterval);
+      }
+    }, 50);
+
+    const timeout = setTimeout(() => {
+      clearInterval(checkInterval);
+      console.warn('[AppStore] Hydration timeout - proceeding anyway');
+      setHydrated(true);
+    }, 5000);
+
+    return () => {
+      clearInterval(checkInterval);
+      clearTimeout(timeout);
+    };
+  }, []);
+
+  return hydrated;
+};
