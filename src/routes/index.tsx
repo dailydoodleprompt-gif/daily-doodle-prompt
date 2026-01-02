@@ -45,6 +45,9 @@ function App() {
   const isAuthenticated = useIsAuthenticated();
   const user = useUser();
 
+  // Debug auth state on every render
+  console.log('[App] Render - isAuthenticated:', isAuthenticated, 'user:', user?.email || 'null');
+
   const [currentView, setCurrentView] = useState<string | null>(null);
   const [previousView, setPreviousView] = useState('landing');
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
@@ -84,12 +87,11 @@ function App() {
   }, []);
 
   useEffect(() => {
+    console.log('[App] Auth effect - currentView:', currentView, 'isAuthenticated:', isAuthenticated);
     if (!currentView) {
-      if (isAuthenticated) {
-        setCurrentView('prompt');
-      } else {
-        setCurrentView('landing');
-      }
+      const newView = isAuthenticated ? 'prompt' : 'landing';
+      console.log('[App] Setting currentView to:', newView);
+      setCurrentView(newView);
     }
   }, [isAuthenticated, currentView]);
 
@@ -267,7 +269,10 @@ function App() {
     currentView !== null &&
     !['landing', 'payment-success', 'payment-cancel'].includes(currentView);
 
-  if (!currentView) return null;
+  if (!currentView) {
+    console.log('[App] currentView is null, returning null');
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">

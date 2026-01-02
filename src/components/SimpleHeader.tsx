@@ -42,20 +42,39 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
   // Check auth status on mount and listen for changes
   useEffect(() => {
     let mounted = true;
+    let loadingTimeout: ReturnType<typeof setTimeout> | null = null;
 
     async function loadUser() {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+      console.log('[SimpleHeader] Starting loadUser...');
 
-        if (!mounted) return;
+      // Safety timeout - ALWAYS stop loading after 10 seconds
+      loadingTimeout = setTimeout(() => {
+        if (mounted) {
+          console.warn('[SimpleHeader] Auth loading timeout - forcing completion');
+          setIsLoading(false);
+        }
+      }, 10000);
+
+      try {
+        console.log('[SimpleHeader] Getting Supabase session...');
+        const { data: { session }, error } = await supabase.auth.getSession();
+        console.log('[SimpleHeader] Session result:', { hasSession: !!session, hasToken: !!session?.access_token, error });
+
+        if (!mounted) {
+          console.log('[SimpleHeader] Component unmounted, aborting');
+          return;
+        }
 
         if (session?.access_token) {
+          console.log('[SimpleHeader] Fetching user profile from /api/me...');
           const response = await fetch('/api/me', {
             headers: { Authorization: `Bearer ${session.access_token}` },
           });
+          console.log('[SimpleHeader] /api/me response status:', response.status);
 
           if (response.ok) {
             const data = await response.json();
+            console.log('[SimpleHeader] User data received:', { id: data.id, email: data.email });
 
             if (mounted) {
               // Set user in app store - include avatar and title fields!
@@ -78,24 +97,37 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
               }
 
               // Load user's badges, stats, etc. from Supabase (source of truth)
-              await loadUserData(data.id);
+              console.log('[SimpleHeader] Loading user data...');
+              try {
+                await loadUserData(data.id);
+                console.log('[SimpleHeader] User data loaded successfully');
+              } catch (loadErr) {
+                console.error('[SimpleHeader] loadUserData failed:', loadErr);
+                // Don't clear user data, just log the error - user is still authenticated
+              }
             }
           } else {
+            console.log('[SimpleHeader] /api/me failed, clearing user data');
             if (mounted) {
               clearUserData();
             }
           }
         } else {
+          console.log('[SimpleHeader] No valid session, clearing user data');
           if (mounted) {
             clearUserData();
           }
         }
       } catch (error) {
-        console.error('Error loading user:', error);
+        console.error('[SimpleHeader] Error loading user:', error);
         if (mounted) {
           clearUserData();
         }
       } finally {
+        console.log('[SimpleHeader] loadUser complete, setting isLoading=false');
+        if (loadingTimeout) {
+          clearTimeout(loadingTimeout);
+        }
         if (mounted) {
           setIsLoading(false);
         }
@@ -164,6 +196,9 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
 
     return () => {
       mounted = false;
+      if (loadingTimeout) {
+        clearTimeout(loadingTimeout);
+      }
       subscription.unsubscribe();
     };
   }, [setUser, loadUserData, clearUserData, setViewedBadges]);
