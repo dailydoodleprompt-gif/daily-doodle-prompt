@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import { BadgeCabinet } from '@/components/BadgeCabinet';
 import { DoodleGallery } from '@/components/DoodleGallery';
 import { DoodleFeed } from '@/components/DoodleFeed';
 import { UserAvatar, AVATAR_ICON_OPTIONS, AVATAR_ICONS, ICON_COLORS } from '@/components/UserAvatar';
+import { ActivityHeatmap } from '@/components/ActivityHeatmap';
 import {
   Tooltip,
   TooltipContent,
@@ -20,6 +21,8 @@ import {
   useBookmarks,
   useIsPremium,
   useAppStore,
+  useBadges,
+  useUserStats,
 } from '@/store/app-store';
 import { type Prompt } from '@/hooks/use-google-sheets';
 import {
@@ -36,9 +39,16 @@ import {
   Upload,
   Flame,
   Snowflake,
+  BarChart3,
+  Target,
+  Trophy,
+  Sparkles,
+  Circle,
+  Pencil,
+  Award,
 } from 'lucide-react';
-import type { AvatarIconType, AvatarType, Doodle } from '@/types';
-import { getTitleDisplayName } from '@/types';
+import type { AvatarIconType, AvatarType, Doodle, BadgeType } from '@/types';
+import { getTitleDisplayName, BADGE_INFO } from '@/types';
 import { cn } from '@/lib/utils';
 import { formatShortDate } from '@/lib/timezone';
 
@@ -56,6 +66,8 @@ export function ProfileView({ prompts = [], onUpgrade, onSettings, onAdminDashbo
   const streak = useStreak();
   const bookmarks = useBookmarks();
   const isPremium = useIsPremium();
+  const badges = useBadges();
+  const userStats = useUserStats();
   const updateAvatar = useAppStore((state) => state.updateAvatar);
   const getDoodles = useAppStore((state) => state.getDoodles);
   const getLikedDoodles = useAppStore((state) => state.getLikedDoodles);
@@ -94,6 +106,181 @@ export function ProfileView({ prompts = [], onUpgrade, onSettings, onAdminDashbo
   const likedDoodles = getLikedDoodles() as Doodle[];
   const followerCount = getFollowerCount(user.id);
   const followingCount = getFollowingCount(user.id);
+
+  // Calculate detailed stats for Stats tab
+  const statsData = useMemo(() => {
+    // Total likes received on user's doodles
+    const totalLikesReceived = myDoodles.reduce((sum, d) => sum + (d.likes_count || 0), 0);
+
+    // Days since joined
+    const joinDate = new Date(user.created_at);
+    const daysSinceJoined = Math.floor((Date.now() - joinDate.getTime()) / (1000 * 60 * 60 * 24));
+
+    // Most active day of week
+    const dayCount = [0, 0, 0, 0, 0, 0, 0]; // Sun-Sat
+    myDoodles.forEach((d) => {
+      const day = new Date(d.created_at).getDay();
+      dayCount[day]++;
+    });
+    const mostActiveIndex = dayCount.indexOf(Math.max(...dayCount));
+    const dayNames = ['Sundays', 'Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays'];
+    const mostActiveDay = dayCount[mostActiveIndex] > 0 ? dayNames[mostActiveIndex] : null;
+
+    // Total badges available (non-seasonal common badges for progress tracking)
+    const totalAvailableBadges = Object.keys(BADGE_INFO).length;
+    const earnedBadgeTypes = badges.map((b) => b.badge_type);
+
+    return {
+      totalDoodles: myDoodles.length,
+      totalLikesReceived,
+      badgesEarned: badges.length,
+      totalBadges: totalAvailableBadges,
+      daysSinceJoined,
+      mostActiveDay,
+      earnedBadgeTypes,
+    };
+  }, [myDoodles, badges, user.created_at]);
+
+  // Calculate next badge to unlock
+  const nextBadge = useMemo(() => {
+    const earned = statsData.earnedBadgeTypes;
+
+    // First doodle badge
+    if (!earned.includes('first_doodle') && statsData.totalDoodles < 1) {
+      return {
+        id: 'first_doodle',
+        title: 'First Doodle',
+        description: 'Upload your first doodle',
+        icon: Pencil,
+        progress: 0,
+        progressText: 'Upload 1 doodle',
+      };
+    }
+
+    // 3-day streak badge
+    if (!earned.includes('creative_ember') && currentStreak < 3) {
+      return {
+        id: 'creative_ember',
+        title: 'Creative Ember',
+        description: 'Complete a 3-day streak',
+        icon: Flame,
+        progress: Math.round((currentStreak / 3) * 100),
+        progressText: `${currentStreak}/3 days`,
+      };
+    }
+
+    // 7-day streak badge
+    if (!earned.includes('creative_fire') && currentStreak < 7) {
+      return {
+        id: 'creative_fire',
+        title: 'Creative Fire',
+        description: 'Complete a 7-day streak',
+        icon: Flame,
+        progress: Math.round((currentStreak / 7) * 100),
+        progressText: `${currentStreak}/7 days`,
+      };
+    }
+
+    // 10 doodles badge
+    if (!earned.includes('doodle_diary') && statsData.totalDoodles < 10) {
+      return {
+        id: 'doodle_diary',
+        title: 'Doodle Diary',
+        description: 'Upload 10 doodles',
+        icon: Pencil,
+        progress: Math.round((statsData.totalDoodles / 10) * 100),
+        progressText: `${statsData.totalDoodles}/10 doodles`,
+      };
+    }
+
+    // 25 doodles badge
+    if (!earned.includes('doodle_digest') && statsData.totalDoodles < 25) {
+      return {
+        id: 'doodle_digest',
+        title: 'Doodle Digest',
+        description: 'Upload 25 doodles',
+        icon: Award,
+        progress: Math.round((statsData.totalDoodles / 25) * 100),
+        progressText: `${statsData.totalDoodles}/25 doodles`,
+      };
+    }
+
+    // 30-day streak
+    if (!earned.includes('creative_rocket') && currentStreak < 30) {
+      return {
+        id: 'creative_rocket',
+        title: 'Creative Rocket',
+        description: 'Complete a 30-day streak',
+        icon: Trophy,
+        progress: Math.round((currentStreak / 30) * 100),
+        progressText: `${currentStreak}/30 days`,
+      };
+    }
+
+    // 50 doodles badge
+    if (!earned.includes('doodle_library') && statsData.totalDoodles < 50) {
+      return {
+        id: 'doodle_library',
+        title: 'Doodle Library',
+        description: 'Upload 50 doodles',
+        icon: Award,
+        progress: Math.round((statsData.totalDoodles / 50) * 100),
+        progressText: `${statsData.totalDoodles}/50 doodles`,
+      };
+    }
+
+    return null; // All tracked badges earned
+  }, [statsData, currentStreak]);
+
+  // Generate milestones
+  const milestones = useMemo(() => {
+    const formatMilestoneDate = (dateStr: string) => {
+      return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    };
+
+    const firstDoodle = myDoodles.length > 0
+      ? [...myDoodles].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())[0]
+      : null;
+
+    return [
+      {
+        title: 'First Doodle',
+        achieved: statsData.totalDoodles >= 1,
+        date: firstDoodle ? formatMilestoneDate(firstDoodle.created_at) : null,
+        remaining: 'Upload your first doodle!',
+      },
+      {
+        title: '7-Day Streak',
+        achieved: longestStreak >= 7,
+        date: longestStreak >= 7 ? 'Achieved!' : null,
+        remaining: `${7 - currentStreak} more days to go!`,
+      },
+      {
+        title: '10 Doodles',
+        achieved: statsData.totalDoodles >= 10,
+        date: statsData.totalDoodles >= 10 ? 'Achieved!' : null,
+        remaining: `${10 - statsData.totalDoodles} more to go!`,
+      },
+      {
+        title: '50 Doodles',
+        achieved: statsData.totalDoodles >= 50,
+        date: statsData.totalDoodles >= 50 ? 'Achieved!' : null,
+        remaining: `${50 - statsData.totalDoodles} more to go!`,
+      },
+      {
+        title: '100 Likes Received',
+        achieved: statsData.totalLikesReceived >= 100,
+        date: statsData.totalLikesReceived >= 100 ? 'Achieved!' : null,
+        remaining: `${100 - statsData.totalLikesReceived} more to go!`,
+      },
+      {
+        title: 'Premium Member',
+        achieved: isPremium,
+        date: isPremium ? 'Active!' : null,
+        remaining: 'Upgrade to Premium!',
+      },
+    ];
+  }, [statsData, longestStreak, currentStreak, myDoodles, isPremium]);
 
   const handleAvatarSelect = (type: AvatarType, icon?: AvatarIconType) => {
     updateAvatar(type, icon);
@@ -332,7 +519,7 @@ export function ProfileView({ prompts = [], onUpgrade, onSettings, onAdminDashbo
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6" ref={tabsRef}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="feed" className="gap-1">
             <Rss className="h-4 w-4" />
             <span className="hidden sm:inline">Feed</span>
@@ -348,6 +535,10 @@ export function ProfileView({ prompts = [], onUpgrade, onSettings, onAdminDashbo
           <TabsTrigger value="favorites" className="gap-1">
             <Bookmark className="h-4 w-4" />
             <span className="hidden sm:inline">Favorites</span>
+          </TabsTrigger>
+          <TabsTrigger value="stats" className="gap-1">
+            <BarChart3 className="h-4 w-4" />
+            <span className="hidden sm:inline">Stats</span>
           </TabsTrigger>
         </TabsList>
 
@@ -462,6 +653,161 @@ export function ProfileView({ prompts = [], onUpgrade, onSettings, onAdminDashbo
                   })}
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="stats" className="mt-4 space-y-6">
+          {/* Quick Numbers */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="text-center p-4 rounded-lg bg-muted/50 border">
+              <p className="text-3xl font-bold text-primary">{statsData.totalDoodles}</p>
+              <p className="text-sm text-muted-foreground">Doodles</p>
+            </div>
+            <div className="text-center p-4 rounded-lg bg-muted/50 border">
+              <p className="text-3xl font-bold text-primary">{statsData.totalLikesReceived}</p>
+              <p className="text-sm text-muted-foreground">Likes Received</p>
+            </div>
+            <div className="text-center p-4 rounded-lg bg-muted/50 border">
+              <p className="text-3xl font-bold text-primary">{statsData.badgesEarned}</p>
+              <p className="text-sm text-muted-foreground">Badges</p>
+            </div>
+            <div className="text-center p-4 rounded-lg bg-muted/50 border">
+              <p className="text-3xl font-bold text-primary">{statsData.daysSinceJoined}</p>
+              <p className="text-sm text-muted-foreground">Days Active</p>
+            </div>
+          </div>
+
+          {/* Activity Heatmap */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Calendar className="h-5 w-5" />
+                Activity This Year
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ActivityHeatmap doodles={myDoodles} />
+            </CardContent>
+          </Card>
+
+          {/* Next Badge Progress */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Target className="h-5 w-5" />
+                Next Badge to Unlock
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {nextBadge ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                      <nextBadge.icon className="w-6 h-6 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="font-semibold">{nextBadge.title}</p>
+                      <p className="text-sm text-muted-foreground">{nextBadge.description}</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span>{nextBadge.progressText}</span>
+                      <span>{nextBadge.progress}%</span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2">
+                      <div
+                        className="bg-primary h-2 rounded-full transition-all"
+                        style={{ width: `${nextBadge.progress}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-muted-foreground">You've earned all tracked badges! Keep up the great work!</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Milestones Timeline */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Trophy className="h-5 w-5" />
+                Milestones
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {milestones.map((milestone, index) => (
+                  <div key={index} className="flex items-center gap-3">
+                    <div
+                      className={cn(
+                        'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0',
+                        milestone.achieved
+                          ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'
+                          : 'bg-muted text-muted-foreground'
+                      )}
+                    >
+                      {milestone.achieved ? <Check className="w-4 h-4" /> : <Circle className="w-4 h-4" />}
+                    </div>
+                    <div className="flex-1">
+                      <p className={cn('font-medium', !milestone.achieved && 'text-muted-foreground')}>
+                        {milestone.title}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {milestone.achieved ? milestone.date : milestone.remaining}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Fun Facts */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Sparkles className="h-5 w-5" />
+                Fun Facts
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3 text-sm">
+                {statsData.mostActiveDay && (
+                  <p>
+                    📅 Your most creative day:{' '}
+                    <span className="font-medium">{statsData.mostActiveDay}</span>
+                  </p>
+                )}
+                <p>
+                  ⏱️ Member for <span className="font-medium">{statsData.daysSinceJoined}</span> days
+                </p>
+                <p>
+                  🎨 Total doodles created: <span className="font-medium">{statsData.totalDoodles}</span>
+                </p>
+                {statsData.totalLikesReceived > 0 && (
+                  <p>
+                    ❤️ Your art has received{' '}
+                    <span className="font-medium">{statsData.totalLikesReceived}</span> likes!
+                  </p>
+                )}
+                {currentStreak > 0 && (
+                  <p>
+                    🔥 Current streak: <span className="font-medium">{currentStreak}</span> day
+                    {currentStreak !== 1 ? 's' : ''}
+                  </p>
+                )}
+                {longestStreak > 0 && (
+                  <p>
+                    🏆 Best streak ever: <span className="font-medium">{longestStreak}</span> day
+                    {longestStreak !== 1 ? 's' : ''}
+                  </p>
+                )}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
