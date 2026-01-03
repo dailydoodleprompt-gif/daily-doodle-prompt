@@ -262,8 +262,22 @@ export function SettingsView({ onBack, onForgotPassword, onUpgrade }: SettingsVi
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    console.log('[SettingsView] Logging out...');
+
+    try {
+      // Wait for Supabase to fully sign out
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('[SettingsView] Supabase signOut error:', error);
+      }
+    } catch (err) {
+      console.error('[SettingsView] SignOut failed:', err);
+    }
+
+    // Clear local state regardless of Supabase result
     clearUserData();
+
+    console.log('[SettingsView] Logout complete');
     onBack();
   };
 

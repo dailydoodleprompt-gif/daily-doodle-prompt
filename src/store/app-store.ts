@@ -826,6 +826,9 @@ export const useAppStore = create<AppState>()(
       },
 
       clearUserData: () => {
+        console.log('[AppStore] Clearing all user data...');
+
+        // Clear Zustand state
         set({
           user: null,
           preferences: null,
@@ -838,6 +841,40 @@ export const useAppStore = create<AppState>()(
           showOnboarding: false,
           currentView: 'landing',
         });
+
+        // NUCLEAR: Clear all localStorage to prevent stale state
+        try {
+          // Clear the Zustand persisted store
+          localStorage.removeItem('dailydoodle-app-store');
+
+          // Clear all app-specific localStorage items
+          localStorage.removeItem(DOODLES_STORAGE_KEY);
+          localStorage.removeItem(LIKES_STORAGE_KEY);
+          localStorage.removeItem(FOLLOWS_STORAGE_KEY);
+          localStorage.removeItem(SHARES_STORAGE_KEY);
+          localStorage.removeItem(USER_STATS_STORAGE_KEY);
+          localStorage.removeItem(USER_BADGES_STORAGE_KEY);
+          localStorage.removeItem(DOODLE_REPORTS_STORAGE_KEY);
+          // Note: Keep ADMIN_SETTINGS_STORAGE_KEY as it's not user-specific
+
+          // Clear any Supabase auth tokens that might be lingering
+          // Supabase stores tokens with a key pattern like 'sb-<project-ref>-auth-token'
+          Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('sb-') && key.includes('-auth-token')) {
+              console.log('[AppStore] Removing Supabase token:', key);
+              localStorage.removeItem(key);
+            }
+          });
+
+          console.log('[AppStore] All user data cleared from localStorage');
+        } catch (err) {
+          console.error('[AppStore] Error clearing localStorage:', err);
+        }
+
+        // Reset hydration flag so app knows to re-check
+        hasHydrated = false;
+
+        console.log('[AppStore] User data clear complete');
       },
 
       updatePreferences: (prefs) => {

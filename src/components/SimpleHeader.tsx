@@ -31,13 +31,47 @@ interface SimpleHeaderProps {
 export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHeaderProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
+  const [authStuck, setAuthStuck] = useState(false);
+
   // Get user from app store
   const user = useAppStore((state) => state.user);
   const setUser = useAppStore((state) => state.setUser);
   const loadUserData = useAppStore((state) => state.loadUserData);
   const clearUserData = useAppStore((state) => state.clearUserData);
   const setViewedBadges = useAppStore((state) => state.setViewedBadges);
+
+  // Detect stuck auth state - if loading for more than 5 seconds, show recovery option
+  useEffect(() => {
+    if (!isLoading) {
+      setAuthStuck(false);
+      return;
+    }
+
+    const stuckTimer = setTimeout(() => {
+      if (isLoading) {
+        console.warn('[SimpleHeader] Auth appears stuck after 5 seconds');
+        setAuthStuck(true);
+      }
+    }, 5000);
+
+    return () => clearTimeout(stuckTimer);
+  }, [isLoading]);
+
+  // Nuclear reset function for stuck auth
+  const handleForceReset = () => {
+    console.log('[SimpleHeader] Force reset triggered by user');
+
+    // Clear everything
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch (err) {
+      console.error('[SimpleHeader] Error clearing storage:', err);
+    }
+
+    // Reload the page
+    window.location.reload();
+  };
 
   // Check auth status on mount and listen for changes
   useEffect(() => {
@@ -53,11 +87,20 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
       (async () => {
         try {
           const { data: { session } } = await supabase.auth.getSession();
+
           if (!session && mounted) {
             console.log('[SimpleHeader] Background check: session expired, logging out');
             clearUserData();
           } else if (session && mounted) {
-            // Session valid - refresh user data in background
+            // CRITICAL: Verify the session user matches the hydrated user
+            if (session.user.id !== user.id) {
+              console.warn('[SimpleHeader] Session user mismatch! Hydrated:', user.id, 'Session:', session.user.id);
+              console.log('[SimpleHeader] Clearing stale state and reloading...');
+              clearUserData();
+              return;
+            }
+
+            // Session valid and matches - refresh user data in background
             try {
               await loadUserData(user.id);
               console.log('[SimpleHeader] Background data refresh complete');
@@ -67,6 +110,11 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
           }
         } catch (err) {
           console.warn('[SimpleHeader] Background session check failed:', err);
+          // If we can't verify, clear state to be safe
+          if (mounted) {
+            console.log('[SimpleHeader] Clearing state due to verification failure');
+            clearUserData();
+          }
         }
       })();
 
@@ -210,8 +258,22 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
   const isPremium = user?.is_premium || false;
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    console.log('[SimpleHeader] Logging out...');
+
+    try {
+      // Wait for Supabase to fully sign out
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('[SimpleHeader] Supabase signOut error:', error);
+      }
+    } catch (err) {
+      console.error('[SimpleHeader] SignOut failed:', err);
+    }
+
+    // Clear local state regardless of Supabase result
     clearUserData();
+
+    console.log('[SimpleHeader] Logout complete, navigating to landing');
     onNavigate('landing');
   };
 
@@ -268,7 +330,19 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
         {/* Right Side */}
         <div className="flex items-center gap-2 ml-auto">
           {isLoading ? (
-            <div className="text-sm text-muted-foreground">Loading...</div>
+            <div className="flex items-center gap-2">
+              <div className="text-sm text-muted-foreground">Loading...</div>
+              {authStuck && (
+                <Button
+                  variant="link"
+                  size="sm"
+                  onClick={handleForceReset}
+                  className="text-xs text-destructive hover:text-destructive"
+                >
+                  Stuck? Reset
+                </Button>
+              )}
+            </div>
           ) : (
             <>
               {/* Show Unlock Lifetime button for non-premium users */}
