@@ -86,6 +86,8 @@ export default async function handler(request: Request) {
 
     const baseUrl = new URL(request.url).origin;
     const pageUrl = `${baseUrl}/prompt/${date}`;
+
+    // Pass all data via query params to OG route
     const ogImageUrl = `${baseUrl}/api/og/prompt?title=${encodeURIComponent(prompt.title)}&category=${encodeURIComponent(prompt.category)}&date=${date}`;
 
     const formattedDate = new Date(date + 'T00:00:00').toLocaleDateString('en-US', {

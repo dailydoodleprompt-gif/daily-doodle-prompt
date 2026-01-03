@@ -1,47 +1,15 @@
-import { ImageResponse } from '@vercel/og';
-import { createClient } from '@supabase/supabase-js';
-
 export const config = {
   runtime: 'edge',
 };
 
+import { ImageResponse } from '@vercel/og';
+
 export default async function handler(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const doodleId = searchParams.get('id');
-
-    if (!doodleId) {
-      return new Response('Missing doodle ID', { status: 400 });
-    }
-
-    const supabaseUrl =
-      process.env.SUPABASE_URL ||
-      process.env.NEXT_PUBLIC_SUPABASE_URL ||
-      process.env.VITE_SUPABASE_URL;
-    const supabaseServiceKey =
-      process.env.SUPABASE_SERVICE_ROLE_KEY ||
-      process.env.SUPABASE_ANON_KEY ||
-      process.env.VITE_SUPABASE_ANON_KEY;
-
-    if (!supabaseUrl || !supabaseServiceKey) {
-      return new Response('Supabase not configured', { status: 500 });
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Fetch doodle data
-    const { data: doodle, error } = await supabase
-      .from('doodles')
-      .select('*')
-      .eq('id', doodleId)
-      .single();
-
-    if (error || !doodle) {
-      return new Response('Doodle not found', { status: 404 });
-    }
-
-    const username = doodle.user_username || 'Artist';
-    const promptTitle = doodle.prompt_title || 'Daily Doodle';
+    const title = searchParams.get('title') || 'Daily Doodle';
+    const username = searchParams.get('username') || 'Artist';
+    const imageUrl = searchParams.get('image');
 
     return new ImageResponse(
       (
@@ -52,30 +20,35 @@ export default async function handler(request: Request) {
             height: '100%',
             backgroundColor: '#fffaed',
             padding: '40px',
+            fontFamily: 'system-ui, sans-serif',
           }}
         >
-          {/* Left side - Doodle image */}
+          {/* Left side - Doodle image placeholder or actual image */}
           <div
             style={{
               display: 'flex',
               width: '500px',
               height: '500px',
               borderRadius: '20px',
+              backgroundColor: '#f5f0e6',
               overflow: 'hidden',
               boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
-              backgroundColor: '#fff',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            <img
-              src={doodle.image_url}
-              width={500}
-              height={500}
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-              }}
-            />
+            {imageUrl ? (
+              <img
+                src={imageUrl}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                }}
+              />
+            ) : (
+              <div style={{ fontSize: '120px' }}>🎨</div>
+            )}
           </div>
 
           {/* Right side - Info */}
@@ -106,9 +79,10 @@ export default async function handler(request: Request) {
                   alignItems: 'center',
                   justifyContent: 'center',
                   marginRight: '15px',
+                  fontSize: '30px',
                 }}
               >
-                <span style={{ fontSize: '28px' }}>✏️</span>
+                ✏️
               </div>
               <span
                 style={{
@@ -124,16 +98,15 @@ export default async function handler(request: Request) {
             {/* Prompt title */}
             <div
               style={{
-                fontSize: '48px',
+                fontSize: '44px',
                 fontWeight: 700,
                 color: '#1c1917',
                 lineHeight: 1.2,
                 marginBottom: '20px',
                 maxWidth: '550px',
-                display: 'flex',
               }}
             >
-              "{promptTitle}"
+              "{title}"
             </div>
 
             {/* Artist info */}
@@ -164,7 +137,7 @@ export default async function handler(request: Request) {
                 display: 'flex',
                 marginTop: '40px',
                 backgroundColor: '#f17313',
-                color: '#fff',
+                color: '#ffffff',
                 padding: '15px 30px',
                 borderRadius: '50px',
                 fontSize: '22px',
@@ -182,7 +155,7 @@ export default async function handler(request: Request) {
       }
     );
   } catch (error) {
-    console.error('OG image error:', error);
+    console.error('OG Image Error:', error);
     return new Response('Error generating image', { status: 500 });
   }
 }

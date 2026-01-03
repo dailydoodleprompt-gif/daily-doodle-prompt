@@ -1,15 +1,15 @@
-import { ImageResponse } from '@vercel/og';
-
 export const config = {
   runtime: 'edge',
 };
+
+import { ImageResponse } from '@vercel/og';
 
 export default async function handler(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const title = searchParams.get('title') || 'Daily Doodle Prompt';
     const category = searchParams.get('category') || 'Creative';
-    const date = searchParams.get('date'); // Format: YYYY-MM-DD
+    const date = searchParams.get('date');
 
     let formattedDate = 'Today';
     if (date) {
@@ -34,6 +34,7 @@ export default async function handler(request: Request) {
             padding: '60px',
             justifyContent: 'center',
             alignItems: 'center',
+            fontFamily: 'system-ui, sans-serif',
           }}
         >
           {/* Logo */}
@@ -54,9 +55,10 @@ export default async function handler(request: Request) {
                 alignItems: 'center',
                 justifyContent: 'center',
                 marginRight: '20px',
+                fontSize: '36px',
               }}
             >
-              <span style={{ fontSize: '36px' }}>✏️</span>
+              ✏️
             </div>
             <span
               style={{
@@ -74,7 +76,7 @@ export default async function handler(request: Request) {
             style={{
               display: 'flex',
               flexDirection: 'column',
-              backgroundColor: '#fff',
+              backgroundColor: '#ffffff',
               borderRadius: '24px',
               padding: '50px 60px',
               boxShadow: '0 10px 60px rgba(0,0,0,0.1)',
@@ -87,7 +89,7 @@ export default async function handler(request: Request) {
               style={{
                 display: 'flex',
                 backgroundColor: '#f17313',
-                color: '#fff',
+                color: '#ffffff',
                 padding: '10px 24px',
                 borderRadius: '50px',
                 fontSize: '20px',
@@ -107,7 +109,6 @@ export default async function handler(request: Request) {
                 textAlign: 'center',
                 lineHeight: 1.3,
                 marginBottom: '30px',
-                display: 'flex',
               }}
             >
               "{title}"
@@ -117,21 +118,14 @@ export default async function handler(request: Request) {
             <div
               style={{
                 display: 'flex',
-                alignItems: 'center',
+                backgroundColor: '#f5f0e6',
+                padding: '8px 20px',
+                borderRadius: '20px',
                 fontSize: '24px',
                 color: '#78716c',
               }}
             >
-              <div
-                style={{
-                  display: 'flex',
-                  backgroundColor: '#f5f0e6',
-                  padding: '8px 20px',
-                  borderRadius: '20px',
-                }}
-              >
-                🏷️ {category}
-              </div>
+              🏷️ {category}
             </div>
           </div>
 
@@ -144,7 +138,7 @@ export default async function handler(request: Request) {
               color: '#78716c',
             }}
           >
-            Join the daily creative challenge at{' '}
+            Join the daily creative challenge at
             <span style={{ color: '#f17313', fontWeight: 600, marginLeft: '8px' }}>
               dailydoodleprompt.com
             </span>
@@ -157,7 +151,7 @@ export default async function handler(request: Request) {
       }
     );
   } catch (error) {
-    console.error('OG image error:', error);
+    console.error('OG Image Error:', error);
     return new Response('Error generating image', { status: 500 });
   }
 }

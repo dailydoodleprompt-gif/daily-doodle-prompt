@@ -1,8 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
-
 export const config = {
   runtime: 'edge',
 };
+
+import { createClient } from '@supabase/supabase-js';
 
 export default async function handler(request: Request) {
   try {
@@ -41,10 +41,14 @@ export default async function handler(request: Request) {
 
     const baseUrl = new URL(request.url).origin;
     const pageUrl = `${baseUrl}/doodle/${doodleId}`;
-    const ogImageUrl = `${baseUrl}/api/og/doodle?id=${doodleId}`;
     const artistName = doodle.user_username || 'an artist';
-    const title = `"${doodle.prompt_title}" by ${artistName}`;
-    const description = doodle.caption || `Check out this doodle for "${doodle.prompt_title}" on Daily Doodle Prompt!`;
+    const promptTitle = doodle.prompt_title || 'Daily Doodle';
+
+    // Pass all data via query params to OG route
+    const ogImageUrl = `${baseUrl}/api/og/doodle?title=${encodeURIComponent(promptTitle)}&username=${encodeURIComponent(artistName)}&image=${encodeURIComponent(doodle.image_url || '')}`;
+
+    const title = `"${promptTitle}" by ${artistName}`;
+    const description = doodle.caption || `Check out this doodle for "${promptTitle}" on Daily Doodle Prompt!`;
 
     const html = `<!DOCTYPE html>
 <html lang="en">

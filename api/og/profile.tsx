@@ -1,71 +1,20 @@
-import { ImageResponse } from '@vercel/og';
-import { createClient } from '@supabase/supabase-js';
-
 export const config = {
   runtime: 'edge',
 };
 
+import { ImageResponse } from '@vercel/og';
+
 export default async function handler(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const username = searchParams.get('username');
-    const userId = searchParams.get('id');
+    const username = searchParams.get('username') || 'Artist';
+    const doodles = searchParams.get('doodles') || '0';
+    const streak = searchParams.get('streak') || '0';
+    const badges = searchParams.get('badges') || '0';
+    const title = searchParams.get('title') || '';
+    const isPremium = searchParams.get('premium') === 'true';
 
-    if (!username && !userId) {
-      return new Response('Missing username or id', { status: 400 });
-    }
-
-    const supabaseUrl =
-      process.env.SUPABASE_URL ||
-      process.env.NEXT_PUBLIC_SUPABASE_URL ||
-      process.env.VITE_SUPABASE_URL;
-    const supabaseServiceKey =
-      process.env.SUPABASE_SERVICE_ROLE_KEY ||
-      process.env.SUPABASE_ANON_KEY ||
-      process.env.VITE_SUPABASE_ANON_KEY;
-
-    if (!supabaseUrl || !supabaseServiceKey) {
-      return new Response('Supabase not configured', { status: 500 });
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Fetch profile
-    let query = supabase.from('profiles').select('*');
-    if (userId) {
-      query = query.eq('id', userId);
-    } else if (username) {
-      query = query.eq('username', username);
-    }
-
-    const { data: profile, error } = await query.single();
-
-    if (error || !profile) {
-      return new Response('Profile not found', { status: 404 });
-    }
-
-    // Count doodles
-    const { count: doodleCount } = await supabase
-      .from('doodles')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', profile.id);
-
-    // Count badges
-    const { count: badgeCount } = await supabase
-      .from('badges')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', profile.id);
-
-    // Get streak from streaks table
-    const { data: streakData } = await supabase
-      .from('streaks')
-      .select('current_streak')
-      .eq('user_id', profile.id)
-      .single();
-
-    const streak = streakData?.current_streak || 0;
-    const initial = (profile.username || 'U')[0].toUpperCase();
-    const isPremium = profile.is_premium || false;
+    const initial = username.charAt(0).toUpperCase();
 
     return new ImageResponse(
       (
@@ -79,6 +28,7 @@ export default async function handler(request: Request) {
             padding: '60px',
             justifyContent: 'center',
             alignItems: 'center',
+            fontFamily: 'system-ui, sans-serif',
           }}
         >
           {/* Logo */}
@@ -101,9 +51,10 @@ export default async function handler(request: Request) {
                 alignItems: 'center',
                 justifyContent: 'center',
                 marginRight: '15px',
+                fontSize: '30px',
               }}
             >
-              <span style={{ fontSize: '28px' }}>✏️</span>
+              ✏️
             </div>
             <span
               style={{
@@ -121,7 +72,7 @@ export default async function handler(request: Request) {
             style={{
               display: 'flex',
               flexDirection: 'column',
-              backgroundColor: '#fff',
+              backgroundColor: '#ffffff',
               borderRadius: '24px',
               padding: '50px 80px',
               boxShadow: '0 10px 60px rgba(0,0,0,0.1)',
@@ -139,13 +90,13 @@ export default async function handler(request: Request) {
                 alignItems: 'center',
                 justifyContent: 'center',
                 marginBottom: '24px',
-                overflow: 'hidden',
+                fontSize: '56px',
+                color: '#ffffff',
+                fontWeight: 700,
                 position: 'relative',
               }}
             >
-              <span style={{ fontSize: '56px', color: '#fff', fontWeight: 700 }}>
-                {initial}
-              </span>
+              {initial}
               {isPremium && (
                 <div
                   style={{
@@ -159,9 +110,10 @@ export default async function handler(request: Request) {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    fontSize: '20px',
                   }}
                 >
-                  <span style={{ fontSize: '20px' }}>👑</span>
+                  👑
                 </div>
               )}
             </div>
@@ -172,25 +124,23 @@ export default async function handler(request: Request) {
                 fontSize: '48px',
                 fontWeight: 700,
                 color: '#1c1917',
-                marginBottom: '8px',
-                display: 'flex',
+                marginBottom: title ? '8px' : '30px',
               }}
             >
-              {profile.username}
+              {username}
             </div>
 
             {/* Title */}
-            {profile.current_title && (
+            {title && (
               <div
                 style={{
                   fontSize: '24px',
                   color: '#78716c',
                   fontStyle: 'italic',
                   marginBottom: '30px',
-                  display: 'flex',
                 }}
               >
-                {profile.current_title}
+                {title}
               </div>
             )}
 
@@ -198,25 +148,24 @@ export default async function handler(request: Request) {
             <div
               style={{
                 display: 'flex',
-                gap: '50px',
-                marginTop: profile.current_title ? '0' : '22px',
+                gap: '40px',
               }}
             >
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <span style={{ fontSize: '40px', fontWeight: 700, color: '#f17313' }}>
-                  {doodleCount || 0}
+                  {doodles}
                 </span>
                 <span style={{ fontSize: '18px', color: '#78716c' }}>Doodles</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <span style={{ fontSize: '40px', fontWeight: 700, color: '#f17313', display: 'flex' }}>
+                <span style={{ fontSize: '40px', fontWeight: 700, color: '#f17313' }}>
                   🔥 {streak}
                 </span>
                 <span style={{ fontSize: '18px', color: '#78716c' }}>Day Streak</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <span style={{ fontSize: '40px', fontWeight: 700, color: '#f17313' }}>
-                  {badgeCount || 0}
+                  {badges}
                 </span>
                 <span style={{ fontSize: '18px', color: '#78716c' }}>Badges</span>
               </div>
@@ -229,7 +178,7 @@ export default async function handler(request: Request) {
               display: 'flex',
               marginTop: '40px',
               backgroundColor: '#f17313',
-              color: '#fff',
+              color: '#ffffff',
               padding: '15px 40px',
               borderRadius: '50px',
               fontSize: '24px',
@@ -246,7 +195,7 @@ export default async function handler(request: Request) {
       }
     );
   } catch (error) {
-    console.error('OG image error:', error);
+    console.error('OG Image Error:', error);
     return new Response('Error generating image', { status: 500 });
   }
 }
