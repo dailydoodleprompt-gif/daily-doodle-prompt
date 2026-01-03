@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Background gradient -->
+    <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e1b4b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+
+    <!-- Badge gradient -->
+    <linearGradient id="badge-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4ade80"/>
+      <stop offset="100%" stop-color="#22c55e"/>
+    </linearGradient>
+
+    <!-- Glow effect -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="20" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Ring glow -->
+    <filter id="ring-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg-gradient)"/>
+
+  <!-- Decorative pattern -->
+  <g opacity="0.1">
+    <circle cx="100" cy="100" r="200" fill="#4ade80" filter="url(#glow)"/>
+    <circle cx="1100" cy="530" r="250" fill="#22c55e" filter="url(#glow)"/>
+  </g>
+
+  <!-- Badge circle with ring -->
+  <g transform="translate(600, 260)">
+    <!-- Outer ring glow -->
+    <circle r="140" fill="none" stroke="#4ade80" stroke-width="8" opacity="0.5" filter="url(#ring-glow)"/>
+
+    <!-- Badge background -->
+    <circle r="120" fill="url(#badge-gradient)" filter="url(#glow)"/>
+
+    <!-- Inner ring -->
+    <circle r="110" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+
+    <!-- Icon (scaled up from 24x24 to 100x100) -->
+    <g transform="translate(-50, -50) scale(4.17)" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/>
+    </g>
+  </g>
+
+  <!-- Badge name -->
+  <text x="600" y="450" font-family="system-ui, -apple-system, sans-serif" font-size="48" font-weight="700" fill="white" text-anchor="middle">
+    Planter of Seeds
+  </text>
+
+  <!-- Description -->
+  <text x="600" y="500" font-family="system-ui, -apple-system, sans-serif" font-size="24" fill="rgba(255,255,255,0.7)" text-anchor="middle">
+    Shared your first prompt
+  </text>
+
+  <!-- Rarity label -->
+  
+
+  <!-- Category label -->
+  <text x="600" y="580" font-family="system-ui, -apple-system, sans-serif" font-size="18" fill="rgba(255,255,255,0.4)" text-anchor="middle">
+    Sharing Badge
+  </text>
+
+  <!-- App branding -->
+  <text x="60" y="590" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="600" fill="rgba(255,255,255,0.6)">
+    Daily Doodle Prompt
+  </text>
+
+  <!-- URL -->
+  <text x="1140" y="590" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="rgba(255,255,255,0.4)" text-anchor="end">
+    dailydoodleprompt.com
+  </text>
+</svg>
