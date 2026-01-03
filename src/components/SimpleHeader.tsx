@@ -29,9 +29,8 @@ interface SimpleHeaderProps {
 }
 
 export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHeaderProps) {
-  const [isLoading, setIsLoading] = useState(true);
+  // NO loading state - we trust hydrated state immediately
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [authStuck, setAuthStuck] = useState(false);
 
   // Get user from app store
   const user = useAppStore((state) => state.user);
@@ -40,218 +39,165 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
   const clearUserData = useAppStore((state) => state.clearUserData);
   const setViewedBadges = useAppStore((state) => state.setViewedBadges);
 
-  // Detect stuck auth state - if loading for more than 5 seconds, show recovery option
-  useEffect(() => {
-    if (!isLoading) {
-      setAuthStuck(false);
-      return;
-    }
-
-    const stuckTimer = setTimeout(() => {
-      if (isLoading) {
-        console.warn('[SimpleHeader] Auth appears stuck after 5 seconds');
-        setAuthStuck(true);
-      }
-    }, 5000);
-
-    return () => clearTimeout(stuckTimer);
-  }, [isLoading]);
-
-  // Nuclear reset function for stuck auth
-  const handleForceReset = async () => {
-    console.log('[SimpleHeader] Force reset triggered by user');
-
-    // Try to sign out from Supabase first
-    try {
-      await supabase.auth.signOut();
-    } catch (err) {
-      console.warn('[SimpleHeader] Supabase signOut failed:', err);
-    }
-
-    // Clear everything
-    try {
-      localStorage.clear();
-      sessionStorage.clear();
-    } catch (err) {
-      console.error('[SimpleHeader] Error clearing storage:', err);
-    }
-
-    console.log('[SimpleHeader] Storage cleared, reloading...');
-
-    // Reload the page
-    window.location.reload();
-  };
-
-  // Check auth status on mount and listen for changes
+  // SIMPLIFIED AUTH: Only use onAuthStateChange, NEVER getSession()
   useEffect(() => {
     let mounted = true;
 
-    // If we already have a hydrated user from Zustand, use it immediately!
-    // This makes page refresh instant instead of waiting for getSession()
-    if (user) {
-      console.log('[SimpleHeader] Using hydrated user:', user.email);
-      setIsLoading(false);
+    console.log('[SimpleHeader] Setting up auth listener, current user:', user?.email || 'none');
 
-      // Verify session in background (non-blocking) - refresh user data silently
-      (async () => {
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
+    // Helper to load user data from session
+    const loadUserFromSession = async (session: { user: { id: string; email?: string }; access_token: string }) => {
+      if (!mounted) return;
 
-          if (!session && mounted) {
-            console.log('[SimpleHeader] Background check: session expired, logging out');
-            clearUserData();
-          } else if (session && mounted) {
-            // CRITICAL: Verify the session user matches the hydrated user
-            if (session.user.id !== user.id) {
-              console.warn('[SimpleHeader] Session user mismatch! Hydrated:', user.id, 'Session:', session.user.id);
-              console.log('[SimpleHeader] Clearing stale state and reloading...');
-              clearUserData();
-              return;
-            }
-
-            // Session valid and matches - refresh user data in background
-            try {
-              await loadUserData(user.id);
-              console.log('[SimpleHeader] Background data refresh complete');
-            } catch (err) {
-              console.warn('[SimpleHeader] Background data refresh failed:', err);
-            }
-          }
-        } catch (err) {
-          console.warn('[SimpleHeader] Background session check failed:', err);
-          // If we can't verify, clear state to be safe
-          if (mounted) {
-            console.log('[SimpleHeader] Clearing state due to verification failure');
-            clearUserData();
-          }
-        }
-      })();
-
-      return; // Don't run the full loadUser flow
-    }
-
-    // Only do full auth check if no hydrated user
-    async function loadUser() {
-      console.log('[SimpleHeader] No hydrated user, checking session...');
+      console.log('[SimpleHeader] Loading user from session:', session.user.email);
 
       try {
-        // Add timeout race to prevent hanging
-        const sessionPromise = supabase.auth.getSession();
-        const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Session check timeout')), 3000)
-        );
+        const response = await fetch('/api/me', {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
 
-        const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]);
-        console.log('[SimpleHeader] Session result:', { hasSession: !!session, error });
+        if (response.ok && mounted) {
+          const data = await response.json();
+          console.log('[SimpleHeader] User data received:', data.email);
 
-        if (!mounted) return;
-
-        if (session?.access_token) {
-          console.log('[SimpleHeader] Fetching user profile...');
-          const response = await fetch('/api/me', {
-            headers: { Authorization: `Bearer ${session.access_token}` },
+          setUser({
+            id: data.id,
+            email: data.email,
+            username: data.username || data.email?.split('@')[0] || 'User',
+            is_premium: data.is_premium || false,
+            is_admin: data.is_admin || false,
+            avatar_type: data.avatar_type || 'initial',
+            avatar_icon: data.avatar_icon || undefined,
+            current_title: data.current_title || null,
+            created_at: data.created_at || new Date().toISOString(),
+            updated_at: data.updated_at || new Date().toISOString(),
           });
 
-          if (response.ok) {
-            const data = await response.json();
-            console.log('[SimpleHeader] User data received:', data.email);
+          if (data.viewed_badges && Array.isArray(data.viewed_badges)) {
+            setViewedBadges(data.viewed_badges);
+          }
 
-            if (mounted) {
-              setUser({
-                id: data.id,
-                email: data.email,
-                username: data.username || data.email?.split('@')[0] || 'User',
-                is_premium: data.is_premium || false,
-                is_admin: data.is_admin || false,
-                avatar_type: data.avatar_type || 'initial',
-                avatar_icon: data.avatar_icon || undefined,
-                current_title: data.current_title || null,
-                created_at: data.created_at || new Date().toISOString(),
-                updated_at: data.updated_at || new Date().toISOString(),
+          try {
+            await loadUserData(data.id);
+          } catch (loadErr) {
+            console.warn('[SimpleHeader] loadUserData failed:', loadErr);
+          }
+        } else if (mounted) {
+          console.warn('[SimpleHeader] /api/me failed, clearing user');
+          clearUserData();
+        }
+      } catch (err) {
+        console.error('[SimpleHeader] Error loading user from session:', err);
+        if (mounted) clearUserData();
+      }
+    };
+
+    // Set up auth state change listener - this is the ONLY source of truth
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
+
+      console.log('[SimpleHeader] Auth event:', event, 'session:', session?.user?.email || 'none');
+
+      switch (event) {
+        case 'INITIAL_SESSION':
+          // This fires on page load with the current session state
+          if (session) {
+            // Valid session exists
+            if (user && user.id === session.user.id) {
+              // Hydrated user matches session - just refresh data in background
+              console.log('[SimpleHeader] INITIAL_SESSION: Hydrated user matches, refreshing data');
+              loadUserData(user.id).catch(err => {
+                console.warn('[SimpleHeader] Background refresh failed:', err);
               });
-
-              if (data.viewed_badges && Array.isArray(data.viewed_badges)) {
-                setViewedBadges(data.viewed_badges);
-              }
-
-              try {
-                await loadUserData(data.id);
-              } catch (loadErr) {
-                console.error('[SimpleHeader] loadUserData failed:', loadErr);
-              }
+            } else if (user && user.id !== session.user.id) {
+              // Hydrated user doesn't match session - clear and reload
+              console.warn('[SimpleHeader] INITIAL_SESSION: User mismatch, reloading');
+              clearUserData();
+              await loadUserFromSession(session);
+            } else {
+              // No hydrated user but valid session - load user
+              console.log('[SimpleHeader] INITIAL_SESSION: Loading user from session');
+              await loadUserFromSession(session);
             }
           } else {
-            console.log('[SimpleHeader] /api/me failed');
-            if (mounted) clearUserData();
-          }
-        } else {
-          console.log('[SimpleHeader] No valid session');
-          if (mounted) clearUserData();
-        }
-      } catch (error) {
-        console.error('[SimpleHeader] Auth check failed:', error);
-        if (mounted) clearUserData();
-      } finally {
-        if (mounted) setIsLoading(false);
-      }
-    }
-
-    loadUser();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (mounted) {
-        if (event === 'SIGNED_OUT') {
-          clearUserData();
-        } else if (event === 'SIGNED_IN' && session) {
-          // Check if this is a new user signup (profile created within last 60 seconds)
-          const welcomeEmailKey = `welcome_email_sent_${session.user.id}`;
-          const alreadySent = localStorage.getItem(welcomeEmailKey);
-
-          if (!alreadySent) {
-            // Check if user profile was just created (new signup)
-            try {
-              const { data: profile } = await supabase
-                .from('profiles')
-                .select('created_at')
-                .eq('id', session.user.id)
-                .single();
-
-              if (profile?.created_at) {
-                const createdAt = new Date(profile.created_at);
-                const now = new Date();
-                const secondsSinceCreation = (now.getTime() - createdAt.getTime()) / 1000;
-
-                // If profile was created within the last 60 seconds, this is a new signup
-                if (secondsSinceCreation < 60) {
-                  console.log('[Auth] New user detected, sending welcome email');
-
-                  // Mark as sent immediately to prevent duplicates
-                  localStorage.setItem(welcomeEmailKey, 'true');
-
-                  // Send welcome email (fire and forget)
-                  fetch('/api/email/welcome', {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'Authorization': `Bearer ${session.access_token}`,
-                    },
-                  }).then(() => {
-                    console.log('[Auth] Welcome email request sent');
-                  }).catch((err) => {
-                    console.error('[Auth] Failed to send welcome email:', err);
-                  });
-                }
-              }
-            } catch (err) {
-              console.error('[Auth] Error checking user profile:', err);
+            // No valid session
+            if (user) {
+              // We thought we were logged in, but no session - log out
+              console.log('[SimpleHeader] INITIAL_SESSION: No session but had hydrated user, logging out');
+              clearUserData();
             }
+            // else: no session, no user - already in correct state
           }
+          break;
 
-          loadUser();
-        } else {
-          loadUser();
-        }
+        case 'SIGNED_IN':
+          console.log('[SimpleHeader] SIGNED_IN event');
+          if (session) {
+            // Check if this is a new user signup
+            const welcomeEmailKey = `welcome_email_sent_${session.user.id}`;
+            const alreadySent = localStorage.getItem(welcomeEmailKey);
+
+            if (!alreadySent) {
+              try {
+                const { data: profile } = await supabase
+                  .from('profiles')
+                  .select('created_at')
+                  .eq('id', session.user.id)
+                  .single();
+
+                if (profile?.created_at) {
+                  const createdAt = new Date(profile.created_at);
+                  const now = new Date();
+                  const secondsSinceCreation = (now.getTime() - createdAt.getTime()) / 1000;
+
+                  if (secondsSinceCreation < 60) {
+                    console.log('[Auth] New user detected, sending welcome email');
+                    localStorage.setItem(welcomeEmailKey, 'true');
+
+                    fetch('/api/email/welcome', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${session.access_token}`,
+                      },
+                    }).catch(err => {
+                      console.error('[Auth] Failed to send welcome email:', err);
+                    });
+                  }
+                }
+              } catch (err) {
+                console.warn('[Auth] Error checking user profile:', err);
+              }
+            }
+
+            await loadUserFromSession(session);
+          }
+          break;
+
+        case 'SIGNED_OUT':
+          console.log('[SimpleHeader] SIGNED_OUT event');
+          clearUserData();
+          break;
+
+        case 'TOKEN_REFRESHED':
+          console.log('[SimpleHeader] TOKEN_REFRESHED event');
+          // Token refreshed, optionally refresh user data
+          if (session && user) {
+            loadUserData(user.id).catch(err => {
+              console.warn('[SimpleHeader] Token refresh data update failed:', err);
+            });
+          }
+          break;
+
+        case 'USER_UPDATED':
+          console.log('[SimpleHeader] USER_UPDATED event');
+          if (session) {
+            await loadUserFromSession(session);
+          }
+          break;
+
+        default:
+          console.log('[SimpleHeader] Unhandled auth event:', event);
       }
     });
 
@@ -259,31 +205,27 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
       mounted = false;
       subscription.unsubscribe();
     };
-    // Note: We intentionally don't include `user` in deps to avoid re-running on user changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setUser, loadUserData, clearUserData, setViewedBadges]);
 
   const isAuthenticated = !!user;
   const isPremium = user?.is_premium || false;
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     console.log('[SimpleHeader] Logging out...');
 
-    try {
-      // Wait for Supabase to fully sign out
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('[SimpleHeader] Supabase signOut error:', error);
-      }
-    } catch (err) {
-      console.error('[SimpleHeader] SignOut failed:', err);
-    }
-
-    // Clear local state regardless of Supabase result
+    // 1. Clear Zustand state FIRST (instant UI update)
     clearUserData();
 
-    console.log('[SimpleHeader] Logout complete, navigating to landing');
+    // 2. Navigate to landing immediately
     onNavigate('landing');
+
+    // 3. Tell Supabase to sign out (fire and forget - don't block on it)
+    supabase.auth.signOut().catch(err => {
+      console.warn('[SimpleHeader] signOut error (ignored):', err);
+    });
+
+    console.log('[SimpleHeader] Logout complete');
   };
 
   const handleLogoClick = () => {
@@ -338,103 +280,78 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
 
         {/* Right Side */}
         <div className="flex items-center gap-2 ml-auto">
-          {isLoading ? (
-            <div className="flex items-center gap-2">
-              <div className="text-sm text-muted-foreground">Loading...</div>
-              {authStuck && (
-                <Button
-                  variant="link"
-                  size="sm"
-                  onClick={handleForceReset}
-                  className="text-xs text-destructive hover:text-destructive"
-                >
-                  Stuck? Reset
-                </Button>
-              )}
-            </div>
-          ) : (
-            <>
-              {/* Show Unlock Lifetime button for non-premium users */}
-              {!isPremium && (
-                <Button
-                  variant="outline"
-                  onClick={() => handleNav('pricing')}
-                  className="gap-1 bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-500 hover:to-amber-600 text-white border-0"
-                >
-                  <Crown className="w-4 h-4" />
-                  Unlock Lifetime
-                </Button>
-              )}
-
-              {/* Auth state */}
-              {isAuthenticated ? (
-  <DropdownMenu>
-    <DropdownMenuTrigger asChild>
-      <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
-        {/* Avatar with colored background */}
-        <div className="relative h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white shadow-md">
-          <span className="text-sm font-semibold">
-            {user?.username?.[0]?.toUpperCase() || 'U'}
-          </span>
-          {/* Premium Crown - positioned on top right */}
-          {isPremium && (
-            <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center shadow-lg">
-              <Crown className="h-3 w-3 text-white" />
-            </div>
+          {/* Show Unlock Lifetime button for non-premium users */}
+          {!isPremium && (
+            <Button
+              variant="outline"
+              onClick={() => handleNav('pricing')}
+              className="gap-1 bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-500 hover:to-amber-600 text-white border-0"
+            >
+              <Crown className="w-4 h-4" />
+              Unlock Lifetime
+            </Button>
           )}
-        </div>
-      </Button>
-    </DropdownMenuTrigger>
-    <DropdownMenuContent align="end" className="w-56">
-      <DropdownMenuLabel className="font-normal">
-        <div className="flex flex-col space-y-1">
-          <p className="text-sm font-medium leading-none flex items-center gap-2">
-            {user?.username}
-            {isPremium && (
-              <Crown className="h-3 w-3 text-yellow-500 fill-yellow-500" />
-            )}
-          </p>
-          <p className="text-xs leading-none text-muted-foreground">
-            {user?.email}
-          </p>
-        </div>
-      </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
 
-                    <DropdownMenuItem onClick={() => handleNav('profile')}>
-                      <UserIcon className="mr-2 h-4 w-4" />
-                      Profile
-                    </DropdownMenuItem>
-
-                    <DropdownMenuItem onClick={() => handleNav('settings')}>
-                      <Settings className="mr-2 h-4 w-4" />
-                      Settings
-                    </DropdownMenuItem>
-
-                    {!isPremium && (
-                      <DropdownMenuItem
-                        onClick={() => handleNav('pricing')}
-                        className="text-primary"
-                      >
-                        <Crown className="mr-2 h-4 w-4" />
-                        Upgrade to Premium
-                      </DropdownMenuItem>
+          {/* Auth state */}
+          {isAuthenticated ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
+                  <div className="relative h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white shadow-md">
+                    <span className="text-sm font-semibold">
+                      {user?.username?.[0]?.toUpperCase() || 'U'}
+                    </span>
+                    {isPremium && (
+                      <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center shadow-lg">
+                        <Crown className="h-3 w-3 text-white" />
+                      </div>
                     )}
-
-                    <DropdownMenuSeparator />
-
-                    <DropdownMenuItem onClick={handleLogout}>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Log out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
-                <Button onClick={onLoginClick} size="sm" variant="ghost">
-                  Log In
+                  </div>
                 </Button>
-              )}
-            </>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none flex items-center gap-2">
+                      {user?.username}
+                      {isPremium && (
+                        <Crown className="h-3 w-3 text-yellow-500 fill-yellow-500" />
+                      )}
+                    </p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {user?.email}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => handleNav('profile')}>
+                  <UserIcon className="mr-2 h-4 w-4" />
+                  Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleNav('settings')}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </DropdownMenuItem>
+                {!isPremium && (
+                  <DropdownMenuItem
+                    onClick={() => handleNav('pricing')}
+                    className="text-primary"
+                  >
+                    <Crown className="mr-2 h-4 w-4" />
+                    Upgrade to Premium
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button onClick={onLoginClick} size="sm" variant="ghost">
+              Log In
+            </Button>
           )}
 
           {/* Mobile Menu Toggle */}
