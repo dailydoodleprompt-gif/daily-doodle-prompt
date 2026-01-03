@@ -121,9 +121,18 @@ export function AdminView({ onBack }: AdminViewProps) {
   const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
   const [updateUsernameDialogOpen, setUpdateUsernameDialogOpen] = useState(false);
   const [deleteDoodleDialogOpen, setDeleteDoodleDialogOpen] = useState(false);
+  const [editDoodleDialogOpen, setEditDoodleDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserToManage | null>(null);
   const [selectedDoodleId, setSelectedDoodleId] = useState<string | null>(null);
+  const [selectedDoodle, setSelectedDoodle] = useState<any | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+
+  // Edit doodle form state
+  const [editDoodleCaption, setEditDoodleCaption] = useState('');
+  const [editDoodleCreatedAt, setEditDoodleCreatedAt] = useState('');
+  const [editDoodlePromptTitle, setEditDoodlePromptTitle] = useState('');
+  const [editDoodlePromptId, setEditDoodlePromptId] = useState('');
+  const [editDoodleIsPublic, setEditDoodleIsPublic] = useState(true);
 
   // Report review states
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
@@ -267,6 +276,16 @@ export function AdminView({ onBack }: AdminViewProps) {
 
       if (updateError) throw updateError;
 
+      // Update username on all user's existing doodles
+      const { error: doodlesError } = await supabase
+        .from('doodles')
+        .update({ user_username: data.username })
+        .eq('user_id', selectedUser.id);
+
+      if (doodlesError) {
+        console.warn('Failed to update username on doodles:', doodlesError);
+      }
+
       setSuccessMessage(`Username changed from "${selectedUser.username}" to "${data.username}".`);
       setUpdateUsernameDialogOpen(false);
       setSelectedUser(null);
@@ -309,6 +328,48 @@ export function AdminView({ onBack }: AdminViewProps) {
       setSelectedDoodleId(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete doodle');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const openEditDoodleDialog = (doodle: any) => {
+    setSelectedDoodle(doodle);
+    setEditDoodleCaption(doodle.caption || '');
+    // Format date for datetime-local input (YYYY-MM-DDTHH:mm)
+    const date = new Date(doodle.created_at);
+    setEditDoodleCreatedAt(date.toISOString().slice(0, 16));
+    setEditDoodlePromptTitle(doodle.prompt_title || '');
+    setEditDoodlePromptId(doodle.prompt_id || '');
+    setEditDoodleIsPublic(doodle.is_public);
+    setEditDoodleDialogOpen(true);
+  };
+
+  const handleSaveEditDoodle = async () => {
+    if (!selectedDoodle) return;
+
+    setActionLoading(true);
+    setError(null);
+
+    try {
+      const { error: updateError } = await supabase
+        .from('doodles')
+        .update({
+          caption: editDoodleCaption,
+          created_at: new Date(editDoodleCreatedAt).toISOString(),
+          prompt_title: editDoodlePromptTitle,
+          prompt_id: editDoodlePromptId,
+          is_public: editDoodleIsPublic,
+        })
+        .eq('id', selectedDoodle.id);
+
+      if (updateError) throw updateError;
+
+      setSuccessMessage('Doodle updated successfully.');
+      setEditDoodleDialogOpen(false);
+      setSelectedDoodle(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update doodle');
     } finally {
       setActionLoading(false);
     }
@@ -652,17 +713,27 @@ export function AdminView({ onBack }: AdminViewProps) {
                         <p className="text-white text-xs text-center px-2 truncate w-full">
                           {owner?.username || 'Unknown'}
                         </p>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => {
-                            setSelectedDoodleId(doodle.id);
-                            setDeleteDoodleDialogOpen(true);
-                          }}
-                        >
-                          <Trash2 className="h-3 w-3 mr-1" />
-                          Delete
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => openEditDoodleDialog(doodle)}
+                          >
+                            <Edit className="h-3 w-3 mr-1" />
+                            Edit
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => {
+                              setSelectedDoodleId(doodle.id);
+                              setDeleteDoodleDialogOpen(true);
+                            }}
+                          >
+                            <Trash2 className="h-3 w-3 mr-1" />
+                            Delete
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   );
@@ -944,6 +1015,121 @@ export function AdminView({ onBack }: AdminViewProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Edit Doodle Dialog */}
+      <Dialog open={editDoodleDialogOpen} onOpenChange={setEditDoodleDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="h-5 w-5" />
+              Edit Doodle
+            </DialogTitle>
+            <DialogDescription>
+              Update doodle metadata. Changes to date will affect where it appears in feeds.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Preview */}
+            {selectedDoodle && (
+              <div className="rounded-lg overflow-hidden bg-muted max-h-40 flex items-center justify-center">
+                <img
+                  src={selectedDoodle.image_url}
+                  alt="Doodle preview"
+                  className="max-h-40 object-contain"
+                />
+              </div>
+            )}
+
+            {/* Upload Date */}
+            <div className="space-y-2">
+              <Label htmlFor="edit-created-at">Upload Date & Time</Label>
+              <Input
+                id="edit-created-at"
+                type="datetime-local"
+                value={editDoodleCreatedAt}
+                onChange={(e) => setEditDoodleCreatedAt(e.target.value)}
+                disabled={actionLoading}
+              />
+              <p className="text-xs text-muted-foreground">
+                Changing this date will backdate the doodle to appear on older prompts
+              </p>
+            </div>
+
+            {/* Prompt ID */}
+            <div className="space-y-2">
+              <Label htmlFor="edit-prompt-id">Prompt ID (Date)</Label>
+              <Input
+                id="edit-prompt-id"
+                type="text"
+                placeholder="YYYY-MM-DD"
+                value={editDoodlePromptId}
+                onChange={(e) => setEditDoodlePromptId(e.target.value)}
+                disabled={actionLoading}
+              />
+              <p className="text-xs text-muted-foreground">
+                Format: YYYY-MM-DD (e.g., 2026-01-01)
+              </p>
+            </div>
+
+            {/* Prompt Title */}
+            <div className="space-y-2">
+              <Label htmlFor="edit-prompt-title">Prompt Title</Label>
+              <Input
+                id="edit-prompt-title"
+                type="text"
+                placeholder="Enter prompt title"
+                value={editDoodlePromptTitle}
+                onChange={(e) => setEditDoodlePromptTitle(e.target.value)}
+                disabled={actionLoading}
+              />
+            </div>
+
+            {/* Caption */}
+            <div className="space-y-2">
+              <Label htmlFor="edit-caption">Caption</Label>
+              <Input
+                id="edit-caption"
+                type="text"
+                placeholder="Enter caption (optional)"
+                value={editDoodleCaption}
+                onChange={(e) => setEditDoodleCaption(e.target.value)}
+                disabled={actionLoading}
+              />
+            </div>
+
+            {/* Public toggle */}
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div className="space-y-0.5">
+                <Label>Public</Label>
+                <p className="text-xs text-muted-foreground">
+                  Visible to other users
+                </p>
+              </div>
+              <Switch
+                checked={editDoodleIsPublic}
+                onCheckedChange={setEditDoodleIsPublic}
+                disabled={actionLoading}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setEditDoodleDialogOpen(false)}
+              disabled={actionLoading}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleSaveEditDoodle} disabled={actionLoading}>
+              {actionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Review Report Dialog */}
       <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>

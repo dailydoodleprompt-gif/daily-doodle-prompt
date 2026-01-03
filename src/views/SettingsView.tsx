@@ -213,6 +213,16 @@ export function SettingsView({ onBack, onForgotPassword, onUpgrade }: SettingsVi
         }
       }
 
+      // Update username on all user's existing doodles
+      const { error: doodlesError } = await supabase
+        .from('doodles')
+        .update({ user_username: data.username })
+        .eq('user_id', user.id);
+
+      if (doodlesError) {
+        console.warn('Failed to update username on doodles:', doodlesError);
+      }
+
       setUsernameSuccess(true);
       usernameForm.reset({ username: data.username, password: '' });
     } catch (err) {
@@ -249,6 +259,16 @@ export function SettingsView({ onBack, onForgotPassword, onUpgrade }: SettingsVi
 
         if (!response.ok) {
           throw new Error('Failed to update username');
+        }
+
+        // Update username on all user's existing doodles
+        const { error: doodlesError } = await supabase
+          .from('doodles')
+          .update({ user_username: data.username })
+          .eq('user_id', sessionData.session.user.id);
+
+        if (doodlesError) {
+          console.warn('Failed to update username on doodles:', doodlesError);
         }
       }
 
