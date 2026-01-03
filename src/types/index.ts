@@ -501,7 +501,7 @@ export const BADGE_INFO: Record<BadgeType, Omit<BadgeInfo, 'type'>> = {
   'valentines_2026': {
     name: "Valentine's Artist '26",
     description: "Uploaded a doodle on Valentine's Day 2026",
-    icon: 'heart-pulse',
+    icon: 'flower-2',
     category: 'seasonal',
     rarity: 'legendary',
     availableFrom: '2026-02-14',
@@ -544,9 +544,9 @@ export const BADGE_INFO: Record<BadgeType, Omit<BadgeInfo, 'type'>> = {
     availableUntil: '2026-10-31',
   },
   'thanksgiving_2026': {
-    name: "Grateful Artist '26",
+    name: "Thankful Artist '26",
     description: "Uploaded a doodle on Thanksgiving 2026",
-    icon: 'wheat',
+    icon: 'drumstick',
     category: 'seasonal',
     rarity: 'legendary',
     availableFrom: '2026-11-26',

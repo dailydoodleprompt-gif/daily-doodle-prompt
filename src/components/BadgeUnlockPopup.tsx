@@ -43,12 +43,12 @@ import {
   Copy,
   Check,
   // Seasonal icons - Holiday badges
-  HeartPulse,
+  Flower2,
   Clover,
   Globe,
   Star,
   Ghost,
-  Wheat,
+  Drumstick,
   Gift,
   PartyPopper,
 } from 'lucide-react';
@@ -84,12 +84,12 @@ const badgeIcons: Record<BadgeType, typeof Flame> = {
   'somebody_likes_me': HeartHandshake,
   'idea_fairy': Lightbulb,
   // Seasonal - Holiday badges (unique icons per holiday)
-  'valentines_2026': HeartPulse,
+  'valentines_2026': Flower2,
   'lucky_creator_2026': Clover,
   'earth_day_2026': Globe,
   'independence_2026': Star,
   'spooky_season_2026': Ghost,
-  'thanksgiving_2026': Wheat,
+  'thanksgiving_2026': Drumstick,
   'holiday_spirit_2026': Gift,
   'new_year_spark_2027': PartyPopper,
   // Seasonal - Monthly challenge badges (all use CalendarCheck)
