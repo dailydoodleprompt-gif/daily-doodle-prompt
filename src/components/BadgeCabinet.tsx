@@ -46,21 +46,15 @@ import {
   Orbit,
   Shrub,
   Flower,
-  // Seasonal badge icons
+  // Seasonal badge icons - Holiday badges
+  HeartPulse,
   Clover,
   Globe,
   Star,
   Ghost,
-  Leaf,
+  Wheat,
   Gift,
   PartyPopper,
-  Snowflake,
-  Wind,
-  CloudRain,
-  Sun,
-  Palmtree,
-  Sunrise,
-  Moon,
 } from 'lucide-react';
 
 const badgeIcons: Record<BadgeType, typeof Flame> = {
@@ -93,28 +87,28 @@ const badgeIcons: Record<BadgeType, typeof Flame> = {
   'warm_fuzzies': Heart,
   'somebody_likes_me': HeartHandshake,
   'idea_fairy': Lightbulb,
-  // Seasonal - Holiday badges (icons as fallback, emoji shown primarily)
-  'valentines_2026': Heart,
+  // Seasonal - Holiday badges (unique icons per holiday)
+  'valentines_2026': HeartPulse,
   'lucky_creator_2026': Clover,
   'earth_day_2026': Globe,
   'independence_2026': Star,
   'spooky_season_2026': Ghost,
-  'thanksgiving_2026': Leaf,
+  'thanksgiving_2026': Wheat,
   'holiday_spirit_2026': Gift,
   'new_year_spark_2027': PartyPopper,
-  // Seasonal - Monthly challenge badges
-  'january_champion_2026': Snowflake,
-  'february_faithful_2026': Heart,
-  'march_maestro_2026': Wind,
-  'april_artist_2026': CloudRain,
-  'may_maven_2026': Flower,
-  'june_genius_2026': Sun,
-  'july_journeyer_2026': Palmtree,
-  'august_ace_2026': Sunrise,
-  'september_star_2026': Leaf,
-  'october_original_2026': Moon,
-  'november_notable_2026': Leaf,
-  'december_dedicator_2026': Snowflake,
+  // Seasonal - Monthly challenge badges (all use CalendarCheck)
+  'january_champion_2026': CalendarCheck,
+  'february_faithful_2026': CalendarCheck,
+  'march_maestro_2026': CalendarCheck,
+  'april_artist_2026': CalendarCheck,
+  'may_maven_2026': CalendarCheck,
+  'june_genius_2026': CalendarCheck,
+  'july_journeyer_2026': CalendarCheck,
+  'august_ace_2026': CalendarCheck,
+  'september_star_2026': CalendarCheck,
+  'october_original_2026': CalendarCheck,
+  'november_notable_2026': CalendarCheck,
+  'december_dedicator_2026': CalendarCheck,
 };
 
 const badgeColors: Record<BadgeType, string> = {
@@ -156,19 +150,19 @@ const badgeColors: Record<BadgeType, string> = {
   'thanksgiving_2026': 'from-amber-500 to-orange-600',
   'holiday_spirit_2026': 'from-red-500 to-green-600',
   'new_year_spark_2027': 'from-yellow-400 to-amber-500',
-  // Seasonal - Monthly challenge badges (Epic - seasonal colors)
-  'january_champion_2026': 'from-blue-400 to-cyan-500',
-  'february_faithful_2026': 'from-pink-400 to-red-500',
-  'march_maestro_2026': 'from-green-400 to-emerald-500',
-  'april_artist_2026': 'from-sky-400 to-blue-500',
-  'may_maven_2026': 'from-pink-400 to-rose-500',
-  'june_genius_2026': 'from-yellow-400 to-orange-500',
-  'july_journeyer_2026': 'from-cyan-400 to-teal-500',
-  'august_ace_2026': 'from-orange-400 to-amber-500',
-  'september_star_2026': 'from-amber-400 to-orange-500',
-  'october_original_2026': 'from-purple-500 to-indigo-600',
-  'november_notable_2026': 'from-orange-500 to-red-500',
-  'december_dedicator_2026': 'from-blue-500 to-indigo-600',
+  // Seasonal - Monthly challenge badges (Epic) - 2026 uses teal gradient
+  'january_champion_2026': 'from-teal-400 to-cyan-500',
+  'february_faithful_2026': 'from-teal-400 to-cyan-500',
+  'march_maestro_2026': 'from-teal-400 to-cyan-500',
+  'april_artist_2026': 'from-teal-400 to-cyan-500',
+  'may_maven_2026': 'from-teal-400 to-cyan-500',
+  'june_genius_2026': 'from-teal-400 to-cyan-500',
+  'july_journeyer_2026': 'from-teal-400 to-cyan-500',
+  'august_ace_2026': 'from-teal-400 to-cyan-500',
+  'september_star_2026': 'from-teal-400 to-cyan-500',
+  'october_original_2026': 'from-teal-400 to-cyan-500',
+  'november_notable_2026': 'from-teal-400 to-cyan-500',
+  'december_dedicator_2026': 'from-teal-400 to-cyan-500',
 };
 
 const badgeColorRings: Record<BadgeType, { bg: string; ring: string }> = {
@@ -210,19 +204,19 @@ const badgeColorRings: Record<BadgeType, { bg: string; ring: string }> = {
   'thanksgiving_2026': { bg: 'from-amber-500 to-orange-600', ring: 'ring-amber-500/50' },
   'holiday_spirit_2026': { bg: 'from-red-500 to-green-600', ring: 'ring-red-500/50' },
   'new_year_spark_2027': { bg: 'from-yellow-400 to-amber-500', ring: 'ring-yellow-500/50' },
-  // Seasonal - Monthly challenge badges (Epic)
-  'january_champion_2026': { bg: 'from-blue-400 to-cyan-500', ring: 'ring-blue-500/50' },
-  'february_faithful_2026': { bg: 'from-pink-400 to-red-500', ring: 'ring-pink-500/50' },
-  'march_maestro_2026': { bg: 'from-green-400 to-emerald-500', ring: 'ring-green-500/50' },
-  'april_artist_2026': { bg: 'from-sky-400 to-blue-500', ring: 'ring-sky-500/50' },
-  'may_maven_2026': { bg: 'from-pink-400 to-rose-500', ring: 'ring-pink-500/50' },
-  'june_genius_2026': { bg: 'from-yellow-400 to-orange-500', ring: 'ring-yellow-500/50' },
-  'july_journeyer_2026': { bg: 'from-cyan-400 to-teal-500', ring: 'ring-cyan-500/50' },
-  'august_ace_2026': { bg: 'from-orange-400 to-amber-500', ring: 'ring-orange-500/50' },
-  'september_star_2026': { bg: 'from-amber-400 to-orange-500', ring: 'ring-amber-500/50' },
-  'october_original_2026': { bg: 'from-purple-500 to-indigo-600', ring: 'ring-purple-500/50' },
-  'november_notable_2026': { bg: 'from-orange-500 to-red-500', ring: 'ring-orange-500/50' },
-  'december_dedicator_2026': { bg: 'from-blue-500 to-indigo-600', ring: 'ring-blue-500/50' },
+  // Seasonal - Monthly challenge badges (Epic) - 2026 uses teal gradient
+  'january_champion_2026': { bg: 'from-teal-400 to-cyan-500', ring: 'ring-teal-500/50' },
+  'february_faithful_2026': { bg: 'from-teal-400 to-cyan-500', ring: 'ring-teal-500/50' },
+  'march_maestro_2026': { bg: 'from-teal-400 to-cyan-500', ring: 'ring-teal-500/50' },
+  'april_artist_2026': { bg: 'from-teal-400 to-cyan-500', ring: 'ring-teal-500/50' },
+  'may_maven_2026': { bg: 'from-teal-400 to-cyan-500', ring: 'ring-teal-500/50' },
+  'june_genius_2026': { bg: 'from-teal-400 to-cyan-500', ring: 'ring-teal-500/50' },
+  'july_journeyer_2026': { bg: 'from-teal-400 to-cyan-500', ring: 'ring-teal-500/50' },
+  'august_ace_2026': { bg: 'from-teal-400 to-cyan-500', ring: 'ring-teal-500/50' },
+  'september_star_2026': { bg: 'from-teal-400 to-cyan-500', ring: 'ring-teal-500/50' },
+  'october_original_2026': { bg: 'from-teal-400 to-cyan-500', ring: 'ring-teal-500/50' },
+  'november_notable_2026': { bg: 'from-teal-400 to-cyan-500', ring: 'ring-teal-500/50' },
+  'december_dedicator_2026': { bg: 'from-teal-400 to-cyan-500', ring: 'ring-teal-500/50' },
 };
 
 // All badges in achievement-progress order (easier to harder)
@@ -295,8 +289,8 @@ interface BadgeItemProps {
 function BadgeItem({ badgeType, earned, earnedAt, isNew, size = 'md', onClick, monthlyProgress }: BadgeItemProps) {
   const info = BADGE_INFO[badgeType];
   const Icon = badgeIcons[badgeType];
-  const hasEmoji = !!info.emoji;
   const isMonthlyChallenge = info.category === 'seasonal' && info.rarity === 'epic' && !earned;
+  const isDedicatedDoodler = info.category === 'seasonal' && info.rarity === 'epic' && info.displayMonth && info.displayYear;
   const daysRemaining = isMonthlyChallenge ? getDaysRemainingInMonth() : 0;
 
   const sizeClasses = size === 'sm'
@@ -307,16 +301,12 @@ function BadgeItem({ badgeType, earned, earnedAt, isNew, size = 'md', onClick, m
     ? 'w-6 h-6'
     : 'w-7 h-7 sm:w-8 sm:h-8';
 
-  const emojiClasses = size === 'sm'
-    ? 'text-xl'
-    : 'text-2xl sm:text-3xl';
-
   // Rarity badge colors - only show for earned badges
   const rarityBorderClass = earned ? (
     info.rarity === 'legendary'
       ? 'ring-2 ring-yellow-400 ring-offset-2 ring-offset-background'
       : info.rarity === 'epic'
-      ? 'ring-2 ring-purple-400 ring-offset-2 ring-offset-background'
+      ? 'ring-2 ring-teal-400 ring-offset-2 ring-offset-background'
       : ''
   ) : '';
 
@@ -334,13 +324,7 @@ function BadgeItem({ badgeType, earned, earnedAt, isNew, size = 'md', onClick, m
                 : 'bg-muted/50 text-muted-foreground/40 grayscale hover:grayscale-0'
             )}
           >
-            {hasEmoji ? (
-              <span className={cn(emojiClasses, !earned && 'grayscale opacity-50')}>
-                {info.emoji}
-              </span>
-            ) : (
-              <Icon className={iconClasses} />
-            )}
+            <Icon className={iconClasses} />
 
             {/* New badge indicator */}
             {earned && isNew && (
@@ -349,7 +333,7 @@ function BadgeItem({ badgeType, earned, earnedAt, isNew, size = 'md', onClick, m
 
             {/* Monthly challenge active indicator */}
             {isMonthlyChallenge && monthlyProgress && (
-              <div className="absolute -top-0.5 -right-0.5 w-3 h-3 sm:w-4 sm:h-4 bg-purple-500 rounded-full border-2 border-background animate-pulse" />
+              <div className="absolute -top-0.5 -right-0.5 w-3 h-3 sm:w-4 sm:h-4 bg-teal-500 rounded-full border-2 border-background animate-pulse" />
             )}
           </button>
         </TooltipTrigger>
@@ -363,11 +347,16 @@ function BadgeItem({ badgeType, earned, earnedAt, isNew, size = 'md', onClick, m
                 </span>
               )}
               {earned && info.rarity === 'epic' && (
-                <span className="px-1.5 py-0.5 text-[10px] font-bold uppercase bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded">
+                <span className="px-1.5 py-0.5 text-[10px] font-bold uppercase bg-teal-500/20 text-teal-600 dark:text-teal-400 rounded">
                   Epic
                 </span>
               )}
             </div>
+            {isDedicatedDoodler && (
+              <p className="text-sm font-medium text-teal-600 dark:text-teal-400">
+                {info.displayMonth} {info.displayYear}
+              </p>
+            )}
             <p className="text-sm text-foreground/80">{info.description}</p>
 
             {earned && earnedAt && (
@@ -384,7 +373,7 @@ function BadgeItem({ badgeType, earned, earnedAt, isNew, size = 'md', onClick, m
             {/* Monthly challenge progress */}
             {isMonthlyChallenge && monthlyProgress && (
               <div className="space-y-1.5 pt-1">
-                <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">
+                <p className="text-xs text-teal-600 dark:text-teal-400 font-medium">
                   Monthly Challenge Active!
                 </p>
                 <div className="text-xs text-muted-foreground">
@@ -392,7 +381,7 @@ function BadgeItem({ badgeType, earned, earnedAt, isNew, size = 'md', onClick, m
                 </div>
                 <div className="w-full bg-muted rounded-full h-1.5">
                   <div
-                    className="bg-purple-500 h-1.5 rounded-full transition-all"
+                    className="bg-teal-500 h-1.5 rounded-full transition-all"
                     style={{ width: `${Math.min(100, (monthlyProgress.current / monthlyProgress.total) * 100)}%` }}
                   />
                 </div>
@@ -427,6 +416,10 @@ export function BadgeCabinet({ className, compact = false }: BadgeCabinetProps) 
   const user = useAppStore((state) => state.user);
 
   const [selectedBadge, setSelectedBadge] = useState<BadgeType | null>(null);
+  const [showAllBadges, setShowAllBadges] = useState(false);
+
+  // Admin check
+  const isAdmin = user?.is_admin === true;
 
   const earnedBadgeTypes = useMemo(() => badges.map(b => b.badge_type), [badges]);
 
@@ -439,11 +432,17 @@ export function BadgeCabinet({ className, compact = false }: BadgeCabinetProps) 
   }, [badges]);
 
   // Filter badges using visibility rules - hide secret badges and inactive seasonal badges
+  // Admin preview mode shows ALL badges
   const visibleBadges = useMemo(() => {
+    if (showAllBadges && isAdmin) {
+      // Admin preview mode: show ALL badges
+      return allBadgesOrdered;
+    }
+    // Normal mode: use visibility rules
     return allBadgesOrdered.filter((badgeType) =>
       isBadgeVisible(badgeType, earnedBadgeTypes)
     );
-  }, [earnedBadgeTypes]);
+  }, [earnedBadgeTypes, showAllBadges, isAdmin]);
 
   // Calculate monthly doodle progress for the active monthly challenge
   const monthlyProgress = useMemo(() => {
@@ -462,13 +461,19 @@ export function BadgeCabinet({ className, compact = false }: BadgeCabinetProps) 
   }, [user, getDoodles]);
 
   const stats = useMemo(() => {
-    // Only count visible badges in the total
+    if (showAllBadges && isAdmin) {
+      // Admin preview mode: show total of ALL badges
+      const total = allBadgesOrdered.length;
+      const earned = badges.length;
+      return { total, earned };
+    }
+    // Normal mode: only count visible badges in the total
     const total = visibleBadges.length;
     const earned = badges.filter((b) =>
       visibleBadges.includes(b.badge_type)
     ).length;
     return { total, earned };
-  }, [badges, visibleBadges]);
+  }, [badges, visibleBadges, showAllBadges, isAdmin]);
 
   // Sort: earned badges first (by earned date), then unearned
   const sortedBadges = useMemo(() => {
@@ -514,12 +519,30 @@ export function BadgeCabinet({ className, compact = false }: BadgeCabinetProps) 
               <Award className="h-5 w-5" />
               Badge Collection
             </CardTitle>
-            <span className="text-sm font-medium px-2 py-1 rounded-full bg-primary/10 text-primary">
-              {stats.earned}/{stats.total}
-            </span>
+            <div className="flex items-center gap-2">
+              {isAdmin && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAllBadges(!showAllBadges)}
+                  className="text-xs"
+                >
+                  {showAllBadges ? 'Show Earned' : 'Preview All'}
+                </Button>
+              )}
+              <span className="text-sm font-medium px-2 py-1 rounded-full bg-primary/10 text-primary">
+                {stats.earned}/{stats.total}
+              </span>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
+          {/* Admin preview mode indicator */}
+          {showAllBadges && isAdmin && (
+            <div className="mb-4 p-2 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 text-sm rounded-lg text-center">
+              Admin Preview Mode - Showing all {allBadgesOrdered.length} badges
+            </div>
+          )}
           <div className={cn(
             "flex flex-wrap gap-2 sm:gap-3",
             compact ? "justify-start" : "justify-center"
@@ -550,18 +573,22 @@ export function BadgeCabinet({ className, compact = false }: BadgeCabinetProps) 
 
       {/* Badge Detail Dialog */}
 {selectedBadge && selectedBadgeInfo && selectedBadgeIcon && selectedBadgeColors && (() => {
-  const hasEmoji = !!selectedBadgeInfo.emoji;
   const isMonthlyChallenge =
     selectedBadgeInfo.category === 'seasonal' &&
     selectedBadgeInfo.rarity === 'epic' &&
     !isSelectedEarned;
+  const isDedicatedDoodler =
+    selectedBadgeInfo.category === 'seasonal' &&
+    selectedBadgeInfo.rarity === 'epic' &&
+    selectedBadgeInfo.displayMonth &&
+    selectedBadgeInfo.displayYear;
 
   // Rarity ring for earned legendary/epic badges
   const rarityRingClass = isSelectedEarned ? (
     selectedBadgeInfo.rarity === 'legendary'
       ? 'ring-yellow-400'
       : selectedBadgeInfo.rarity === 'epic'
-      ? 'ring-purple-400'
+      ? 'ring-teal-400'
       : selectedBadgeColors.ring
   ) : selectedBadgeColors.ring;
 
@@ -587,7 +614,7 @@ export function BadgeCabinet({ className, compact = false }: BadgeCabinetProps) 
             <div className={cn(
               "px-3 py-1 text-xs font-bold uppercase rounded-full",
               selectedBadgeInfo.rarity === 'legendary' && "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400",
-              selectedBadgeInfo.rarity === 'epic' && "bg-purple-500/20 text-purple-600 dark:text-purple-400"
+              selectedBadgeInfo.rarity === 'epic' && "bg-teal-500/20 text-teal-600 dark:text-teal-400"
             )}>
               {selectedBadgeInfo.rarity}
             </div>
@@ -603,12 +630,7 @@ export function BadgeCabinet({ className, compact = false }: BadgeCabinetProps) 
               !isSelectedEarned && 'opacity-50 grayscale'
             )}
           >
-            {/* Render emoji or icon */}
-            {hasEmoji ? (
-              <span className={cn("text-5xl", !isSelectedEarned && "grayscale")}>
-                {selectedBadgeInfo.emoji}
-              </span>
-            ) : (() => {
+            {(() => {
               const IconComponent = selectedBadgeIcon;
               return <IconComponent className="w-16 h-16" />;
             })()}
@@ -626,6 +648,11 @@ export function BadgeCabinet({ className, compact = false }: BadgeCabinetProps) 
           {/* Badge Info */}
           <div className="space-y-2">
             <h3 className="text-xl font-bold">{selectedBadgeInfo.name}</h3>
+            {isDedicatedDoodler && (
+              <p className="text-lg font-semibold text-teal-600 dark:text-teal-400">
+                {selectedBadgeInfo.displayMonth} {selectedBadgeInfo.displayYear}
+              </p>
+            )}
             <p className="text-muted-foreground">{selectedBadgeInfo.description}</p>
 
             {isSelectedEarned && selectedEarnedAt && (
@@ -642,7 +669,7 @@ export function BadgeCabinet({ className, compact = false }: BadgeCabinetProps) 
             {/* Monthly challenge progress in dialog */}
             {isMonthlyChallenge && monthlyProgress && (
               <div className="space-y-2 pt-2">
-                <p className="text-sm text-purple-600 dark:text-purple-400 font-medium">
+                <p className="text-sm text-teal-600 dark:text-teal-400 font-medium">
                   Monthly Challenge Active!
                 </p>
                 <div className="text-sm text-muted-foreground">
@@ -650,7 +677,7 @@ export function BadgeCabinet({ className, compact = false }: BadgeCabinetProps) 
                 </div>
                 <div className="w-full bg-muted rounded-full h-2">
                   <div
-                    className="bg-purple-500 h-2 rounded-full transition-all"
+                    className="bg-teal-500 h-2 rounded-full transition-all"
                     style={{ width: `${Math.min(100, (monthlyProgress.current / monthlyProgress.total) * 100)}%` }}
                   />
                 </div>

@@ -42,21 +42,15 @@ import {
   Share2,
   Copy,
   Check,
-  // Seasonal icons
+  // Seasonal icons - Holiday badges
+  HeartPulse,
   Clover,
   Globe,
   Star,
   Ghost,
-  Leaf,
+  Wheat,
   Gift,
   PartyPopper,
-  Snowflake,
-  Wind,
-  CloudRain,
-  Sun,
-  Palmtree,
-  Sunrise,
-  Moon,
 } from 'lucide-react';
 
 const badgeIcons: Record<BadgeType, typeof Flame> = {
@@ -89,28 +83,28 @@ const badgeIcons: Record<BadgeType, typeof Flame> = {
   'warm_fuzzies': Heart,
   'somebody_likes_me': HeartHandshake,
   'idea_fairy': Lightbulb,
-  // Seasonal - Holiday badges
-  'valentines_2026': Heart,
+  // Seasonal - Holiday badges (unique icons per holiday)
+  'valentines_2026': HeartPulse,
   'lucky_creator_2026': Clover,
   'earth_day_2026': Globe,
   'independence_2026': Star,
   'spooky_season_2026': Ghost,
-  'thanksgiving_2026': Leaf,
+  'thanksgiving_2026': Wheat,
   'holiday_spirit_2026': Gift,
   'new_year_spark_2027': PartyPopper,
-  // Seasonal - Monthly challenge badges
-  'january_champion_2026': Snowflake,
-  'february_faithful_2026': Heart,
-  'march_maestro_2026': Wind,
-  'april_artist_2026': CloudRain,
-  'may_maven_2026': Flower,
-  'june_genius_2026': Sun,
-  'july_journeyer_2026': Palmtree,
-  'august_ace_2026': Sunrise,
-  'september_star_2026': Leaf,
-  'october_original_2026': Moon,
-  'november_notable_2026': Leaf,
-  'december_dedicator_2026': Snowflake,
+  // Seasonal - Monthly challenge badges (all use CalendarCheck)
+  'january_champion_2026': CalendarCheck,
+  'february_faithful_2026': CalendarCheck,
+  'march_maestro_2026': CalendarCheck,
+  'april_artist_2026': CalendarCheck,
+  'may_maven_2026': CalendarCheck,
+  'june_genius_2026': CalendarCheck,
+  'july_journeyer_2026': CalendarCheck,
+  'august_ace_2026': CalendarCheck,
+  'september_star_2026': CalendarCheck,
+  'october_original_2026': CalendarCheck,
+  'november_notable_2026': CalendarCheck,
+  'december_dedicator_2026': CalendarCheck,
 };
 
 const badgeColors: Record<BadgeType, { bg: string; ring: string }> = {
@@ -152,19 +146,19 @@ const badgeColors: Record<BadgeType, { bg: string; ring: string }> = {
   'thanksgiving_2026': { bg: 'from-amber-500 to-orange-600', ring: 'ring-amber-500/50' },
   'holiday_spirit_2026': { bg: 'from-red-500 to-green-600', ring: 'ring-red-500/50' },
   'new_year_spark_2027': { bg: 'from-yellow-400 to-amber-500', ring: 'ring-yellow-500/50' },
-  // Seasonal - Monthly challenge badges (Epic)
-  'january_champion_2026': { bg: 'from-blue-400 to-cyan-500', ring: 'ring-blue-500/50' },
-  'february_faithful_2026': { bg: 'from-pink-400 to-red-500', ring: 'ring-pink-500/50' },
-  'march_maestro_2026': { bg: 'from-green-400 to-emerald-500', ring: 'ring-green-500/50' },
-  'april_artist_2026': { bg: 'from-sky-400 to-blue-500', ring: 'ring-sky-500/50' },
-  'may_maven_2026': { bg: 'from-pink-400 to-rose-500', ring: 'ring-pink-500/50' },
-  'june_genius_2026': { bg: 'from-yellow-400 to-orange-500', ring: 'ring-yellow-500/50' },
-  'july_journeyer_2026': { bg: 'from-cyan-400 to-teal-500', ring: 'ring-cyan-500/50' },
-  'august_ace_2026': { bg: 'from-orange-400 to-amber-500', ring: 'ring-orange-500/50' },
-  'september_star_2026': { bg: 'from-amber-400 to-orange-500', ring: 'ring-amber-500/50' },
-  'october_original_2026': { bg: 'from-purple-500 to-indigo-600', ring: 'ring-purple-500/50' },
-  'november_notable_2026': { bg: 'from-orange-500 to-red-500', ring: 'ring-orange-500/50' },
-  'december_dedicator_2026': { bg: 'from-blue-500 to-indigo-600', ring: 'ring-blue-500/50' },
+  // Seasonal - Monthly challenge badges (Epic) - 2026 uses teal gradient
+  'january_champion_2026': { bg: 'from-teal-400 to-cyan-500', ring: 'ring-teal-500/50' },
+  'february_faithful_2026': { bg: 'from-teal-400 to-cyan-500', ring: 'ring-teal-500/50' },
+  'march_maestro_2026': { bg: 'from-teal-400 to-cyan-500', ring: 'ring-teal-500/50' },
+  'april_artist_2026': { bg: 'from-teal-400 to-cyan-500', ring: 'ring-teal-500/50' },
+  'may_maven_2026': { bg: 'from-teal-400 to-cyan-500', ring: 'ring-teal-500/50' },
+  'june_genius_2026': { bg: 'from-teal-400 to-cyan-500', ring: 'ring-teal-500/50' },
+  'july_journeyer_2026': { bg: 'from-teal-400 to-cyan-500', ring: 'ring-teal-500/50' },
+  'august_ace_2026': { bg: 'from-teal-400 to-cyan-500', ring: 'ring-teal-500/50' },
+  'september_star_2026': { bg: 'from-teal-400 to-cyan-500', ring: 'ring-teal-500/50' },
+  'october_original_2026': { bg: 'from-teal-400 to-cyan-500', ring: 'ring-teal-500/50' },
+  'november_notable_2026': { bg: 'from-teal-400 to-cyan-500', ring: 'ring-teal-500/50' },
+  'december_dedicator_2026': { bg: 'from-teal-400 to-cyan-500', ring: 'ring-teal-500/50' },
 };
 
 export function BadgeUnlockPopup() {
@@ -199,13 +193,13 @@ export function BadgeUnlockPopup() {
   // Check badge type for special celebration messaging
   const isSecretHolidayBadge = info.category === 'seasonal' && info.rarity === 'legendary';
   const isMonthlyChallenge = info.category === 'seasonal' && info.rarity === 'epic';
-  const hasEmoji = !!info.emoji;
+  const isDedicatedDoodler = isMonthlyChallenge && info.displayMonth && info.displayYear;
 
   // Special ring colors for rarity
   const rarityRingClass = isSecretHolidayBadge
     ? 'ring-yellow-400'
     : isMonthlyChallenge
-    ? 'ring-purple-400'
+    ? 'ring-teal-400'
     : colors.ring;
 
   const handleClose = () => {
@@ -213,15 +207,19 @@ export function BadgeUnlockPopup() {
   };
 
   // Share functionality
-  const badgeEmoji = info.emoji || '🏆';
-  const shareText = `${badgeEmoji} I just unlocked "${info.name}" on Daily Doodle Prompt!\n\n${info.description}\n\nJoin me in building creative habits!`;
+  const badgeDisplayName = isDedicatedDoodler
+    ? `${info.name} - ${info.displayMonth} ${info.displayYear}`
+    : info.name;
+  const shareText = isDedicatedDoodler
+    ? `🏆 I just earned the ${info.name} badge for ${info.displayMonth} ${info.displayYear} on Daily Doodle Prompt!\n\n${info.description}\n\nJoin me in building creative habits!`
+    : `🏆 I just unlocked "${info.name}" on Daily Doodle Prompt!\n\n${info.description}\n\nJoin me in building creative habits!`;
   const shareUrl = 'https://dailydoodleprompt.com';
   const isMobile = typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
   const handleNativeShare = async () => {
     try {
       await navigator.share({
-        title: `I unlocked ${info.name}!`,
+        title: `I unlocked ${badgeDisplayName}!`,
         text: shareText,
         url: shareUrl,
       });
@@ -244,8 +242,10 @@ export function BadgeUnlockPopup() {
   };
 
   const shareToTwitter = () => {
-    const text = `${badgeEmoji} I just unlocked "${info.name}" on @DailyDoodleApp!\n\n${info.description}`;
-    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`;
+    const twitterText = isDedicatedDoodler
+      ? `🏆 I just earned the ${info.name} badge for ${info.displayMonth} ${info.displayYear} on @DailyDoodleApp!\n\n${info.description}`
+      : `🏆 I just unlocked "${info.name}" on @DailyDoodleApp!\n\n${info.description}`;
+    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(twitterText)}&url=${encodeURIComponent(shareUrl)}`;
     window.open(url, '_blank', 'width=550,height=420');
   };
 
@@ -306,11 +306,7 @@ export function BadgeUnlockPopup() {
               isAnimating && 'animate-bounce'
             )}
           >
-            {hasEmoji ? (
-              <span className="text-5xl">{info.emoji}</span>
-            ) : (
-              <Icon className="w-16 h-16" />
-            )}
+            <Icon className="w-16 h-16" />
 
             {/* Sparkle effects */}
             <div className="absolute inset-0 flex items-center justify-center">
@@ -335,6 +331,11 @@ export function BadgeUnlockPopup() {
           {/* Badge Info */}
           <div className="space-y-2">
             <h3 className="text-xl font-bold">{info.name}</h3>
+            {isDedicatedDoodler && (
+              <p className="text-lg font-semibold text-teal-600 dark:text-teal-400">
+                {info.displayMonth} {info.displayYear}
+              </p>
+            )}
             <p className="text-muted-foreground">{info.description}</p>
           </div>
         </div>
