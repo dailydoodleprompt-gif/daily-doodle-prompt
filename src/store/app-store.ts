@@ -857,15 +857,22 @@ export const useAppStore = create<AppState>()(
           localStorage.removeItem(DOODLE_REPORTS_STORAGE_KEY);
           // Note: Keep ADMIN_SETTINGS_STORAGE_KEY as it's not user-specific
 
-          // Clear any Supabase auth tokens that might be lingering
-          // Supabase stores tokens with a key pattern like 'sb-<project-ref>-auth-token'
-          Object.keys(localStorage).forEach(key => {
-            if (key.startsWith('sb-') && key.includes('-auth-token')) {
-              console.log('[AppStore] Removing Supabase token:', key);
-              localStorage.removeItem(key);
+          // Clear ALL Supabase-related localStorage keys
+          // Collect keys first to avoid mutation during iteration
+          const keysToRemove: string[] = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.startsWith('sb-') || key.includes('supabase'))) {
+              keysToRemove.push(key);
             }
+          }
+
+          keysToRemove.forEach(key => {
+            console.log('[AppStore] Removing Supabase key:', key);
+            localStorage.removeItem(key);
           });
 
+          console.log('[AppStore] Cleared', keysToRemove.length, 'Supabase keys');
           console.log('[AppStore] All user data cleared from localStorage');
         } catch (err) {
           console.error('[AppStore] Error clearing localStorage:', err);

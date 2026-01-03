@@ -58,8 +58,15 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
   }, [isLoading]);
 
   // Nuclear reset function for stuck auth
-  const handleForceReset = () => {
+  const handleForceReset = async () => {
     console.log('[SimpleHeader] Force reset triggered by user');
+
+    // Try to sign out from Supabase first
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.warn('[SimpleHeader] Supabase signOut failed:', err);
+    }
 
     // Clear everything
     try {
@@ -68,6 +75,8 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
     } catch (err) {
       console.error('[SimpleHeader] Error clearing storage:', err);
     }
+
+    console.log('[SimpleHeader] Storage cleared, reloading...');
 
     // Reload the page
     window.location.reload();
