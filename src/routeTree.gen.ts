@@ -16,8 +16,11 @@ import { Route as SupportImport } from './routes/support'
 import { Route as PromptImport } from './routes/prompt'
 import { Route as PrivacyImport } from './routes/privacy'
 import { Route as IndexImport } from './routes/index'
+import { Route as PromptDateImport } from './routes/prompt/$date'
+import { Route as ProfileUsernameImport } from './routes/profile/$username'
 import { Route as PaymentSuccessImport } from './routes/payment/success'
 import { Route as PaymentCancelImport } from './routes/payment/cancel'
+import { Route as DoodleIdImport } from './routes/doodle/$id'
 
 // Create/Update Routes
 
@@ -51,6 +54,18 @@ const IndexRoute = IndexImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const PromptDateRoute = PromptDateImport.update({
+  id: '/$date',
+  path: '/$date',
+  getParentRoute: () => PromptRoute,
+} as any)
+
+const ProfileUsernameRoute = ProfileUsernameImport.update({
+  id: '/profile/$username',
+  path: '/profile/$username',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const PaymentSuccessRoute = PaymentSuccessImport.update({
   id: '/payment/success',
   path: '/payment/success',
@@ -60,6 +75,12 @@ const PaymentSuccessRoute = PaymentSuccessImport.update({
 const PaymentCancelRoute = PaymentCancelImport.update({
   id: '/payment/cancel',
   path: '/payment/cancel',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const DoodleIdRoute = DoodleIdImport.update({
+  id: '/doodle/$id',
+  path: '/doodle/$id',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -102,6 +123,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsImport
       parentRoute: typeof rootRoute
     }
+    '/doodle/$id': {
+      id: '/doodle/$id'
+      path: '/doodle/$id'
+      fullPath: '/doodle/$id'
+      preLoaderRoute: typeof DoodleIdImport
+      parentRoute: typeof rootRoute
+    }
     '/payment/cancel': {
       id: '/payment/cancel'
       path: '/payment/cancel'
@@ -116,40 +144,74 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PaymentSuccessImport
       parentRoute: typeof rootRoute
     }
+    '/profile/$username': {
+      id: '/profile/$username'
+      path: '/profile/$username'
+      fullPath: '/profile/$username'
+      preLoaderRoute: typeof ProfileUsernameImport
+      parentRoute: typeof rootRoute
+    }
+    '/prompt/$date': {
+      id: '/prompt/$date'
+      path: '/$date'
+      fullPath: '/prompt/$date'
+      preLoaderRoute: typeof PromptDateImport
+      parentRoute: typeof PromptImport
+    }
   }
 }
 
 // Create and export the route tree
 
+interface PromptRouteChildren {
+  PromptDateRoute: typeof PromptDateRoute
+}
+
+const PromptRouteChildren: PromptRouteChildren = {
+  PromptDateRoute: PromptDateRoute,
+}
+
+const PromptRouteWithChildren =
+  PromptRoute._addFileChildren(PromptRouteChildren)
+
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/privacy': typeof PrivacyRoute
-  '/prompt': typeof PromptRoute
+  '/prompt': typeof PromptRouteWithChildren
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
+  '/doodle/$id': typeof DoodleIdRoute
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
+  '/profile/$username': typeof ProfileUsernameRoute
+  '/prompt/$date': typeof PromptDateRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/privacy': typeof PrivacyRoute
-  '/prompt': typeof PromptRoute
+  '/prompt': typeof PromptRouteWithChildren
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
+  '/doodle/$id': typeof DoodleIdRoute
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
+  '/profile/$username': typeof ProfileUsernameRoute
+  '/prompt/$date': typeof PromptDateRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
   '/privacy': typeof PrivacyRoute
-  '/prompt': typeof PromptRoute
+  '/prompt': typeof PromptRouteWithChildren
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
+  '/doodle/$id': typeof DoodleIdRoute
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
+  '/profile/$username': typeof ProfileUsernameRoute
+  '/prompt/$date': typeof PromptDateRoute
 }
 
 export interface FileRouteTypes {
@@ -160,8 +222,11 @@ export interface FileRouteTypes {
     | '/prompt'
     | '/support'
     | '/terms'
+    | '/doodle/$id'
     | '/payment/cancel'
     | '/payment/success'
+    | '/profile/$username'
+    | '/prompt/$date'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -169,8 +234,11 @@ export interface FileRouteTypes {
     | '/prompt'
     | '/support'
     | '/terms'
+    | '/doodle/$id'
     | '/payment/cancel'
     | '/payment/success'
+    | '/profile/$username'
+    | '/prompt/$date'
   id:
     | '__root__'
     | '/'
@@ -178,29 +246,36 @@ export interface FileRouteTypes {
     | '/prompt'
     | '/support'
     | '/terms'
+    | '/doodle/$id'
     | '/payment/cancel'
     | '/payment/success'
+    | '/profile/$username'
+    | '/prompt/$date'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   PrivacyRoute: typeof PrivacyRoute
-  PromptRoute: typeof PromptRoute
+  PromptRoute: typeof PromptRouteWithChildren
   SupportRoute: typeof SupportRoute
   TermsRoute: typeof TermsRoute
+  DoodleIdRoute: typeof DoodleIdRoute
   PaymentCancelRoute: typeof PaymentCancelRoute
   PaymentSuccessRoute: typeof PaymentSuccessRoute
+  ProfileUsernameRoute: typeof ProfileUsernameRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   PrivacyRoute: PrivacyRoute,
-  PromptRoute: PromptRoute,
+  PromptRoute: PromptRouteWithChildren,
   SupportRoute: SupportRoute,
   TermsRoute: TermsRoute,
+  DoodleIdRoute: DoodleIdRoute,
   PaymentCancelRoute: PaymentCancelRoute,
   PaymentSuccessRoute: PaymentSuccessRoute,
+  ProfileUsernameRoute: ProfileUsernameRoute,
 }
 
 export const routeTree = rootRoute
@@ -218,8 +293,10 @@ export const routeTree = rootRoute
         "/prompt",
         "/support",
         "/terms",
+        "/doodle/$id",
         "/payment/cancel",
-        "/payment/success"
+        "/payment/success",
+        "/profile/$username"
       ]
     },
     "/": {
@@ -229,7 +306,10 @@ export const routeTree = rootRoute
       "filePath": "privacy.tsx"
     },
     "/prompt": {
-      "filePath": "prompt.tsx"
+      "filePath": "prompt.tsx",
+      "children": [
+        "/prompt/$date"
+      ]
     },
     "/support": {
       "filePath": "support.tsx"
@@ -237,11 +317,21 @@ export const routeTree = rootRoute
     "/terms": {
       "filePath": "terms.tsx"
     },
+    "/doodle/$id": {
+      "filePath": "doodle/$id.tsx"
+    },
     "/payment/cancel": {
       "filePath": "payment/cancel.tsx"
     },
     "/payment/success": {
       "filePath": "payment/success.tsx"
+    },
+    "/profile/$username": {
+      "filePath": "profile/$username.tsx"
+    },
+    "/prompt/$date": {
+      "filePath": "prompt/$date.tsx",
+      "parent": "/prompt"
     }
   }
 }

@@ -1,6 +1,39 @@
 {
   "rewrites": [
     {
+      "source": "/doodle/:id",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(Twitterbot|facebookexternalhit|LinkedInBot|WhatsApp|Slackbot|TelegramBot|Discordbot|Pinterest|bot|crawler|spider|crawling).*"
+        }
+      ],
+      "destination": "/api/meta/doodle?id=:id"
+    },
+    {
+      "source": "/profile/:username",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(Twitterbot|facebookexternalhit|LinkedInBot|WhatsApp|Slackbot|TelegramBot|Discordbot|Pinterest|bot|crawler|spider|crawling).*"
+        }
+      ],
+      "destination": "/api/meta/profile?username=:username"
+    },
+    {
+      "source": "/prompt/:date",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(Twitterbot|facebookexternalhit|LinkedInBot|WhatsApp|Slackbot|TelegramBot|Discordbot|Pinterest|bot|crawler|spider|crawling).*"
+        }
+      ],
+      "destination": "/api/meta/prompt?date=:date"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/$1"
     },

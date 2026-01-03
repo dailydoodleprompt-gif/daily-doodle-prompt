@@ -221,3 +221,31 @@ export function useOpenSheetPrompts(enabled: boolean = true) {
     refetchOnReconnect: true,   // Refetch when network reconnects
   });
 }
+
+// ============================================================================
+// usePromptForDate Hook
+// ============================================================================
+
+/**
+ * Hook to fetch a specific prompt by date from Google Sheets.
+ *
+ * @param date - The date string in YYYY-MM-DD format
+ * @returns Object with prompt, loading, and error states
+ *
+ * @example
+ * ```ts
+ * const { prompt, loading, error } = usePromptForDate('2025-01-15');
+ * ```
+ */
+export function usePromptForDate(date: string) {
+  const { data: prompts, isLoading, error: queryError } = useOpenSheetPrompts();
+
+  const prompt = prompts?.find(p => p.id === date || p.publish_date === date) || null;
+  const error = queryError ? queryError.message : (!isLoading && !prompt ? 'Prompt not found for this date' : null);
+
+  return {
+    prompt,
+    loading: isLoading,
+    error,
+  };
+}

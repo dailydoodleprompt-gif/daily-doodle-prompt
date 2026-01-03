@@ -70,7 +70,7 @@ export function ShareButton(props: ShareButtonProps) {
       return {
         title: `DailyDoodlePrompt: ${prompt.title}`,
         text: `Today's drawing prompt: "${prompt.title}" - ${prompt.description} #DailyDoodlePrompt`,
-        url: `${baseUrl}/?prompt=${prompt.id}`,
+        url: `${baseUrl}/prompt/${prompt.publish_date}`,
         ogUrl: `${baseUrl}/api/og/prompt?title=${encodeURIComponent(prompt.title)}&category=${encodeURIComponent(prompt.category)}&date=${prompt.publish_date}`,
         promptId: prompt.id,
       };
@@ -80,7 +80,7 @@ export function ShareButton(props: ShareButtonProps) {
       return {
         title: `"${props.promptTitle}" by ${props.artistName || 'an artist'}`,
         text: `Check out this doodle for "${props.promptTitle}" on Daily Doodle Prompt! #DailyDoodlePrompt`,
-        url: `${baseUrl}/?doodle=${props.doodleId}`,
+        url: `${baseUrl}/doodle/${props.doodleId}`,
         ogUrl: `${baseUrl}/api/og/doodle?id=${props.doodleId}`,
         promptId: null,
       };
@@ -90,7 +90,7 @@ export function ShareButton(props: ShareButtonProps) {
       return {
         title: `${props.username}'s Profile on Daily Doodle Prompt`,
         text: `Check out ${props.username}'s creative journey on Daily Doodle Prompt! #DailyDoodlePrompt`,
-        url: `${baseUrl}/?profile=${props.userId || props.username}`,
+        url: `${baseUrl}/profile/${props.userId || props.username}`,
         ogUrl: `${baseUrl}/api/og/profile?username=${encodeURIComponent(props.username)}`,
         promptId: null,
       };
