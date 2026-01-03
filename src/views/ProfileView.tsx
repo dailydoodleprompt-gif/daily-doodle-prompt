@@ -9,6 +9,7 @@ import { DoodleGallery } from '@/components/DoodleGallery';
 import { DoodleFeed } from '@/components/DoodleFeed';
 import { UserAvatar, AVATAR_ICON_OPTIONS, AVATAR_ICONS, ICON_COLORS } from '@/components/UserAvatar';
 import { ActivityHeatmap } from '@/components/ActivityHeatmap';
+import { ShareButton } from '@/components/ShareButton';
 import {
   Tooltip,
   TooltipContent,
@@ -351,9 +352,18 @@ export function ProfileView({ prompts = [], onUpgrade, onSettings, onAdminDashbo
               </div>
             </div>
 
-            <Button variant="outline" onClick={onSettings}>
-              Edit Settings
-            </Button>
+            <div className="flex gap-2">
+              <ShareButton
+                type="profile"
+                username={user.username}
+                userId={user.id}
+                variant="outline"
+                size="default"
+              />
+              <Button variant="outline" onClick={onSettings}>
+                Edit Settings
+              </Button>
+            </div>
           </div>
 
           {/* Avatar Picker */}

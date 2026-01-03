@@ -4,6 +4,7 @@ import { type Doodle } from '@/types';
 import { LikeButton } from '@/components/LikeButton';
 import { DoodleImage } from '@/components/DoodleImage';
 import { BlurredDoodle } from '@/components/BlurredDoodle';
+import { ShareButton } from '@/components/ShareButton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -411,6 +412,14 @@ export function DoodleGallery({
                     likesCount={selectedDoodle.likes_count}
                     isOwnDoodle={selectedDoodle.user_id === user?.id}
                     onAuthRequired={onAuthRequired}
+                  />
+                  <ShareButton
+                    type="doodle"
+                    doodleId={selectedDoodle.id}
+                    promptTitle={selectedDoodle.prompt_title}
+                    artistName={selectedDoodle.user_username}
+                    variant="outline"
+                    size="sm"
                   />
                   {!selectedDoodle.is_public && (
                     <Badge variant="secondary" className="gap-1">
