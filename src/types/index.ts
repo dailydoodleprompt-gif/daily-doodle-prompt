@@ -501,7 +501,7 @@ export const BADGE_INFO: Record<BadgeType, Omit<BadgeInfo, 'type'>> = {
   'valentines_2026': {
     name: "Valentine's Artist '26",
     description: "Uploaded a doodle on Valentine's Day 2026",
-    icon: 'flower-2',
+    icon: 'rose',
     category: 'seasonal',
     rarity: 'legendary',
     availableFrom: '2026-02-14',

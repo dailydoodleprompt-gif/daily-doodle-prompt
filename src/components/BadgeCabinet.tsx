@@ -47,7 +47,7 @@ import {
   Shrub,
   Flower,
   // Seasonal badge icons - Holiday badges
-  Flower2,
+  Rose,
   Clover,
   Globe,
   Star,
@@ -88,7 +88,7 @@ const badgeIcons: Record<BadgeType, typeof Flame> = {
   'somebody_likes_me': HeartHandshake,
   'idea_fairy': Lightbulb,
   // Seasonal - Holiday badges (unique icons per holiday)
-  'valentines_2026': Flower2,
+  'valentines_2026': Rose,
   'lucky_creator_2026': Clover,
   'earth_day_2026': Globe,
   'independence_2026': Star,
