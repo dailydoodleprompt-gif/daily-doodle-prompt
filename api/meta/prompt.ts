@@ -25,7 +25,6 @@ async function fetchPromptByDate(date: string): Promise<Prompt | null> {
 
     if (lines.length < 2) return null;
 
-    // Parse CSV rows (skip header)
     for (let i = 1; i < lines.length; i++) {
       const row = parseCSVRow(lines[i]);
       if (row.length >= 4 && row[0] === date) {
@@ -86,9 +85,8 @@ export default async function handler(request: Request) {
 
     const baseUrl = new URL(request.url).origin;
     const pageUrl = `${baseUrl}/prompt/${date}`;
-
-    // Pass all data via query params to OG route
-    const ogImageUrl = `${baseUrl}/api/og/prompt?title=${encodeURIComponent(prompt.title)}&category=${encodeURIComponent(prompt.category)}&date=${date}`;
+    // Use static OG image
+    const ogImageUrl = `${baseUrl}/og-image.png`;
 
     const formattedDate = new Date(date + 'T00:00:00').toLocaleDateString('en-US', {
       weekday: 'long',

@@ -65,9 +65,8 @@ export default async function handler(request: Request) {
 
     const baseUrl = new URL(request.url).origin;
     const pageUrl = `${baseUrl}/profile/${profile.username || profile.id}`;
-
-    // Pass all data via query params to OG route
-    const ogImageUrl = `${baseUrl}/api/og/profile?username=${encodeURIComponent(profile.username || 'Artist')}&doodles=${doodleCount}&streak=${streak}&badges=${badgeCount}&title=${encodeURIComponent(profile.current_title || '')}&premium=${profile.is_premium ? 'true' : 'false'}`;
+    // Use static OG image
+    const ogImageUrl = `${baseUrl}/og-image.png`;
 
     const title = `${profile.username}'s Profile - Daily Doodle Prompt`;
     const description = profile.current_title

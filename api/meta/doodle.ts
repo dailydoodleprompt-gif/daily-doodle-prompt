@@ -44,8 +44,8 @@ export default async function handler(request: Request) {
     const artistName = doodle.user_username || 'an artist';
     const promptTitle = doodle.prompt_title || 'Daily Doodle';
 
-    // Pass all data via query params to OG route
-    const ogImageUrl = `${baseUrl}/api/og/doodle?title=${encodeURIComponent(promptTitle)}&username=${encodeURIComponent(artistName)}&image=${encodeURIComponent(doodle.image_url || '')}`;
+    // Use actual doodle image as OG image!
+    const ogImageUrl = doodle.image_url;
 
     const title = `"${promptTitle}" by ${artistName}`;
     const description = doodle.caption || `Check out this doodle for "${promptTitle}" on Daily Doodle Prompt!`;
@@ -62,8 +62,6 @@ export default async function handler(request: Request) {
   <meta property="og:title" content="${escapeHtml(title)}">
   <meta property="og:description" content="${escapeHtml(description)}">
   <meta property="og:image" content="${ogImageUrl}">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
   <meta property="og:url" content="${pageUrl}">
   <meta property="og:site_name" content="Daily Doodle Prompt">
 
