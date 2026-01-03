@@ -139,6 +139,9 @@ export function AdminView({ onBack }: AdminViewProps) {
   const [selectedReport, setSelectedReport] = useState<DoodleReport | null>(null);
   const [reportFilter, setReportFilter] = useState<'pending' | 'all'>('pending');
 
+  // Force refresh key for doodles grid
+  const [doodlesRefreshKey, setDoodlesRefreshKey] = useState(0);
+
   const resetPasswordForm = useForm<ResetPasswordFormData>({
     resolver: zodResolver(resetPasswordSchema),
     defaultValues: {
@@ -351,19 +354,56 @@ export function AdminView({ onBack }: AdminViewProps) {
     setActionLoading(true);
     setError(null);
 
+    const newCreatedAt = new Date(editDoodleCreatedAt).toISOString();
+
+    console.log('[AdminEdit] Saving doodle:', selectedDoodle.id);
+    console.log('[AdminEdit] Old created_at:', selectedDoodle.created_at);
+    console.log('[AdminEdit] New created_at:', newCreatedAt);
+
     try {
-      const { error: updateError } = await supabase
+      const { data: updatedData, error: updateError } = await supabase
         .from('doodles')
         .update({
           caption: editDoodleCaption,
-          created_at: new Date(editDoodleCreatedAt).toISOString(),
+          created_at: newCreatedAt,
           prompt_title: editDoodlePromptTitle,
           prompt_id: editDoodlePromptId,
           is_public: editDoodleIsPublic,
         })
-        .eq('id', selectedDoodle.id);
+        .eq('id', selectedDoodle.id)
+        .select()
+        .single();
+
+      console.log('[AdminEdit] Update result:', updatedData, updateError);
 
       if (updateError) throw updateError;
+
+      // Update localStorage cache to reflect the change immediately
+      const DOODLES_STORAGE_KEY = 'dailydoodle_doodles';
+      try {
+        const storedDoodles = localStorage.getItem(DOODLES_STORAGE_KEY);
+        if (storedDoodles) {
+          const doodles = JSON.parse(storedDoodles);
+          const doodleIndex = doodles.findIndex((d: any) => d.id === selectedDoodle.id);
+          if (doodleIndex !== -1) {
+            doodles[doodleIndex] = {
+              ...doodles[doodleIndex],
+              caption: editDoodleCaption,
+              created_at: newCreatedAt,
+              prompt_title: editDoodlePromptTitle,
+              prompt_id: editDoodlePromptId,
+              is_public: editDoodleIsPublic,
+            };
+            localStorage.setItem(DOODLES_STORAGE_KEY, JSON.stringify(doodles));
+            console.log('[AdminEdit] ✅ localStorage cache updated');
+          }
+        }
+      } catch (cacheErr) {
+        console.warn('[AdminEdit] Failed to update localStorage cache:', cacheErr);
+      }
+
+      // Force refresh the doodles grid
+      setDoodlesRefreshKey(k => k + 1);
 
       setSuccessMessage('Doodle updated successfully.');
       setEditDoodleDialogOpen(false);
@@ -686,7 +726,7 @@ export function AdminView({ onBack }: AdminViewProps) {
             Manage all user-uploaded doodles - delete inappropriate content
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent key={doodlesRefreshKey}>
           {(() => {
             const allDoodles = getDoodles();
             if (allDoodles.length === 0) {
