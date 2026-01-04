@@ -21,6 +21,7 @@ import { Route as ProfileUsernameImport } from './routes/profile/$username'
 import { Route as PaymentSuccessImport } from './routes/payment/success'
 import { Route as PaymentCancelImport } from './routes/payment/cancel'
 import { Route as DoodleIdImport } from './routes/doodle/$id'
+import { Route as BadgeIdImport } from './routes/badge/$id'
 
 // Create/Update Routes
 
@@ -84,6 +85,12 @@ const DoodleIdRoute = DoodleIdImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const BadgeIdRoute = BadgeIdImport.update({
+  id: '/badge/$id',
+  path: '/badge/$id',
+  getParentRoute: () => rootRoute,
+} as any)
+
 // Populate the FileRoutesByPath interface
 
 declare module '@tanstack/react-router' {
@@ -121,6 +128,13 @@ declare module '@tanstack/react-router' {
       path: '/terms'
       fullPath: '/terms'
       preLoaderRoute: typeof TermsImport
+      parentRoute: typeof rootRoute
+    }
+    '/badge/$id': {
+      id: '/badge/$id'
+      path: '/badge/$id'
+      fullPath: '/badge/$id'
+      preLoaderRoute: typeof BadgeIdImport
       parentRoute: typeof rootRoute
     }
     '/doodle/$id': {
@@ -180,6 +194,7 @@ export interface FileRoutesByFullPath {
   '/prompt': typeof PromptRouteWithChildren
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
+  '/badge/$id': typeof BadgeIdRoute
   '/doodle/$id': typeof DoodleIdRoute
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
@@ -193,6 +208,7 @@ export interface FileRoutesByTo {
   '/prompt': typeof PromptRouteWithChildren
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
+  '/badge/$id': typeof BadgeIdRoute
   '/doodle/$id': typeof DoodleIdRoute
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
@@ -207,6 +223,7 @@ export interface FileRoutesById {
   '/prompt': typeof PromptRouteWithChildren
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
+  '/badge/$id': typeof BadgeIdRoute
   '/doodle/$id': typeof DoodleIdRoute
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
@@ -222,6 +239,7 @@ export interface FileRouteTypes {
     | '/prompt'
     | '/support'
     | '/terms'
+    | '/badge/$id'
     | '/doodle/$id'
     | '/payment/cancel'
     | '/payment/success'
@@ -234,6 +252,7 @@ export interface FileRouteTypes {
     | '/prompt'
     | '/support'
     | '/terms'
+    | '/badge/$id'
     | '/doodle/$id'
     | '/payment/cancel'
     | '/payment/success'
@@ -246,6 +265,7 @@ export interface FileRouteTypes {
     | '/prompt'
     | '/support'
     | '/terms'
+    | '/badge/$id'
     | '/doodle/$id'
     | '/payment/cancel'
     | '/payment/success'
@@ -260,6 +280,7 @@ export interface RootRouteChildren {
   PromptRoute: typeof PromptRouteWithChildren
   SupportRoute: typeof SupportRoute
   TermsRoute: typeof TermsRoute
+  BadgeIdRoute: typeof BadgeIdRoute
   DoodleIdRoute: typeof DoodleIdRoute
   PaymentCancelRoute: typeof PaymentCancelRoute
   PaymentSuccessRoute: typeof PaymentSuccessRoute
@@ -272,6 +293,7 @@ const rootRouteChildren: RootRouteChildren = {
   PromptRoute: PromptRouteWithChildren,
   SupportRoute: SupportRoute,
   TermsRoute: TermsRoute,
+  BadgeIdRoute: BadgeIdRoute,
   DoodleIdRoute: DoodleIdRoute,
   PaymentCancelRoute: PaymentCancelRoute,
   PaymentSuccessRoute: PaymentSuccessRoute,
@@ -293,6 +315,7 @@ export const routeTree = rootRoute
         "/prompt",
         "/support",
         "/terms",
+        "/badge/$id",
         "/doodle/$id",
         "/payment/cancel",
         "/payment/success",
@@ -316,6 +339,9 @@ export const routeTree = rootRoute
     },
     "/terms": {
       "filePath": "terms.tsx"
+    },
+    "/badge/$id": {
+      "filePath": "badge/$id.tsx"
     },
     "/doodle/$id": {
       "filePath": "doodle/$id.tsx"

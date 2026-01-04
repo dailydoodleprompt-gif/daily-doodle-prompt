@@ -1,6 +1,17 @@
 {
   "rewrites": [
     {
+      "source": "/badge/:id",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(Twitterbot|facebookexternalhit|LinkedInBot|WhatsApp|Slackbot|TelegramBot|Discordbot|Pinterest|bot|crawler|spider|crawling).*"
+        }
+      ],
+      "destination": "/api/meta/badge?id=:id"
+    },
+    {
       "source": "/doodle/:id",
       "has": [
         {

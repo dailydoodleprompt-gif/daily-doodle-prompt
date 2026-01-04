@@ -46,6 +46,7 @@ import {
   Orbit,
   Shrub,
   Flower,
+  Rat,
   // Seasonal badge icons - Holiday badges
   Rose,
   Clover,
@@ -69,7 +70,7 @@ const badgeIcons: Record<BadgeType, typeof Flame> = {
   'creative_supernova': Orbit,
   // Collection - bookmark progression
   'new_collector': Bookmark,
-  'pack_rat': BookOpen,
+  'pack_rat': Rat,
   'cue_curator': Library,
   'grand_gatherer': Gem,
   // Sharing - nature progression

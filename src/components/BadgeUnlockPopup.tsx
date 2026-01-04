@@ -39,6 +39,7 @@ import {
   Orbit,
   Shrub,
   Flower,
+  Rat,
   Share2,
   Copy,
   Check,
@@ -65,7 +66,7 @@ const badgeIcons: Record<BadgeType, typeof Flame> = {
   'creative_supernova': Orbit,
   // Collection - bookmark progression
   'new_collector': Bookmark,
-  'pack_rat': BookOpen,
+  'pack_rat': Rat,
   'cue_curator': Library,
   'grand_gatherer': Gem,
   // Sharing - nature progression
@@ -213,7 +214,7 @@ export function BadgeUnlockPopup() {
   const shareText = isDedicatedDoodler
     ? `🏆 I just earned the ${info.name} badge for ${info.displayMonth} ${info.displayYear} on Daily Doodle Prompt!\n\n${info.description}\n\nJoin me in building creative habits!`
     : `🏆 I just unlocked "${info.name}" on Daily Doodle Prompt!\n\n${info.description}\n\nJoin me in building creative habits!`;
-  const shareUrl = 'https://dailydoodleprompt.com';
+  const shareUrl = `https://dailydoodleprompt.com/badge/${newlyEarnedBadge}`;
   const isMobile = typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
   const handleNativeShare = async () => {

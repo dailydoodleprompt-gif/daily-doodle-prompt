@@ -343,6 +343,8 @@ export interface BadgeInfo {
   // Dedicated Doodler (monthly challenge) badge properties
   displayMonth?: string; // e.g., "January"
   displayYear?: string;  // e.g., "2026"
+  // OG image for social sharing (filename in /public/badges/share/, without extension)
+  ogImage?: string;
 }
 
 export const BADGE_INFO: Record<BadgeType, Omit<BadgeInfo, 'type'>> = {
@@ -402,7 +404,7 @@ export const BADGE_INFO: Record<BadgeType, Omit<BadgeInfo, 'type'>> = {
   'pack_rat': {
     name: 'Pack Rat',
     description: 'Saved 10 favorite prompts',
-    icon: 'bookmarks',
+    icon: 'rat',
     category: 'collection',
   },
   'cue_curator': {
@@ -526,7 +528,7 @@ export const BADGE_INFO: Record<BadgeType, Omit<BadgeInfo, 'type'>> = {
     availableUntil: '2026-04-22',
   },
   'independence_2026': {
-    name: "Freedom Creator '26",
+    name: "Independent Artist '26",
     description: "Uploaded a doodle on Independence Day 2026",
     icon: 'star',
     category: 'seasonal',
@@ -562,13 +564,14 @@ export const BADGE_INFO: Record<BadgeType, Omit<BadgeInfo, 'type'>> = {
     availableUntil: '2026-12-25',
   },
   'new_year_spark_2027': {
-    name: "New Year Spark '27",
+    name: "New Year New Doodle '27",
     description: "Uploaded a doodle on New Year's Day 2027",
     icon: 'party-popper',
     category: 'seasonal',
     rarity: 'legendary',
     availableFrom: '2027-01-01',
     availableUntil: '2027-01-01',
+    ogImage: 'new_year_new_doodle_2027',
   },
 
   // Monthly Challenge Badges (2026) - Epic rarity, upload 15 doodles in the month
@@ -583,6 +586,7 @@ export const BADGE_INFO: Record<BadgeType, Omit<BadgeInfo, 'type'>> = {
     availableUntil: '2026-01-31',
     displayMonth: 'January',
     displayYear: '2026',
+    ogImage: 'january_artist_2026',
   },
   'february_faithful_2026': {
     name: 'Dedicated Doodler',
@@ -594,6 +598,7 @@ export const BADGE_INFO: Record<BadgeType, Omit<BadgeInfo, 'type'>> = {
     availableUntil: '2026-02-28',
     displayMonth: 'February',
     displayYear: '2026',
+    ogImage: 'february_artist_2026',
   },
   'march_maestro_2026': {
     name: 'Dedicated Doodler',
@@ -605,6 +610,7 @@ export const BADGE_INFO: Record<BadgeType, Omit<BadgeInfo, 'type'>> = {
     availableUntil: '2026-03-31',
     displayMonth: 'March',
     displayYear: '2026',
+    ogImage: 'march_artist_2026',
   },
   'april_artist_2026': {
     name: 'Dedicated Doodler',
@@ -616,6 +622,7 @@ export const BADGE_INFO: Record<BadgeType, Omit<BadgeInfo, 'type'>> = {
     availableUntil: '2026-04-30',
     displayMonth: 'April',
     displayYear: '2026',
+    ogImage: 'april_artist_2026',
   },
   'may_maven_2026': {
     name: 'Dedicated Doodler',
@@ -627,6 +634,7 @@ export const BADGE_INFO: Record<BadgeType, Omit<BadgeInfo, 'type'>> = {
     availableUntil: '2026-05-31',
     displayMonth: 'May',
     displayYear: '2026',
+    ogImage: 'may_artist_2026',
   },
   'june_genius_2026': {
     name: 'Dedicated Doodler',
@@ -638,6 +646,7 @@ export const BADGE_INFO: Record<BadgeType, Omit<BadgeInfo, 'type'>> = {
     availableUntil: '2026-06-30',
     displayMonth: 'June',
     displayYear: '2026',
+    ogImage: 'june_artist_2026',
   },
   'july_journeyer_2026': {
     name: 'Dedicated Doodler',
@@ -649,6 +658,7 @@ export const BADGE_INFO: Record<BadgeType, Omit<BadgeInfo, 'type'>> = {
     availableUntil: '2026-07-31',
     displayMonth: 'July',
     displayYear: '2026',
+    ogImage: 'july_artist_2026',
   },
   'august_ace_2026': {
     name: 'Dedicated Doodler',
@@ -660,6 +670,7 @@ export const BADGE_INFO: Record<BadgeType, Omit<BadgeInfo, 'type'>> = {
     availableUntil: '2026-08-31',
     displayMonth: 'August',
     displayYear: '2026',
+    ogImage: 'august_artist_2026',
   },
   'september_star_2026': {
     name: 'Dedicated Doodler',
@@ -671,6 +682,7 @@ export const BADGE_INFO: Record<BadgeType, Omit<BadgeInfo, 'type'>> = {
     availableUntil: '2026-09-30',
     displayMonth: 'September',
     displayYear: '2026',
+    ogImage: 'september_artist_2026',
   },
   'october_original_2026': {
     name: 'Dedicated Doodler',
@@ -682,6 +694,7 @@ export const BADGE_INFO: Record<BadgeType, Omit<BadgeInfo, 'type'>> = {
     availableUntil: '2026-10-31',
     displayMonth: 'October',
     displayYear: '2026',
+    ogImage: 'october_artist_2026',
   },
   'november_notable_2026': {
     name: 'Dedicated Doodler',
@@ -693,6 +706,7 @@ export const BADGE_INFO: Record<BadgeType, Omit<BadgeInfo, 'type'>> = {
     availableUntil: '2026-11-30',
     displayMonth: 'November',
     displayYear: '2026',
+    ogImage: 'november_artist_2026',
   },
   'december_dedicator_2026': {
     name: 'Dedicated Doodler',
@@ -704,6 +718,7 @@ export const BADGE_INFO: Record<BadgeType, Omit<BadgeInfo, 'type'>> = {
     availableUntil: '2026-12-31',
     displayMonth: 'December',
     displayYear: '2026',
+    ogImage: 'december_artist_2026',
   },
 };
 
