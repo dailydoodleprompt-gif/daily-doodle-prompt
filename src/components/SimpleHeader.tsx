@@ -18,6 +18,9 @@ import {
   LogOut,
   Settings,
   User as UserIcon,
+  Bookmark,
+  Lightbulb,
+  Shield,
 } from 'lucide-react';
 import { supabase } from '@/sdk/core/supabase';
 import { useAppStore } from '@/store/app-store';
@@ -328,10 +331,28 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
                   <UserIcon className="mr-2 h-4 w-4" />
                   Profile
                 </DropdownMenuItem>
+                {isPremium && (
+                  <DropdownMenuItem onClick={() => handleNav('bookmarks')}>
+                    <Bookmark className="mr-2 h-4 w-4" />
+                    Bookmarks
+                  </DropdownMenuItem>
+                )}
+                {isPremium && (
+                  <DropdownMenuItem onClick={() => handleNav('prompt-ideas')}>
+                    <Lightbulb className="mr-2 h-4 w-4" />
+                    Submit Prompt Idea
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={() => handleNav('settings')}>
                   <Settings className="mr-2 h-4 w-4" />
                   Settings
                 </DropdownMenuItem>
+                {user?.is_admin && (
+                  <DropdownMenuItem onClick={() => handleNav('admin')}>
+                    <Shield className="mr-2 h-4 w-4" />
+                    Admin Dashboard
+                  </DropdownMenuItem>
+                )}
                 {!isPremium && (
                   <DropdownMenuItem
                     onClick={() => handleNav('pricing')}
