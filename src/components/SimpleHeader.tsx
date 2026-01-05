@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/sdk/core/supabase';
 import { useAppStore } from '@/store/app-store';
+import { NotificationBell } from '@/components/NotificationBell';
 
 interface SimpleHeaderProps {
   currentView: string;
@@ -294,6 +295,9 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
               Unlock Lifetime
             </Button>
           )}
+
+          {/* Notification Bell - Only show for authenticated users */}
+          {isAuthenticated && <NotificationBell onNavigate={handleNav} />}
 
           {/* Auth state */}
           {isAuthenticated ? (

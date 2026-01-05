@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useAppStore, useUser, useIsAdmin, usePreferences } from '@/store/app-store';
+import { useAppStore, useUser, useIsAdmin, usePreferences, useFeedDataLoaded } from '@/store/app-store';
 import { type Doodle } from '@/types';
 import { type Prompt } from '@/hooks/use-google-sheets';
 import { LikeButton } from '@/components/LikeButton';
@@ -61,6 +61,7 @@ export function DoodleFeed({ prompts, className, onUserClick, onPromptClick, onA
   const user = useUser();
   const isAdmin = useIsAdmin();
   const preferences = usePreferences();
+  const feedDataLoaded = useFeedDataLoaded();
   const getFeed = useAppStore((state) => state.getFeed);
   const getFollowingCount = useAppStore((state) => state.getFollowingCount);
   const deleteDoodle = useAppStore((state) => state.deleteDoodle);
@@ -148,7 +149,7 @@ export function DoodleFeed({ prompts, className, onUserClick, onPromptClick, onA
     return items.sort(
       (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
     );
-  }, [prompts, getFeed]);
+  }, [prompts, getFeed, feedDataLoaded]); // Re-run when feed data is loaded from Supabase
 
   if (!user) {
     return null;

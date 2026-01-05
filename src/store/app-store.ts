@@ -454,6 +454,7 @@ interface AppState {
   // UI state
   showOnboarding: boolean;
   currentView: string;
+  feedDataLoaded: boolean; // True when follows/doodles have been loaded from Supabase
 
   // User actions (NO AUTH - managed by Supabase)
   setUser: (user: User | null) => void;
@@ -575,6 +576,7 @@ export const useAppStore = create<AppState>()(
       newlyEarnedBadge: null,
       showOnboarding: false,
       currentView: 'landing',
+      feedDataLoaded: false,
 
       // User management (replaces auth)
       setUser: (user) => set({ user }),
@@ -808,6 +810,7 @@ export const useAppStore = create<AppState>()(
           badges,
           preferences: preferences || defaultPreferences,
           streak: loadedStreak,
+          feedDataLoaded: true, // Mark that follows/doodles are now loaded
         });
 
         // Auto-award missing badges after state is set
@@ -843,6 +846,7 @@ export const useAppStore = create<AppState>()(
           newlyEarnedBadge: null,
           showOnboarding: false,
           currentView: 'landing',
+          feedDataLoaded: false,
         });
 
         // NUCLEAR: Clear all localStorage to prevent stale state
@@ -1836,6 +1840,24 @@ if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')
             // The owner can sync their own badges if needed.
           }
         }
+
+        // Sync to Supabase - this triggers notification via database trigger
+        (async () => {
+          try {
+            const { error } = await supabase.from('likes').insert({
+              user_id: user.id,
+              doodle_id: doodleId,
+              created_at: newLike.created_at,
+            });
+            if (error) {
+              console.error('[likeDoodle] Failed to sync like to Supabase:', error);
+            } else {
+              console.log('[likeDoodle] Like synced to Supabase');
+            }
+          } catch (err) {
+            console.error('[likeDoodle] Error syncing like:', err);
+          }
+        })();
       },
 
       unlikeDoodle: (doodleId: string) => {
@@ -1856,6 +1878,24 @@ if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')
           doodles[doodleIndex].likes_count -= 1;
           saveDoodles(doodles);
         }
+
+        // Sync to Supabase
+        (async () => {
+          try {
+            const { error } = await supabase
+              .from('likes')
+              .delete()
+              .eq('user_id', user.id)
+              .eq('doodle_id', doodleId);
+            if (error) {
+              console.error('[unlikeDoodle] Failed to sync unlike to Supabase:', error);
+            } else {
+              console.log('[unlikeDoodle] Unlike synced to Supabase');
+            }
+          } catch (err) {
+            console.error('[unlikeDoodle] Error syncing unlike:', err);
+          }
+        })();
       },
 
       hasLikedDoodle: (doodleId: string) => {
@@ -2427,6 +2467,7 @@ export const useBookmarks = () => useAppStore((state) => state.bookmarks);
 export const useUserStats = () => useAppStore((state) => state.userStats);
 export const useNewlyEarnedBadge = () => useAppStore((state) => state.newlyEarnedBadge);
 export const useAppSettings = () => useAppStore((state) => state.getAppSettings());
+export const useFeedDataLoaded = () => useAppStore((state) => state.feedDataLoaded);
 
 // Hydration hook - use this to wait for store rehydration before rendering
 export const useHasHydrated = () => {

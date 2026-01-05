@@ -358,7 +358,7 @@ export async function updatePromptIdeaStatus(params: {
       return { success: false, error: error.message };
     }
 
-    // Create notification for the user
+    // Create notification for the user in Supabase
     const statusMessages: Record<PromptIdeaStatus, { title: string; body: string }> = {
       submitted: { title: 'Prompt Idea Submitted', body: 'Your prompt idea has been submitted for review.' },
       under_review: { title: 'Prompt Idea Under Review', body: 'Your prompt idea is being reviewed by our team.' },
@@ -367,14 +367,23 @@ export async function updatePromptIdeaStatus(params: {
     };
 
     const message = statusMessages[params.status];
-    createNotification({
-      userId: data.user_id,
-      type: 'prompt_idea_reviewed',
-      title: message.title,
-      body: message.body,
-      link: '/prompt-ideas',
-      metadata: { ideaId: params.ideaId, status: params.status },
-    });
+
+    // Insert notification directly into Supabase
+    const { error: notifError } = await supabase
+      .from('notifications')
+      .insert({
+        user_id: data.user_id,
+        type: 'prompt_idea_reviewed',
+        title: message.title,
+        body: message.body,
+        link: '/prompt-ideas',
+        metadata: { ideaId: params.ideaId, status: params.status },
+      });
+
+    if (notifError) {
+      console.warn('[SUPPORT SERVICE] Failed to create notification:', notifError);
+      // Don't fail the whole operation if notification fails
+    }
 
     return { success: true };
   } catch (err) {
