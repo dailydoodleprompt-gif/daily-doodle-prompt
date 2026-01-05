@@ -65,6 +65,7 @@ export function Navigation({ currentView, onNavigate }: NavigationProps) {
 
           if (response.ok) {
             const data = await response.json();
+            console.log('[Navigation] /api/me response:', { is_premium: data.is_premium, is_admin: data.is_admin });
             setUser({
               id: data.id,
               email: data.email,
