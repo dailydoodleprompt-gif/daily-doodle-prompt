@@ -284,11 +284,8 @@ export type BadgeType =
   | 'pack_rat'                 // Favorited 10 prompts
   | 'cue_curator'              // Favorited 25 prompts
   | 'grand_gatherer'           // Favorited 50 prompts
-  // Sharing badges
+  // Sharing badge
   | 'planter_of_seeds'         // Shared first prompt
-  | 'gardener_of_growth'       // Shared 10 prompts
-  | 'cultivator_of_influence'  // Shared 25 prompts
-  | 'harvester_of_inspiration' // Shared 50 prompts
   // Doodle upload badges
   | 'first_doodle'             // Uploaded first doodle
   | 'doodle_diary'             // Uploaded 10 doodles
@@ -420,29 +417,11 @@ export const BADGE_INFO: Record<BadgeType, Omit<BadgeInfo, 'type'>> = {
     category: 'collection',
   },
   
-  // Sharing badges - nature/growth progression
+  // Sharing badge - single badge for first share
   'planter_of_seeds': {
     name: 'Planter of Seeds',
     description: 'Shared your first prompt',
     icon: 'sprout',
-    category: 'sharing',
-  },
-  'gardener_of_growth': {
-    name: 'Gardener of Growth',
-    description: 'Shared 10 prompts',
-    icon: 'shrub',
-    category: 'sharing',
-  },
-  'cultivator_of_influence': {
-    name: 'Cultivator of Influence',
-    description: 'Shared 25 prompts',
-    icon: 'trees',
-    category: 'sharing',
-  },
-  'harvester_of_inspiration': {
-    name: 'Harvester of Inspiration',
-    description: 'Shared 50 prompts',
-    icon: 'flower',
     category: 'sharing',
   },
   
