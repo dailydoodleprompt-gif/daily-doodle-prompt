@@ -44,6 +44,7 @@ import {
   Flag,
 } from 'lucide-react';
 import { ReportDoodleDialog } from '@/components/ReportDoodleDialog';
+import { FollowButton } from '@/components/FollowButton';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -376,7 +377,7 @@ export function DoodleGallery({
 
               {/* User credit in detail view using embedded username */}
               {selectedDoodle.user_username && (selectedDoodle.is_public || selectedDoodle.user_id === user?.id) && (
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                   <button
                     type="button"
                     onClick={(e) => {
@@ -402,6 +403,15 @@ export function DoodleGallery({
                       {selectedDoodle.user_username}
                     </span>
                   </button>
+                  {/* Follow button - only show for other users' public doodles */}
+                  {selectedDoodle.user_id !== user?.id && selectedDoodle.is_public && (
+                    <FollowButton
+                      userId={selectedDoodle.user_id}
+                      username={selectedDoodle.user_username}
+                      size="sm"
+                      onAuthRequired={onAuthRequired}
+                    />
+                  )}
                 </div>
               )}
 
