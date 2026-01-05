@@ -110,20 +110,23 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
 
-      console.log('[SimpleHeader] Auth event:', event, 'session:', session?.user?.email || 'none');
+      // IMPORTANT: Get current user from store, not from closure (which may be stale)
+      const currentUser = useAppStore.getState().user;
+
+      console.log('[SimpleHeader] Auth event:', event, 'session:', session?.user?.email || 'none', 'currentUser:', currentUser?.email || 'none');
 
       switch (event) {
         case 'INITIAL_SESSION':
           // This fires on page load with the current session state
           if (session) {
             // Valid session exists
-            if (user && user.id === session.user.id) {
+            if (currentUser && currentUser.id === session.user.id) {
               // Hydrated user matches session - just refresh data in background
               console.log('[SimpleHeader] INITIAL_SESSION: Hydrated user matches, refreshing data');
-              loadUserData(user.id).catch(err => {
+              loadUserData(currentUser.id).catch(err => {
                 console.warn('[SimpleHeader] Background refresh failed:', err);
               });
-            } else if (user && user.id !== session.user.id) {
+            } else if (currentUser && currentUser.id !== session.user.id) {
               // Hydrated user doesn't match session - clear and reload
               console.warn('[SimpleHeader] INITIAL_SESSION: User mismatch, reloading');
               clearUserData();
@@ -135,7 +138,7 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
             }
           } else {
             // No valid session
-            if (user) {
+            if (currentUser) {
               // We thought we were logged in, but no session - log out
               console.log('[SimpleHeader] INITIAL_SESSION: No session but had hydrated user, logging out');
               clearUserData();
@@ -208,8 +211,8 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
         case 'TOKEN_REFRESHED':
           console.log('[SimpleHeader] TOKEN_REFRESHED event');
           // Token refreshed, optionally refresh user data
-          if (session && user) {
-            loadUserData(user.id).catch(err => {
+          if (session && currentUser) {
+            loadUserData(currentUser.id).catch(err => {
               console.warn('[SimpleHeader] Token refresh data update failed:', err);
             });
           }
