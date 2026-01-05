@@ -37,8 +37,6 @@ export function ArtistProfileView({ artistId, onBack, onPromptClick, onAuthRequi
   const currentUser = useUser();
   const isAuthenticated = useIsAuthenticated();
   const getDoodles = useAppStore((state) => state.getDoodles);
-  const getFollowerCount = useAppStore((state) => state.getFollowerCount);
-  const getFollowingCount = useAppStore((state) => state.getFollowingCount);
   const isFollowing = useAppStore((state) => state.isFollowing);
   const followUser = useAppStore((state) => state.followUser);
   const unfollowUser = useAppStore((state) => state.unfollowUser);
@@ -46,36 +44,53 @@ export function ArtistProfileView({ artistId, onBack, onPromptClick, onAuthRequi
   const [artist, setArtist] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [following, setFollowing] = useState(false);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
 
-  // Fetch artist from Supabase
+  // Fetch artist and follow counts from Supabase
   useEffect(() => {
-    async function fetchArtist() {
+    async function fetchArtistData() {
       try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', artistId)
-          .single();
+        // Fetch profile, follower count, and following count in parallel
+        const [profileResult, followersResult, followingResult] = await Promise.all([
+          supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', artistId)
+            .single(),
+          supabase
+            .from('follows')
+            .select('id', { count: 'exact', head: true })
+            .eq('following_id', artistId),
+          supabase
+            .from('follows')
+            .select('id', { count: 'exact', head: true })
+            .eq('follower_id', artistId),
+        ]);
 
-        if (error || !data) {
+        if (profileResult.error || !profileResult.data) {
           setArtist(null);
         } else {
           setArtist({
-            id: data.id,
-            email: data.email,
-            username: data.username || 'Anonymous',
-            is_premium: data.is_premium || false,
-            is_admin: data.is_admin || false,
-            avatar_type: data.avatar_type || 'initial',
-            avatar_icon: data.avatar_icon,
-            current_title: data.current_title,
-            unlocked_titles: data.unlocked_titles || [],
-            newly_unlocked_titles: data.newly_unlocked_titles || [],
-            oauth_provider: data.oauth_provider,
-            created_at: data.created_at,
-            updated_at: data.updated_at,
+            id: profileResult.data.id,
+            email: profileResult.data.email,
+            username: profileResult.data.username || 'Anonymous',
+            is_premium: profileResult.data.is_premium || false,
+            is_admin: profileResult.data.is_admin || false,
+            avatar_type: profileResult.data.avatar_type || 'initial',
+            avatar_icon: profileResult.data.avatar_icon,
+            current_title: profileResult.data.current_title,
+            unlocked_titles: profileResult.data.unlocked_titles || [],
+            newly_unlocked_titles: profileResult.data.newly_unlocked_titles || [],
+            oauth_provider: profileResult.data.oauth_provider,
+            created_at: profileResult.data.created_at,
+            updated_at: profileResult.data.updated_at,
           } as User);
         }
+
+        // Set counts from Supabase
+        setFollowerCount(followersResult.count || 0);
+        setFollowingCount(followingResult.count || 0);
       } catch (err) {
         console.error('Failed to fetch artist:', err);
         setArtist(null);
@@ -84,7 +99,7 @@ export function ArtistProfileView({ artistId, onBack, onPromptClick, onAuthRequi
       }
     }
 
-    fetchArtist();
+    fetchArtistData();
   }, [artistId]);
 
   // Update following state when artist loads
@@ -133,8 +148,6 @@ export function ArtistProfileView({ artistId, onBack, onPromptClick, onAuthRequi
 
   // Get artist's public doodles
   const artistDoodles = (getDoodles(artistId) as Doodle[]).filter(d => d.is_public);
-  const followerCount = getFollowerCount(artistId);
-  const followingCount = getFollowingCount(artistId);
 
   const isOwnProfile = currentUser?.id === artistId;
 
@@ -157,10 +170,12 @@ export function ArtistProfileView({ artistId, onBack, onPromptClick, onAuthRequi
     if (following) {
       unfollowUser(artistId);
       setFollowing(false);
+      setFollowerCount(prev => Math.max(0, prev - 1)); // Optimistic update
       toast.success(`Unfollowed ${artist.username}`);
     } else {
       followUser(artistId);
       setFollowing(true);
+      setFollowerCount(prev => prev + 1); // Optimistic update
       toast.success(`Now following ${artist.username}`);
     }
   };

@@ -8,7 +8,10 @@
       "Bash(gh pr view:*)",
       "Bash(gh pr merge:*)",
       "Bash(gh api:*)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(git fetch:*)",
+      "Bash(git merge:*)",
+      "Bash(curl:*)"
     ]
   }
 }
