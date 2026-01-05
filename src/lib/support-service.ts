@@ -6,9 +6,11 @@ import type {
   Notification,
   NotificationType,
   PromptIdea,
+  PromptIdeaStatus,
   DoodleFlag,
 } from '@/types';
 import { notifyAdminOfSupportTicket, notifyAdminOfDoodleFlag, notifyAdminOfPromptIdea } from './email-service';
+import { supabase } from '@/sdk/core/supabase';
 
 // Storage keys
 const SUPPORT_TICKETS_KEY = 'dailydoodle_support_tickets';
@@ -217,7 +219,194 @@ export function getUnreadCount(userId: string): number {
   return getUserNotifications(userId, true).length;
 }
 
-// Prompt Ideas
+// Prompt Ideas - Supabase backed
+export async function getPromptIdeas(status?: PromptIdeaStatus): Promise<PromptIdea[]> {
+  try {
+    let query = supabase
+      .from('prompt_ideas')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (status) {
+      query = query.eq('status', status);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('[SUPPORT SERVICE] Failed to fetch prompt ideas:', error);
+      return [];
+    }
+
+    return (data || []).map((row) => ({
+      id: row.id,
+      user_id: row.user_id,
+      username: row.username,
+      title: row.title,
+      description: row.description,
+      tags: row.tags || [],
+      created_at: row.created_at,
+      status: row.status as PromptIdeaStatus,
+      reviewed_by_admin_id: row.reviewed_by_admin_id,
+      reviewed_at: row.reviewed_at,
+      admin_notes: row.admin_notes,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export async function getUserPromptIdeas(userId: string): Promise<PromptIdea[]> {
+  try {
+    const { data, error } = await supabase
+      .from('prompt_ideas')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('[SUPPORT SERVICE] Failed to fetch user prompt ideas:', error);
+      return [];
+    }
+
+    return (data || []).map((row) => ({
+      id: row.id,
+      user_id: row.user_id,
+      username: row.username,
+      title: row.title,
+      description: row.description,
+      tags: row.tags || [],
+      created_at: row.created_at,
+      status: row.status as PromptIdeaStatus,
+      reviewed_by_admin_id: row.reviewed_by_admin_id,
+      reviewed_at: row.reviewed_at,
+      admin_notes: row.admin_notes,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export async function submitPromptIdea(params: {
+  userId: string;
+  username: string;
+  title: string;
+  description: string;
+  tags?: string[];
+}): Promise<{ success: boolean; ideaId?: string; error?: string }> {
+  try {
+    const { data, error } = await supabase
+      .from('prompt_ideas')
+      .insert({
+        user_id: params.userId,
+        username: params.username,
+        title: params.title,
+        description: params.description,
+        tags: params.tags || [],
+        status: 'submitted',
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('[SUPPORT SERVICE] Failed to submit prompt idea:', error);
+      return { success: false, error: error.message };
+    }
+
+    // Send email notification to admin
+    try {
+      await notifyAdminOfPromptIdea({
+        ideaId: data.id,
+        userId: params.userId,
+        username: params.username,
+        title: params.title,
+        description: params.description,
+        tags: params.tags,
+      });
+    } catch (emailError) {
+      console.error('[SUPPORT SERVICE] Failed to send prompt idea email:', emailError);
+      // Don't fail the submission if email fails
+    }
+
+    return { success: true, ideaId: data.id };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
+  }
+}
+
+export async function updatePromptIdeaStatus(params: {
+  ideaId: string;
+  status: PromptIdeaStatus;
+  adminId: string;
+  adminNotes?: string;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { data, error } = await supabase
+      .from('prompt_ideas')
+      .update({
+        status: params.status,
+        reviewed_by_admin_id: params.adminId,
+        reviewed_at: new Date().toISOString(),
+        admin_notes: params.adminNotes || null,
+      })
+      .eq('id', params.ideaId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('[SUPPORT SERVICE] Failed to update prompt idea:', error);
+      return { success: false, error: error.message };
+    }
+
+    // Create notification for the user
+    const statusMessages: Record<PromptIdeaStatus, { title: string; body: string }> = {
+      submitted: { title: 'Prompt Idea Submitted', body: 'Your prompt idea has been submitted for review.' },
+      under_review: { title: 'Prompt Idea Under Review', body: 'Your prompt idea is being reviewed by our team.' },
+      approved: { title: 'Prompt Idea Approved!', body: `Great news! Your prompt idea "${data.title}" has been approved and may be featured in future prompts.` },
+      rejected: { title: 'Prompt Idea Reviewed', body: `Your prompt idea "${data.title}" was reviewed but won't be used at this time.${params.adminNotes ? ` Feedback: ${params.adminNotes}` : ''}` },
+    };
+
+    const message = statusMessages[params.status];
+    createNotification({
+      userId: data.user_id,
+      type: 'prompt_idea_reviewed',
+      title: message.title,
+      body: message.body,
+      link: '/prompt-ideas',
+      metadata: { ideaId: params.ideaId, status: params.status },
+    });
+
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
+  }
+}
+
+export async function getPromptIdeasCount(status?: PromptIdeaStatus): Promise<number> {
+  try {
+    let query = supabase
+      .from('prompt_ideas')
+      .select('id', { count: 'exact', head: true });
+
+    if (status) {
+      query = query.eq('status', status);
+    }
+
+    const { count, error } = await query;
+
+    if (error) {
+      console.error('[SUPPORT SERVICE] Failed to count prompt ideas:', error);
+      return 0;
+    }
+
+    return count || 0;
+  } catch {
+    return 0;
+  }
+}
+
+// Legacy localStorage functions for backwards compatibility during migration
+// These can be removed once all users have migrated to Supabase
 export function getStoredPromptIdeas(): PromptIdea[] {
   try {
     const stored = localStorage.getItem(PROMPT_IDEAS_KEY);
@@ -229,40 +418,6 @@ export function getStoredPromptIdeas(): PromptIdea[] {
 
 export function savePromptIdeas(ideas: PromptIdea[]): void {
   localStorage.setItem(PROMPT_IDEAS_KEY, JSON.stringify(ideas));
-}
-
-export async function submitPromptIdea(params: {
-  userId: string;
-  username: string;
-  title: string;
-  description: string;
-  tags?: string[];
-}): Promise<{ success: boolean; error?: string }> {
-  const idea: PromptIdea = {
-    id: `idea_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    user_id: params.userId,
-    title: params.title,
-    description: params.description,
-    tags: params.tags || [],
-    created_at: new Date().toISOString(),
-    status: 'submitted',
-  };
-
-  const ideas = getStoredPromptIdeas();
-  ideas.push(idea);
-  savePromptIdeas(ideas);
-
-  // Send email notification to admin
-  await notifyAdminOfPromptIdea({
-    ideaId: idea.id,
-    userId: params.userId,
-    username: params.username,
-    title: params.title,
-    description: params.description,
-    tags: params.tags,
-  });
-
-  return { success: true };
 }
 
 // Doodle Flags

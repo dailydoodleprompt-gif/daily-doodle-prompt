@@ -860,7 +860,8 @@ export type NotificationType =
   | 'account_warning'
   | 'account_banned'
   | 'system_announcement'
-  | 'badge_earned'; // Adding badge notification support
+  | 'badge_earned'
+  | 'prompt_idea_reviewed';
 
 export interface Notification {
   id: string;
@@ -875,14 +876,17 @@ export interface Notification {
 }
 
 // Prompt Idea Submission (Premium Feature)
+export type PromptIdeaStatus = 'submitted' | 'under_review' | 'approved' | 'rejected';
+
 export interface PromptIdea {
   id: string;
   user_id: string;
+  username?: string;
   title: string;
   description: string;
   tags?: string[];
   created_at: string;
-  status: 'submitted' | 'under_review' | 'approved' | 'rejected';
+  status: PromptIdeaStatus;
   reviewed_by_admin_id?: string | null;
   reviewed_at?: string | null;
   admin_notes?: string | null;
