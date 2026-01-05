@@ -7,9 +7,10 @@ interface DoodleImageProps {
   alt: string;
   className?: string;
   aspectRatio?: 'square' | 'auto';
+  priority?: boolean; // If true, load eagerly (for above-the-fold images)
 }
 
-export function DoodleImage({ src, alt, className, aspectRatio = 'square' }: DoodleImageProps) {
+export function DoodleImage({ src, alt, className, aspectRatio = 'square', priority = false }: DoodleImageProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
@@ -40,7 +41,8 @@ export function DoodleImage({ src, alt, className, aspectRatio = 'square' }: Doo
           aspectRatio === 'square' ? 'w-full h-full' : 'w-auto h-auto max-w-full max-h-full',
           isLoading ? 'opacity-0' : 'opacity-100'
         )}
-        loading="lazy"
+        loading={priority ? 'eager' : 'lazy'}
+        fetchPriority={priority ? 'high' : undefined}
         onLoad={() => setIsLoading(false)}
         onError={() => {
           setIsLoading(false);
