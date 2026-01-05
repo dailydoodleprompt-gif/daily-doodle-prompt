@@ -69,11 +69,8 @@ const badgeIcons: Record<BadgeType, typeof Flame> = {
   'pack_rat': Rat,
   'cue_curator': Library,
   'grand_gatherer': Gem,
-  // Sharing - nature progression
+  // Sharing
   'planter_of_seeds': Sprout,
-  'gardener_of_growth': Shrub,
-  'cultivator_of_influence': Trees,
-  'harvester_of_inspiration': Flower,
   // Creative - art progression
   'first_doodle': Pencil,
   'doodle_diary': BookOpen,
@@ -123,11 +120,8 @@ const badgeColors: Record<BadgeType, { bg: string; ring: string }> = {
   'pack_rat': { bg: 'from-indigo-400 to-purple-500', ring: 'ring-indigo-500/50' },
   'cue_curator': { bg: 'from-purple-400 to-pink-500', ring: 'ring-purple-500/50' },
   'grand_gatherer': { bg: 'from-pink-400 to-rose-500', ring: 'ring-pink-500/50' },
-  // Sharing - green/nature
+  // Sharing
   'planter_of_seeds': { bg: 'from-green-400 to-emerald-500', ring: 'ring-green-500/50' },
-  'gardener_of_growth': { bg: 'from-lime-400 to-green-500', ring: 'ring-lime-500/50' },
-  'cultivator_of_influence': { bg: 'from-emerald-400 to-teal-500', ring: 'ring-emerald-500/50' },
-  'harvester_of_inspiration': { bg: 'from-yellow-400 to-amber-500', ring: 'ring-yellow-500/50' },
   // Creative - warm artistic colors
   'first_doodle': { bg: 'from-amber-400 to-orange-500', ring: 'ring-amber-500/50' },
   'doodle_diary': { bg: 'from-orange-400 to-red-400', ring: 'ring-orange-500/50' },

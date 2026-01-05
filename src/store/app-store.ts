@@ -2037,17 +2037,9 @@ if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')
 
         updateUserStats(user.id, { total_shares: totalShares });
 
+        // Award badge for first share only
         if (totalShares === 1) {
           get().awardBadge('planter_of_seeds');
-        }
-        if (totalShares >= 10 && !get().hasBadge('gardener_of_growth')) {
-          get().awardBadge('gardener_of_growth');
-        }
-        if (totalShares >= 25 && !get().hasBadge('cultivator_of_influence')) {
-          get().awardBadge('cultivator_of_influence');
-        }
-        if (totalShares >= 50 && !get().hasBadge('harvester_of_inspiration')) {
-          get().awardBadge('harvester_of_inspiration');
         }
       },
 

@@ -20,6 +20,7 @@ import { Route as PromptDateImport } from './routes/prompt/$date'
 import { Route as ProfileUsernameImport } from './routes/profile/$username'
 import { Route as PaymentSuccessImport } from './routes/payment/success'
 import { Route as PaymentCancelImport } from './routes/payment/cancel'
+import { Route as GalleryUsernameImport } from './routes/gallery/$username'
 import { Route as DoodleIdImport } from './routes/doodle/$id'
 import { Route as BadgeIdImport } from './routes/badge/$id'
 
@@ -76,6 +77,12 @@ const PaymentSuccessRoute = PaymentSuccessImport.update({
 const PaymentCancelRoute = PaymentCancelImport.update({
   id: '/payment/cancel',
   path: '/payment/cancel',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const GalleryUsernameRoute = GalleryUsernameImport.update({
+  id: '/gallery/$username',
+  path: '/gallery/$username',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -144,6 +151,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DoodleIdImport
       parentRoute: typeof rootRoute
     }
+    '/gallery/$username': {
+      id: '/gallery/$username'
+      path: '/gallery/$username'
+      fullPath: '/gallery/$username'
+      preLoaderRoute: typeof GalleryUsernameImport
+      parentRoute: typeof rootRoute
+    }
     '/payment/cancel': {
       id: '/payment/cancel'
       path: '/payment/cancel'
@@ -196,6 +210,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/badge/$id': typeof BadgeIdRoute
   '/doodle/$id': typeof DoodleIdRoute
+  '/gallery/$username': typeof GalleryUsernameRoute
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/profile/$username': typeof ProfileUsernameRoute
@@ -210,6 +225,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/badge/$id': typeof BadgeIdRoute
   '/doodle/$id': typeof DoodleIdRoute
+  '/gallery/$username': typeof GalleryUsernameRoute
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/profile/$username': typeof ProfileUsernameRoute
@@ -225,6 +241,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/badge/$id': typeof BadgeIdRoute
   '/doodle/$id': typeof DoodleIdRoute
+  '/gallery/$username': typeof GalleryUsernameRoute
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/profile/$username': typeof ProfileUsernameRoute
@@ -241,6 +258,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/badge/$id'
     | '/doodle/$id'
+    | '/gallery/$username'
     | '/payment/cancel'
     | '/payment/success'
     | '/profile/$username'
@@ -254,6 +272,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/badge/$id'
     | '/doodle/$id'
+    | '/gallery/$username'
     | '/payment/cancel'
     | '/payment/success'
     | '/profile/$username'
@@ -267,6 +286,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/badge/$id'
     | '/doodle/$id'
+    | '/gallery/$username'
     | '/payment/cancel'
     | '/payment/success'
     | '/profile/$username'
@@ -282,6 +302,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   BadgeIdRoute: typeof BadgeIdRoute
   DoodleIdRoute: typeof DoodleIdRoute
+  GalleryUsernameRoute: typeof GalleryUsernameRoute
   PaymentCancelRoute: typeof PaymentCancelRoute
   PaymentSuccessRoute: typeof PaymentSuccessRoute
   ProfileUsernameRoute: typeof ProfileUsernameRoute
@@ -295,6 +316,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   BadgeIdRoute: BadgeIdRoute,
   DoodleIdRoute: DoodleIdRoute,
+  GalleryUsernameRoute: GalleryUsernameRoute,
   PaymentCancelRoute: PaymentCancelRoute,
   PaymentSuccessRoute: PaymentSuccessRoute,
   ProfileUsernameRoute: ProfileUsernameRoute,
@@ -317,6 +339,7 @@ export const routeTree = rootRoute
         "/terms",
         "/badge/$id",
         "/doodle/$id",
+        "/gallery/$username",
         "/payment/cancel",
         "/payment/success",
         "/profile/$username"
@@ -345,6 +368,9 @@ export const routeTree = rootRoute
     },
     "/doodle/$id": {
       "filePath": "doodle/$id.tsx"
+    },
+    "/gallery/$username": {
+      "filePath": "gallery/$username.tsx"
     },
     "/payment/cancel": {
       "filePath": "payment/cancel.tsx"

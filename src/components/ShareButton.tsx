@@ -1,16 +1,23 @@
 import { Button } from '@/components/ui/button';
 import { type Prompt } from '@/hooks/use-google-sheets';
-import { Share2, Copy, Check } from 'lucide-react';
+import { Share2, Copy, Check, Facebook, Twitter, MessageCircle } from 'lucide-react';
 import { useState, useCallback } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAppStore, useIsAuthenticated } from '@/store/app-store';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+
+// Check if device is mobile for native share (desktop shows system apps, not social media)
+const isMobileDevice = () => {
+  if (typeof navigator === 'undefined') return false;
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+};
 
 // Base share button props for all share types
 interface BaseShareButtonProps {
@@ -143,13 +150,37 @@ export function ShareButton(props: ShareButtonProps) {
     }
   }, [shareData, trackShare]);
 
+  const handleFacebookShare = useCallback(() => {
+    if (!shareData) return;
+    const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareData.url)}&quote=${encodeURIComponent(shareData.text)}`;
+    window.open(fbUrl, '_blank', 'width=600,height=400');
+    trackShare('facebook');
+  }, [shareData, trackShare]);
+
+  const handleTwitterShare = useCallback(() => {
+    if (!shareData) return;
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareData.text)}&url=${encodeURIComponent(shareData.url)}&hashtags=DailyDoodlePrompt`;
+    window.open(twitterUrl, '_blank', 'width=600,height=400');
+    trackShare('twitter');
+  }, [shareData, trackShare]);
+
+  const handleRedditShare = useCallback(() => {
+    if (!shareData) return;
+    const redditUrl = `https://www.reddit.com/submit?url=${encodeURIComponent(shareData.url)}&title=${encodeURIComponent(shareData.title)}`;
+    window.open(redditUrl, '_blank', 'width=800,height=600');
+    trackShare('reddit');
+  }, [shareData, trackShare]);
+
+  // Only use native share on mobile devices - desktop shows system utilities instead of social media
   const canNativeShare =
     typeof navigator !== 'undefined' &&
     'share' in navigator &&
-    'canShare' in navigator;
+    'canShare' in navigator &&
+    isMobileDevice();
 
   if (!shareData) return null;
 
+  // On mobile, use native share for best UX
   if (canNativeShare) {
     return (
       <Button
@@ -164,6 +195,7 @@ export function ShareButton(props: ShareButtonProps) {
     );
   }
 
+  // On desktop, show dropdown with social media options
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -172,17 +204,30 @@ export function ShareButton(props: ShareButtonProps) {
           {size !== 'icon' && 'Share'}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" className="w-52">
+        <DropdownMenuItem onClick={handleFacebookShare}>
+          <Facebook className="w-4 h-4 mr-2 text-blue-600" />
+          Share on Facebook
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleTwitterShare}>
+          <Twitter className="w-4 h-4 mr-2 text-sky-500" />
+          Share on X (Twitter)
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleRedditShare}>
+          <MessageCircle className="w-4 h-4 mr-2 text-orange-600" />
+          Share on Reddit
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleCopy}>
           {copied ? (
             <>
-              <Check className="w-4 h-4 mr-2" />
+              <Check className="w-4 h-4 mr-2 text-green-600" />
               Copied!
             </>
           ) : (
             <>
               <Copy className="w-4 h-4 mr-2" />
-              Copy to clipboard
+              Copy link
             </>
           )}
         </DropdownMenuItem>

@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +10,7 @@ import { DoodleFeed } from '@/components/DoodleFeed';
 import { UserAvatar, AVATAR_ICON_OPTIONS, AVATAR_ICONS, ICON_COLORS } from '@/components/UserAvatar';
 import { ActivityHeatmap } from '@/components/ActivityHeatmap';
 import { ShareButton } from '@/components/ShareButton';
+import { FollowingDialog } from '@/components/FollowingDialog';
 import {
   Tooltip,
   TooltipContent,
@@ -52,6 +53,7 @@ import type { AvatarIconType, AvatarType, Doodle, BadgeType } from '@/types';
 import { getTitleDisplayName, BADGE_INFO } from '@/types';
 import { cn } from '@/lib/utils';
 import { formatShortDate } from '@/lib/timezone';
+import { supabase } from '@/sdk/core/supabase';
 
 interface ProfileViewProps {
   prompts?: Prompt[];
@@ -72,11 +74,35 @@ export function ProfileView({ prompts = [], onUpgrade, onSettings, onAdminDashbo
   const updateAvatar = useAppStore((state) => state.updateAvatar);
   const getDoodles = useAppStore((state) => state.getDoodles);
   const getLikedDoodles = useAppStore((state) => state.getLikedDoodles);
-  const getFollowerCount = useAppStore((state) => state.getFollowerCount);
-  const getFollowingCount = useAppStore((state) => state.getFollowingCount);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [activeTab, setActiveTab] = useState('feed');
   const tabsRef = useRef<HTMLDivElement>(null);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
+  const [showFollowingDialog, setShowFollowingDialog] = useState(false);
+
+  // Fetch follower/following counts from Supabase
+  useEffect(() => {
+    if (!user) return;
+
+    async function fetchFollowCounts() {
+      const [followersResult, followingResult] = await Promise.all([
+        supabase
+          .from('follows')
+          .select('id', { count: 'exact', head: true })
+          .eq('following_id', user!.id),
+        supabase
+          .from('follows')
+          .select('id', { count: 'exact', head: true })
+          .eq('follower_id', user!.id),
+      ]);
+
+      setFollowerCount(followersResult.count || 0);
+      setFollowingCount(followingResult.count || 0);
+    }
+
+    fetchFollowCounts();
+  }, [user]);
 
   // Streak values with fallbacks
   const currentStreak = streak?.current_streak ?? 0;
@@ -105,8 +131,6 @@ export function ProfileView({ prompts = [], onUpgrade, onSettings, onAdminDashbo
   // Get user's doodles and stats
   const myDoodles = getDoodles(user.id) as Doodle[];
   const likedDoodles = getLikedDoodles() as Doodle[];
-  const followerCount = getFollowerCount(user.id);
-  const followingCount = getFollowingCount(user.id);
 
   // Calculate detailed stats for Stats tab
   const statsData = useMemo(() => {
@@ -341,10 +365,14 @@ export function ProfileView({ prompts = [], onUpgrade, onSettings, onAdminDashbo
                   <p className="font-bold">{followerCount}</p>
                   <p className="text-xs text-muted-foreground">Followers</p>
                 </div>
-                <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => setShowFollowingDialog(true)}
+                  className="text-center hover:bg-muted/50 rounded-lg px-2 py-1 -mx-2 -my-1 transition-colors"
+                >
                   <p className="font-bold">{followingCount}</p>
                   <p className="text-xs text-muted-foreground">Following</p>
-                </div>
+                </button>
                 <div className="text-center">
                   <p className="font-bold">{myDoodles.length}</p>
                   <p className="text-xs text-muted-foreground">Doodles</p>
@@ -874,6 +902,13 @@ export function ProfileView({ prompts = [], onUpgrade, onSettings, onAdminDashbo
           </CardContent>
         </Card>
       )}
+
+      {/* Following Dialog */}
+      <FollowingDialog
+        open={showFollowingDialog}
+        onOpenChange={setShowFollowingDialog}
+        onUserClick={onUserClick}
+      />
     </div>
   );
 }

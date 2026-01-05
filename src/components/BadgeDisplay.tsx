@@ -62,11 +62,8 @@ const badgeIcons: Record<BadgeType, typeof Flame> = {
   'pack_rat': BookOpen,
   'cue_curator': Library,
   'grand_gatherer': Gem,
-  // Sharing - nature progression
+  // Sharing
   'planter_of_seeds': Sprout,
-  'gardener_of_growth': Shrub,
-  'cultivator_of_influence': Trees,
-  'harvester_of_inspiration': Flower,
   // Creative - art progression
   'first_doodle': Pencil,
   'doodle_diary': BookOpen,
@@ -116,11 +113,8 @@ const badgeColors: Record<BadgeType, string> = {
   'pack_rat': 'from-indigo-400 to-purple-500 text-white',
   'cue_curator': 'from-purple-400 to-pink-500 text-white',
   'grand_gatherer': 'from-pink-400 to-rose-500 text-white',
-  // Sharing - green/nature
+  // Sharing
   'planter_of_seeds': 'from-green-400 to-emerald-500 text-white',
-  'gardener_of_growth': 'from-lime-400 to-green-500 text-white',
-  'cultivator_of_influence': 'from-emerald-400 to-teal-500 text-white',
-  'harvester_of_inspiration': 'from-yellow-400 to-amber-500 text-white',
   // Creative - warm artistic colors
   'first_doodle': 'from-amber-400 to-orange-500 text-white',
   'doodle_diary': 'from-orange-400 to-red-400 text-white',
@@ -241,11 +235,8 @@ const allBadgeTypes: BadgeType[] = [
   'pack_rat',
   'cue_curator',
   'grand_gatherer',
-  // Sharing badges
+  // Sharing badge
   'planter_of_seeds',
-  'gardener_of_growth',
-  'cultivator_of_influence',
-  'harvester_of_inspiration',
   // Creative badges
   'first_doodle',
   'doodle_diary',
