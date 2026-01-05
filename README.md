@@ -14,6 +14,7 @@ Get a fresh creative prompt every day, upload your artwork, earn badges, and joi
 - **365 Daily Prompts** - A unique creative prompt for every day of the year
 - **Doodle Upload** - Share your artwork with the community (Premium)
 - **Social Features** - Like, follow, and interact with other artists
+- **Notifications** - Get notified when someone likes your doodle or follows you
 - **Gamification** - Earn 43+ unique badges and build streaks
 - **Archive** - Browse and filter all prompts by category
 - **Bookmarks** - Save your favorite prompts for later
@@ -195,6 +196,7 @@ daily-doodle-prompt/
 - **follows** - User relationships
 - **likes** - Doodle interactions
 - **prompt_ideas** - Premium user prompt submissions for admin review
+- **notifications** - User notifications for likes, follows, and system events
 
 ---
 
