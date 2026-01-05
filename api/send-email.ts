@@ -41,20 +41,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const { to, subject, text, html } = req.body as {
-      to: string;
+      to?: string;
       subject: string;
       text: string;
       html?: string;
     };
 
-    if (!to || !subject || !text) {
+    if (!subject || !text) {
       res.status(400).json({ error: 'Missing required fields' });
       return;
     }
 
     // Security: Only allow sending to the configured admin email
-    const allowedRecipient = process.env.SUPPORT_INBOX_EMAIL || process.env.VITE_SUPPORT_INBOX_EMAIL;
-    if (!allowedRecipient || to !== allowedRecipient) {
+    // If no recipient specified, default to support inbox (preferred for security)
+    const supportInbox = process.env.SUPPORT_INBOX_EMAIL || process.env.VITE_SUPPORT_INBOX_EMAIL;
+    if (!supportInbox) {
+      console.error('SUPPORT_INBOX_EMAIL is not set');
+      res.status(500).json({ error: 'Support inbox not configured' });
+      return;
+    }
+
+    // Use support inbox if no recipient specified, or validate that recipient matches
+    const recipient = to || supportInbox;
+    if (recipient !== supportInbox) {
       res.status(403).json({ error: 'Recipient not allowed' });
       return;
     }
@@ -77,7 +86,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
       body: JSON.stringify({
         from,
-        to,
+        to: recipient,
         subject,
         html: html ?? `<pre>${text}</pre>`,
       }),

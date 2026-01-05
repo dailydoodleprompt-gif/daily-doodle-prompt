@@ -1,22 +1,19 @@
 // src/lib/email-service.ts
 // REAL production email service using /api/send-email
+// NOTE: The API automatically sends to SUPPORT_INBOX_EMAIL (server-side env var)
+// No client-side email configuration is needed.
 
 import { getAuthToken } from '@/sdk/core/auth';
 
 export interface EmailParams {
-  to: string;
   subject: string;
   body: string;
   html?: string;
 }
 
-const SUPPORT_INBOX_EMAIL =
-  import.meta.env.SUPPORT_INBOX_EMAIL ||
-  import.meta.env.VITE_SUPPORT_INBOX_EMAIL ||
-  '';
-
 /**
- * Sends an email notification (REAL PRODUCTION VERSION)
+ * Sends an email notification to the support inbox (REAL PRODUCTION VERSION)
+ * The recipient is determined server-side from SUPPORT_INBOX_EMAIL env var.
  */
 export async function sendEmail(
   params: EmailParams,
@@ -35,7 +32,6 @@ export async function sendEmail(
         'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify({
-        to: params.to,
         subject: params.subject,
         text: params.body,
         html: params.html,
@@ -69,11 +65,6 @@ export async function notifyAdminOfSupportTicket(params: {
   subject: string;
   message: string;
 }): Promise<{ success: boolean; error?: string }> {
-  if (!SUPPORT_INBOX_EMAIL) {
-    console.warn('[EMAIL SERVICE] SUPPORT_INBOX_EMAIL not configured');
-    return { success: false, error: 'Admin email not configured' };
-  }
-
   const emailBody = `
 New Support Ticket Received
 
@@ -91,7 +82,6 @@ View and respond to this ticket in the Admin Panel.
   `.trim();
 
   return sendEmail({
-    to: SUPPORT_INBOX_EMAIL,
     subject: `[DailyDoodlePrompt] New Support Ticket: ${params.subject}`,
     body: emailBody,
   });
@@ -107,11 +97,6 @@ export async function notifyAdminOfDoodleFlag(params: {
   reporterUsername: string;
   reason: string;
 }): Promise<{ success: boolean; error?: string }> {
-  if (!SUPPORT_INBOX_EMAIL) {
-    console.warn('[EMAIL SERVICE] SUPPORT_INBOX_EMAIL not configured');
-    return { success: false, error: 'Admin email not configured' };
-  }
-
   const emailBody = `
 Doodle Flagged for Review
 
@@ -127,7 +112,6 @@ Review this doodle in the Admin Panel.
   `.trim();
 
   return sendEmail({
-    to: SUPPORT_INBOX_EMAIL,
     subject: `[DailyDoodlePrompt] Doodle Flagged: ${params.doodleId}`,
     body: emailBody,
   });
@@ -144,11 +128,6 @@ export async function notifyAdminOfPromptIdea(params: {
   description: string;
   tags?: string[];
 }): Promise<{ success: boolean; error?: string }> {
-  if (!SUPPORT_INBOX_EMAIL) {
-    console.warn('[EMAIL SERVICE] SUPPORT_INBOX_EMAIL not configured');
-    return { success: false, error: 'Admin email not configured' };
-  }
-
   const emailBody = `
 New Prompt Idea Submitted
 
@@ -166,7 +145,6 @@ Review this idea in the Admin Panel.
   `.trim();
 
   return sendEmail({
-    to: SUPPORT_INBOX_EMAIL,
     subject: `[DailyDoodlePrompt] New Prompt Idea: ${params.title}`,
     body: emailBody,
   });
