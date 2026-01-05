@@ -15,6 +15,7 @@ Get a fresh creative prompt every day, upload your artwork, earn badges, and joi
 - **Doodle Upload** - Share your artwork with the community (Premium)
 - **Social Features** - Like, follow, and interact with other artists
 - **Notifications** - Get notified when someone likes your doodle or follows you
+- **Badge Alerts** - Get reminded about time-limited holiday and monthly badges
 - **Gamification** - Earn 43+ unique badges and build streaks
 - **Archive** - Browse and filter all prompts by category
 - **Bookmarks** - Save your favorite prompts for later
@@ -90,6 +91,10 @@ Get a fresh creative prompt every day, upload your artwork, earn badges, and joi
    STRIPE_SECRET_KEY=sk_test_...
    STRIPE_WEBHOOK_SECRET=whsec_...
    STRIPE_PRICE_ID=price_...
+
+   # Cron Jobs (Backend - set in Vercel)
+   CRON_SECRET=your_random_secret_for_cron_auth
+   SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
    ```
 
 4. **Run development server**
