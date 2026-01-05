@@ -24,6 +24,7 @@ import type {
   SupportTicketCategory,
   Notification,
   PromptIdea,
+  PromptIdeaStatus,
   DoodleFlag,
   DoodleReport,
   DoodleReportReason,
@@ -542,8 +543,10 @@ interface AppState {
 
   // Prompt Idea actions
   submitPromptIdeaPremium: (title: string, description: string, tags?: string[]) => Promise<{ success: boolean; error?: string }>;
-  getAllPromptIdeas: () => PromptIdea[];
-  updatePromptIdeaStatus: (ideaId: string, status: 'under_review' | 'approved' | 'rejected', adminNotes?: string) => void;
+  getAllPromptIdeas: () => Promise<PromptIdea[]>;
+  getPromptIdeasByStatus: (status: PromptIdeaStatus) => Promise<PromptIdea[]>;
+  getPromptIdeasCount: (status?: PromptIdeaStatus) => Promise<number>;
+  updatePromptIdeaStatus: (ideaId: string, status: PromptIdeaStatus, adminNotes?: string) => Promise<{ success: boolean; error?: string }>;
 
   // Doodle moderation
   flagDoodle: (doodleId: string, reason: string) => Promise<{ success: boolean; ticketId?: string; error?: string }>;
@@ -2200,36 +2203,29 @@ if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')
         return result;
       },
 
-      getAllPromptIdeas: () => {
-        return SupportService.getStoredPromptIdeas();
+      getAllPromptIdeas: async () => {
+        return SupportService.getPromptIdeas();
       },
 
-      updatePromptIdeaStatus: (ideaId, status, adminNotes) => {
+      getPromptIdeasByStatus: async (status) => {
+        return SupportService.getPromptIdeas(status);
+      },
+
+      getPromptIdeasCount: async (status) => {
+        return SupportService.getPromptIdeasCount(status);
+      },
+
+      updatePromptIdeaStatus: async (ideaId, status, adminNotes) => {
         const { user } = get();
-        if (!user?.is_admin) return;
-
-        const ideas = SupportService.getStoredPromptIdeas();
-        const ideaIndex = ideas.findIndex((i: any) => i.id === ideaId);
-        if (ideaIndex === -1) return;
-
-        ideas[ideaIndex].status = status;
-        ideas[ideaIndex].reviewed_by_admin_id = user.id;
-        ideas[ideaIndex].reviewed_at = new Date().toISOString();
-        if (adminNotes) {
-          ideas[ideaIndex].admin_notes = adminNotes;
+        if (!user?.is_admin) {
+          return { success: false, error: 'Admin access required' };
         }
-        SupportService.savePromptIdeas(ideas);
 
-        const idea = ideas[ideaIndex];
-        SupportService.createNotification({
-          userId: idea.user_id,
-          type: 'system_announcement',
-          title: `Prompt Idea ${status === 'approved' ? 'Approved' : status === 'rejected' ? 'Declined' : 'Under Review'}`,
-          body: status === 'approved'
-            ? 'Your prompt idea has been approved! It may appear in future prompts.'
-            : status === 'rejected'
-            ? 'Thank you for your submission. We reviewed your prompt idea but cannot use it at this time.'
-            : 'Your prompt idea is under review.',
+        return SupportService.updatePromptIdeaStatus({
+          ideaId,
+          status,
+          adminId: user.id,
+          adminNotes,
         });
       },
 

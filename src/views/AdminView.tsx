@@ -66,8 +66,12 @@ import {
   CheckCircle,
   XCircle,
   Eye,
+  Lightbulb,
+  Clock,
+  CheckCircle2,
 } from 'lucide-react';
-import { type DoodleReport, type DoodleReportStatus, REPORT_REASONS } from '@/types';
+import { Textarea } from '@/components/ui/textarea';
+import { type DoodleReport, type DoodleReportStatus, type PromptIdea, type PromptIdeaStatus, REPORT_REASONS } from '@/types';
 import { supabase } from '@/sdk/core/supabase';
 
 const resetPasswordSchema = z.object({
@@ -110,6 +114,8 @@ export function AdminView({ onBack }: AdminViewProps) {
   const deleteDoodle = useAppStore((state) => state.deleteDoodle);
   const getDoodleReports = useAppStore((state) => state.getDoodleReports);
   const updateReportStatus = useAppStore((state) => state.updateReportStatus);
+  const getAllPromptIdeas = useAppStore((state) => state.getAllPromptIdeas);
+  const updatePromptIdeaStatus = useAppStore((state) => state.updatePromptIdeaStatus);
 
   const [users, setUsers] = useState<UserToManage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -138,6 +144,14 @@ export function AdminView({ onBack }: AdminViewProps) {
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<DoodleReport | null>(null);
   const [reportFilter, setReportFilter] = useState<'pending' | 'all'>('pending');
+
+  // Prompt Ideas states
+  const [promptIdeas, setPromptIdeas] = useState<PromptIdea[]>([]);
+  const [promptIdeasLoading, setPromptIdeasLoading] = useState(true);
+  const [promptIdeaFilter, setPromptIdeaFilter] = useState<'submitted' | 'all'>('submitted');
+  const [selectedPromptIdea, setSelectedPromptIdea] = useState<PromptIdea | null>(null);
+  const [promptIdeaDialogOpen, setPromptIdeaDialogOpen] = useState(false);
+  const [promptIdeaAdminNotes, setPromptIdeaAdminNotes] = useState('');
 
   // Force refresh key for doodles grid
   const [doodlesRefreshKey, setDoodlesRefreshKey] = useState(0);
@@ -177,9 +191,23 @@ export function AdminView({ onBack }: AdminViewProps) {
     }
   };
 
+  // Fetch prompt ideas
+  const fetchPromptIdeas = async () => {
+    try {
+      setPromptIdeasLoading(true);
+      const ideas = await getAllPromptIdeas();
+      setPromptIdeas(ideas);
+    } catch (err) {
+      console.error('Failed to fetch prompt ideas:', err);
+    } finally {
+      setPromptIdeasLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (currentUser?.is_admin) {
       fetchUsers();
+      fetchPromptIdeas();
     }
   }, [currentUser]);
 
@@ -466,6 +494,65 @@ export function AdminView({ onBack }: AdminViewProps) {
 
   const pendingReportsCount = getDoodleReports('pending').length;
 
+  // Prompt Ideas handlers
+  const filteredPromptIdeas = promptIdeaFilter === 'submitted'
+    ? promptIdeas.filter((idea) => idea.status === 'submitted')
+    : promptIdeas;
+
+  const pendingPromptIdeasCount = promptIdeas.filter((idea) => idea.status === 'submitted').length;
+
+  const handleReviewPromptIdea = (idea: PromptIdea) => {
+    setSelectedPromptIdea(idea);
+    setPromptIdeaAdminNotes('');
+    setPromptIdeaDialogOpen(true);
+  };
+
+  const handleUpdatePromptIdeaStatus = async (status: PromptIdeaStatus) => {
+    if (!selectedPromptIdea) return;
+    setActionLoading(true);
+    try {
+      const result = await updatePromptIdeaStatus(
+        selectedPromptIdea.id,
+        status,
+        promptIdeaAdminNotes || undefined
+      );
+      if (result.success) {
+        setSuccessMessage(
+          status === 'approved'
+            ? 'Prompt idea approved! The user has been notified.'
+            : status === 'rejected'
+            ? 'Prompt idea declined. The user has been notified.'
+            : 'Prompt idea marked as under review.'
+        );
+        setPromptIdeaDialogOpen(false);
+        setSelectedPromptIdea(null);
+        fetchPromptIdeas(); // Refresh the list
+      } else {
+        setError(result.error || 'Failed to update prompt idea');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update prompt idea');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const getPromptIdeaStatusBadge = (status: PromptIdeaStatus) => {
+    const config: Record<PromptIdeaStatus, { variant: 'default' | 'secondary' | 'outline'; icon: typeof Clock; label: string; className?: string }> = {
+      submitted: { variant: 'default', icon: Clock, label: 'Pending Review' },
+      under_review: { variant: 'secondary', icon: Eye, label: 'Under Review' },
+      approved: { variant: 'outline', icon: CheckCircle2, label: 'Approved', className: 'border-green-500 text-green-600' },
+      rejected: { variant: 'outline', icon: XCircle, label: 'Declined', className: 'border-red-500 text-red-600' },
+    };
+    const { variant, icon: Icon, label, className } = config[status];
+    return (
+      <Badge variant={variant} className={className}>
+        <Icon className="h-3 w-3 mr-1" />
+        {label}
+      </Badge>
+    );
+  };
+
   // Clear success message after 5 seconds
   useEffect(() => {
     if (successMessage) {
@@ -702,6 +789,109 @@ export function AdminView({ onBack }: AdminViewProps) {
                         variant="outline"
                         size="sm"
                         onClick={() => handleReviewReport(report)}
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        Review
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Prompt Ideas */}
+      <Card className="mb-6">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Lightbulb className="h-5 w-5" />
+                Prompt Ideas
+                {pendingPromptIdeasCount > 0 && (
+                  <Badge variant="secondary">{pendingPromptIdeasCount}</Badge>
+                )}
+              </CardTitle>
+              <CardDescription>
+                Review prompt ideas submitted by premium members
+              </CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant={promptIdeaFilter === 'submitted' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setPromptIdeaFilter('submitted')}
+              >
+                Pending
+              </Button>
+              <Button
+                variant={promptIdeaFilter === 'all' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setPromptIdeaFilter('all')}
+              >
+                All
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {promptIdeasLoading ? (
+            <div className="text-center py-8">
+              <Loader2 className="h-8 w-8 mx-auto mb-4 animate-spin text-muted-foreground" />
+              <p className="text-muted-foreground">Loading prompt ideas...</p>
+            </div>
+          ) : filteredPromptIdeas.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              {promptIdeaFilter === 'submitted' ? 'No pending prompt ideas' : 'No prompt ideas found'}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredPromptIdeas.map((idea) => (
+                <div
+                  key={idea.id}
+                  className="flex items-start gap-4 p-4 rounded-lg border"
+                >
+                  {/* Idea icon */}
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Lightbulb className="h-5 w-5 text-primary" />
+                  </div>
+
+                  {/* Idea details */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      {getPromptIdeaStatusBadge(idea.status)}
+                      <span className="font-medium truncate">{idea.title}</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                      {idea.description}
+                    </p>
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      <span>By: {idea.username || 'Unknown'}</span>
+                      <span>{new Date(idea.created_at).toLocaleDateString()}</span>
+                      {idea.tags && idea.tags.length > 0 && (
+                        <span className="flex gap-1">
+                          {idea.tags.slice(0, 3).map((tag, i) => (
+                            <Badge key={i} variant="outline" className="text-xs py-0">
+                              {tag}
+                            </Badge>
+                          ))}
+                          {idea.tags.length > 3 && (
+                            <span>+{idea.tags.length - 3}</span>
+                          )}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  {idea.status === 'submitted' && (
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleReviewPromptIdea(idea)}
                       >
                         <Eye className="h-4 w-4 mr-1" />
                         Review
@@ -1269,6 +1459,114 @@ export function AdminView({ onBack }: AdminViewProps) {
                 <Trash2 className="mr-2 h-4 w-4" />
               )}
               Delete Doodle
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Review Prompt Idea Dialog */}
+      <Dialog open={promptIdeaDialogOpen} onOpenChange={setPromptIdeaDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lightbulb className="h-5 w-5" />
+              Review Prompt Idea
+            </DialogTitle>
+            <DialogDescription>
+              Review this prompt idea and decide whether to approve or decline it.
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedPromptIdea && (
+            <div className="space-y-4 py-4">
+              {/* Idea title */}
+              <div className="space-y-1">
+                <span className="font-medium text-sm">Title</span>
+                <p className="text-base font-semibold">{selectedPromptIdea.title}</p>
+              </div>
+
+              {/* Idea description */}
+              <div className="space-y-1">
+                <span className="font-medium text-sm">Description</span>
+                <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg whitespace-pre-wrap">
+                  {selectedPromptIdea.description}
+                </p>
+              </div>
+
+              {/* Tags */}
+              {selectedPromptIdea.tags && selectedPromptIdea.tags.length > 0 && (
+                <div className="space-y-1">
+                  <span className="font-medium text-sm">Tags</span>
+                  <div className="flex flex-wrap gap-1">
+                    {selectedPromptIdea.tags.map((tag, i) => (
+                      <Badge key={i} variant="outline">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Metadata */}
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Submitted by:</span>
+                  <p className="font-medium">{selectedPromptIdea.username || 'Unknown'}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Date:</span>
+                  <p className="font-medium">{new Date(selectedPromptIdea.created_at).toLocaleString()}</p>
+                </div>
+              </div>
+
+              {/* Admin Notes */}
+              <div className="space-y-2">
+                <Label htmlFor="admin-notes">Feedback for user (optional)</Label>
+                <Textarea
+                  id="admin-notes"
+                  placeholder="Add feedback or notes that will be shared with the user..."
+                  value={promptIdeaAdminNotes}
+                  onChange={(e) => setPromptIdeaAdminNotes(e.target.value)}
+                  rows={3}
+                />
+                <p className="text-xs text-muted-foreground">
+                  This will be included in the notification sent to the user.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setPromptIdeaDialogOpen(false)}
+              disabled={actionLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => handleUpdatePromptIdeaStatus('rejected')}
+              disabled={actionLoading}
+            >
+              {actionLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <XCircle className="mr-2 h-4 w-4" />
+              )}
+              Decline
+            </Button>
+            <Button
+              onClick={() => handleUpdatePromptIdeaStatus('approved')}
+              disabled={actionLoading}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {actionLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <CheckCircle2 className="mr-2 h-4 w-4" />
+              )}
+              Approve
             </Button>
           </DialogFooter>
         </DialogContent>
