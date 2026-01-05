@@ -14,14 +14,16 @@ Get a fresh creative prompt every day, upload your artwork, earn badges, and joi
 - **365 Daily Prompts** - A unique creative prompt for every day of the year
 - **Doodle Upload** - Share your artwork with the community (Premium)
 - **Social Features** - Like, follow, and interact with other artists
-- **Gamification** - Earn 23+ unique badges and build streaks
+- **Gamification** - Earn 43+ unique badges and build streaks
 - **Archive** - Browse and filter all prompts by category
 - **Bookmarks** - Save your favorite prompts for later
 - **Personal Feed** - See doodles from artists you follow
+- **Badge Sharing** - Share your earned badges with OG meta tags
 
 ### Premium Features ($4.99 lifetime)
 - Unlimited doodle uploads
 - Unlock all badges
+- Submit prompt ideas for consideration
 - Ad-free experience
 - Support indie development
 - Lifetime access - pay once, use forever
@@ -192,11 +194,13 @@ daily-doodle-prompt/
 - **bookmarks** - Saved prompts
 - **follows** - User relationships
 - **likes** - Doodle interactions
+- **prompt_ideas** - Premium user prompt submissions for admin review
 
 ---
 
-## Badges (23 Total)
+## Badges (43 Total)
 
+### Achievement Badges
 - **Creative Spark** - First login
 - **Early Bird** - Upload by 6 AM
 - **Night Owl** - Upload after 10 PM
@@ -204,7 +208,8 @@ daily-doodle-prompt/
 - **Dedicated Artist** - 30-day streak
 - **Premium Patron** - Lifetime premium
 - **Somebody Likes Me** - First like received
-- And 16 more!
+- **Idea Fairy** - Submit first prompt idea (Premium)
+- And 35+ more including holiday badges!
 
 ---
 

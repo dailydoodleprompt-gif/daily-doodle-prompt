@@ -137,6 +137,7 @@ Badges earned by users (achievement system).
 - popular_50 - 50 total likes
 - popular_100 - 100 total likes
 - social_butterfly - First follow
+- idea_fairy - First prompt idea submitted (Premium)
 
 ---
 
@@ -317,6 +318,54 @@ Content moderation reports submitted by users.
 
 ---
 
+### prompt_ideas
+
+Prompt ideas submitted by premium users.
+
+**Purpose:** Allow premium users to suggest creative prompts for admin review.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| id | uuid | NO | gen_random_uuid() | Primary key |
+| user_id | uuid | NO | - | Foreign key to auth.users(id), submitter |
+| username | text | NO | - | Cached username of submitter |
+| title | text | NO | - | Short title for the prompt idea |
+| description | text | NO | - | Detailed description of the prompt idea |
+| tags | jsonb | YES | '[]' | Array of category tags |
+| status | text | NO | 'submitted' | Status: 'submitted', 'under_review', 'approved', 'rejected' |
+| reviewed_by_admin_id | uuid | YES | null | Admin who reviewed |
+| reviewed_at | timestamptz | YES | null | When reviewed |
+| admin_notes | text | YES | null | Feedback notes from admin |
+| created_at | timestamptz | NO | now() | When submitted |
+| updated_at | timestamptz | NO | now() | Last update |
+
+**Indexes:**
+- PRIMARY KEY (id)
+- INDEX on user_id (for user's submissions query)
+- INDEX on status (for admin queue filtering)
+- INDEX on created_at DESC (for chronological order)
+
+**RLS Policies:**
+- Users can view their own prompt ideas
+- Users can insert their own prompt ideas
+- Admins can view all prompt ideas
+- Admins can update any prompt idea (for review)
+
+**Foreign Keys:**
+- user_id → auth.users(id) ON DELETE CASCADE
+- reviewed_by_admin_id → auth.users(id) ON DELETE SET NULL
+
+**Status Flow:**
+- `submitted` → Initial state when user submits
+- `under_review` → Admin is reviewing
+- `approved` → Idea accepted for future use
+- `rejected` → Idea declined (with optional feedback)
+
+**Triggers:**
+- update_prompt_ideas_updated_at: Auto-update updated_at on changes
+
+---
+
 ## Storage Buckets
 
 ### doodles
@@ -475,12 +524,26 @@ All tables have RLS enabled for security.
        │    └─────────────┘
        │
        │    ┌─────────────┐
-       └───<│   follows   │>───┐
-            │             │    │
-            │follower_id(PK)│    │
-            │following_id(PK)│───┘
-            │ created_at  │
-            └─────────────┘
+       ├───<│   follows   │>───┐
+       │    │             │    │
+       │    │follower_id(PK)│    │
+       │    │following_id(PK)│───┘
+       │    │ created_at  │
+       │    └─────────────┘
+       │
+       │    ┌─────────────────┐
+       └───<│  prompt_ideas   │
+            │                 │
+            │ id (PK)         │
+            │ user_id (FK)    │
+            │ username        │
+            │ title           │
+            │ description     │
+            │ tags (JSONB)    │
+            │ status          │
+            │ reviewed_by (FK)│
+            │ admin_notes     │
+            └─────────────────┘
 ```
 
 ---
