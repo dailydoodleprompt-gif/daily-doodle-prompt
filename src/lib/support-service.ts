@@ -31,13 +31,15 @@ export function saveTickets(tickets: SupportTicket[]): void {
   localStorage.setItem(SUPPORT_TICKETS_KEY, JSON.stringify(tickets));
 }
 
-export function createSupportTicket(params: {
+export async function createSupportTicket(params: {
   userId: string | null;
+  username?: string;
   category: SupportTicketCategory;
   subject: string;
   message: string;
   relatedDoodleId?: string;
-}): SupportTicket {
+  skipEmailNotification?: boolean; // Set true when caller sends their own notification
+}): Promise<SupportTicket> {
   const ticket: SupportTicket = {
     id: `ticket_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     user_id: params.userId,
@@ -53,6 +55,23 @@ export function createSupportTicket(params: {
   const tickets = getStoredTickets();
   tickets.push(ticket);
   saveTickets(tickets);
+
+  // Send email notification to admin (unless caller handles it)
+  if (!params.skipEmailNotification) {
+    try {
+      await notifyAdminOfSupportTicket({
+        ticketId: ticket.id,
+        userId: params.userId,
+        username: params.username || 'Unknown',
+        category: params.category,
+        subject: params.subject,
+        message: params.message,
+      });
+    } catch (error) {
+      console.error('[SUPPORT SERVICE] Failed to send email notification:', error);
+      // Don't throw - ticket is already saved, email is secondary
+    }
+  }
 
   return ticket;
 }
@@ -266,13 +285,15 @@ export async function flagDoodle(params: {
   reporterUsername: string;
   reason: string;
 }): Promise<{ success: boolean; ticketId?: string; error?: string }> {
-  // Create support ticket for the flag
-  const ticket = createSupportTicket({
+  // Create support ticket for the flag (skip email - flagDoodle sends its own specific notification)
+  const ticket = await createSupportTicket({
     userId: params.reporterUserId,
+    username: params.reporterUsername,
     category: 'doodle_flag',
     subject: `Doodle Flagged: ${params.doodleId}`,
     message: params.reason,
     relatedDoodleId: params.doodleId,
+    skipEmailNotification: true,
   });
 
   // Create flag record

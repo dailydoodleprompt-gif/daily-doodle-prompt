@@ -2059,8 +2059,9 @@ if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')
       // Support Ticket actions
       createSupportTicket: async (category, subject, message) => {
         const { user } = get();
-        const ticket = SupportService.createSupportTicket({
+        const ticket = await SupportService.createSupportTicket({
           userId: user?.id || null,
+          username: user?.username,
           category,
           subject,
           message,
