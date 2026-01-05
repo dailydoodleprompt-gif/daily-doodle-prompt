@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { useAppStore, useUser } from '@/store/app-store';
-import { type Notification } from '@/types';
+import { useEffect, useState, useCallback } from 'react';
+import { useUser } from '@/store/app-store';
+import { type Notification, type NotificationType } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,100 +9,143 @@ import {
   Bell,
   BellOff,
   CheckCheck,
-  AlertCircle,
-  ShieldAlert,
-  ShieldX,
-  Megaphone,
-  Award,
-  MessageSquare,
-  FileCheck,
   ArrowLeft,
+  Heart,
+  UserPlus,
+  Lightbulb,
+  Award,
+  Star,
+  Flame,
+  MessageCircle,
+  CheckCircle,
+  Megaphone,
+  AlertTriangle,
+  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import {
+  fetchNotifications,
+  markAsRead,
+  markAllAsRead,
+  subscribeToNotifications,
+} from '@/lib/notification-service';
 
 interface NotificationsListViewProps {
   onBack?: () => void;
   onNavigate?: (view: string) => void;
 }
 
+// Icon mapping for notification types
+const notificationIcons: Record<NotificationType, React.ElementType> = {
+  like_received: Heart,
+  follower_gained: UserPlus,
+  prompt_idea_reviewed: Lightbulb,
+  badge_earned: Award,
+  badge_available: Star,
+  streak_reminder: Flame,
+  support_reply: MessageCircle,
+  ticket_closed: CheckCircle,
+  system_announcement: Megaphone,
+  admin_alert: AlertTriangle,
+};
+
+// Color mapping for notification types
+const notificationColors: Record<NotificationType, string> = {
+  like_received: 'text-pink-500',
+  follower_gained: 'text-blue-500',
+  prompt_idea_reviewed: 'text-yellow-500',
+  badge_earned: 'text-amber-500',
+  badge_available: 'text-purple-500',
+  streak_reminder: 'text-orange-500',
+  support_reply: 'text-green-500',
+  ticket_closed: 'text-green-600',
+  system_announcement: 'text-blue-600',
+  admin_alert: 'text-red-500',
+};
+
 export function NotificationsListView({ onBack, onNavigate }: NotificationsListViewProps) {
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [total, setTotal] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
   const user = useUser();
-  const getNotifications = useAppStore((state) => state.getNotifications);
-  const markNotificationRead = useAppStore((state) => state.markNotificationRead);
-  const markAllNotificationsRead = useAppStore((state) => state.markAllNotificationsRead);
+
+  const loadNotifications = useCallback(async (offset = 0, append = false) => {
+    if (!user) return;
+
+    if (offset === 0) {
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
+
+    try {
+      const result = await fetchNotifications({ limit: 20, offset });
+
+      if (append) {
+        setNotifications((prev) => [...prev, ...result.notifications]);
+      } else {
+        setNotifications(result.notifications);
+      }
+
+      setTotal(result.total);
+      setHasMore(offset + result.notifications.length < result.total);
+    } catch (err) {
+      console.error('Failed to load notifications:', err);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (user) {
-      const allNotifications = getNotifications();
-      setNotifications(allNotifications);
-      setLoading(false);
-    }
-  }, [user, getNotifications]);
+      loadNotifications();
 
-  const handleNotificationClick = (notification: Notification) => {
+      // Subscribe to real-time updates
+      const unsubscribe = subscribeToNotifications(user.id, (newNotification) => {
+        setNotifications((prev) => [newNotification, ...prev]);
+        setTotal((prev) => prev + 1);
+      });
+
+      return () => unsubscribe();
+    }
+  }, [user, loadNotifications]);
+
+  const handleNotificationClick = async (notification: Notification) => {
     // Mark as read
     if (!notification.read_at) {
-      markNotificationRead(notification.id);
-      // Update local state
-      setNotifications((prev) =>
-        prev.map((n) =>
-          n.id === notification.id ? { ...n, read_at: new Date().toISOString() } : n
-        )
-      );
+      const success = await markAsRead(notification.id);
+      if (success) {
+        setNotifications((prev) =>
+          prev.map((n) =>
+            n.id === notification.id ? { ...n, read_at: new Date().toISOString() } : n
+          )
+        );
+      }
     }
 
     // Navigate to linked page if available
     if (notification.link && onNavigate) {
-      onNavigate(notification.link);
+      // Convert link to view name (e.g., '/profile' -> 'profile')
+      const view = notification.link.replace(/^\//, '');
+      onNavigate(view);
     }
   };
 
-  const handleMarkAllRead = () => {
-    markAllNotificationsRead();
-    setNotifications((prev) =>
-      prev.map((n) => ({ ...n, read_at: n.read_at || new Date().toISOString() }))
-    );
-  };
-
-  const getNotificationIcon = (type: Notification['type']) => {
-    switch (type) {
-      case 'support_reply':
-        return MessageSquare;
-      case 'ticket_closed':
-        return FileCheck;
-      case 'report_resolved':
-        return CheckCheck;
-      case 'content_removed':
-        return AlertCircle;
-      case 'account_warning':
-        return ShieldAlert;
-      case 'account_banned':
-        return ShieldX;
-      case 'system_announcement':
-        return Megaphone;
-      case 'badge_earned':
-        return Award;
-      default:
-        return Bell;
+  const handleMarkAllRead = async () => {
+    const success = await markAllAsRead();
+    if (success) {
+      setNotifications((prev) =>
+        prev.map((n) => ({ ...n, read_at: n.read_at || new Date().toISOString() }))
+      );
     }
   };
 
-  const getNotificationColor = (type: Notification['type']) => {
-    switch (type) {
-      case 'account_warning':
-        return 'text-orange-500';
-      case 'account_banned':
-        return 'text-red-500';
-      case 'badge_earned':
-        return 'text-yellow-500';
-      case 'system_announcement':
-        return 'text-blue-500';
-      default:
-        return 'text-muted-foreground';
-    }
+  const handleLoadMore = () => {
+    loadNotifications(notifications.length, true);
   };
 
   const unreadCount = notifications.filter((n) => !n.read_at).length;
@@ -155,16 +198,16 @@ export function NotificationsListView({ onBack, onNavigate }: NotificationsListV
             <BellOff className="h-16 w-16 text-muted-foreground mb-4" />
             <h2 className="text-xl font-semibold mb-2">No notifications yet</h2>
             <p className="text-muted-foreground text-center max-w-md">
-              When you receive notifications about support tickets, badges, or other
-              updates, they'll appear here.
+              When someone likes your doodle, follows you, or when you receive updates
+              about your prompt ideas, they'll appear here.
             </p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-2">
           {notifications.map((notification) => {
-            const Icon = getNotificationIcon(notification.type);
-            const iconColor = getNotificationColor(notification.type);
+            const Icon = notificationIcons[notification.type] || Bell;
+            const iconColor = notificationColors[notification.type] || 'text-muted-foreground';
             const isUnread = !notification.read_at;
 
             return (
@@ -207,6 +250,26 @@ export function NotificationsListView({ onBack, onNavigate }: NotificationsListV
               </Card>
             );
           })}
+
+          {/* Load More Button */}
+          {hasMore && (
+            <div className="flex justify-center pt-4">
+              <Button
+                variant="outline"
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+              >
+                {loadingMore ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  `Load more (${total - notifications.length} remaining)`
+                )}
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>

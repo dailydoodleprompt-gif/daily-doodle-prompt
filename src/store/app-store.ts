@@ -454,6 +454,7 @@ interface AppState {
   // UI state
   showOnboarding: boolean;
   currentView: string;
+  feedDataLoaded: boolean; // True when follows/doodles have been loaded from Supabase
 
   // User actions (NO AUTH - managed by Supabase)
   setUser: (user: User | null) => void;
@@ -575,6 +576,7 @@ export const useAppStore = create<AppState>()(
       newlyEarnedBadge: null,
       showOnboarding: false,
       currentView: 'landing',
+      feedDataLoaded: false,
 
       // User management (replaces auth)
       setUser: (user) => set({ user }),
@@ -808,6 +810,7 @@ export const useAppStore = create<AppState>()(
           badges,
           preferences: preferences || defaultPreferences,
           streak: loadedStreak,
+          feedDataLoaded: true, // Mark that follows/doodles are now loaded
         });
 
         // Auto-award missing badges after state is set
@@ -843,6 +846,7 @@ export const useAppStore = create<AppState>()(
           newlyEarnedBadge: null,
           showOnboarding: false,
           currentView: 'landing',
+          feedDataLoaded: false,
         });
 
         // NUCLEAR: Clear all localStorage to prevent stale state
@@ -2427,6 +2431,7 @@ export const useBookmarks = () => useAppStore((state) => state.bookmarks);
 export const useUserStats = () => useAppStore((state) => state.userStats);
 export const useNewlyEarnedBadge = () => useAppStore((state) => state.newlyEarnedBadge);
 export const useAppSettings = () => useAppStore((state) => state.getAppSettings());
+export const useFeedDataLoaded = () => useAppStore((state) => state.feedDataLoaded);
 
 // Hydration hook - use this to wait for store rehydration before rendering
 export const useHasHydrated = () => {

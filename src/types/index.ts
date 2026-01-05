@@ -851,17 +851,18 @@ export interface SupportTicketNote {
   is_internal: boolean; // true for internal notes, false for user-facing replies
 }
 
-// Notification System
+// Notification System (Supabase-backed)
 export type NotificationType =
-  | 'support_reply'
-  | 'ticket_closed'
-  | 'report_resolved'
-  | 'content_removed'
-  | 'account_warning'
-  | 'account_banned'
-  | 'system_announcement'
-  | 'badge_earned'
-  | 'prompt_idea_reviewed';
+  | 'like_received'        // Someone liked your doodle (anonymous)
+  | 'follower_gained'      // Someone followed you (anonymous)
+  | 'prompt_idea_reviewed' // Your prompt idea was reviewed
+  | 'badge_earned'         // You earned a new badge
+  | 'badge_available'      // A time-sensitive badge is available
+  | 'streak_reminder'      // Reminder to maintain streak
+  | 'support_reply'        // Admin replied to your support ticket
+  | 'ticket_closed'        // Your support ticket was resolved
+  | 'system_announcement'  // System-wide announcement
+  | 'admin_alert';         // Alert for admin users
 
 export interface Notification {
   id: string;
