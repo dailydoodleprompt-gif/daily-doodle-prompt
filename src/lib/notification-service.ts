@@ -34,6 +34,7 @@ export async function fetchNotifications(options?: {
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.access_token) {
+      console.log('[NOTIFICATION SERVICE] No session for fetchNotifications');
       return { notifications: [], total: 0 };
     }
 
@@ -42,16 +43,18 @@ export async function fetchNotifications(options?: {
     if (options?.limit) params.set('limit', options.limit.toString());
     if (options?.offset) params.set('offset', options.offset.toString());
 
+    console.log('[NOTIFICATION SERVICE] Fetching notifications...');
     const response = await fetch(`/api/notifications?${params.toString()}`, {
       headers: { Authorization: `Bearer ${session.access_token}` },
     });
 
     if (!response.ok) {
-      console.error('[NOTIFICATION SERVICE] Failed to fetch notifications');
+      console.error('[NOTIFICATION SERVICE] Failed to fetch notifications, status:', response.status);
       return { notifications: [], total: 0 };
     }
 
     const data = await response.json();
+    console.log('[NOTIFICATION SERVICE] Fetched notifications:', data.total, 'total');
     return {
       notifications: data.notifications || [],
       total: data.total || 0,
@@ -69,6 +72,7 @@ export async function getUnreadCount(forceRefresh = false): Promise<number> {
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user?.id) {
+      console.log('[NOTIFICATION SERVICE] No session for getUnreadCount');
       return 0;
     }
 
@@ -82,6 +86,7 @@ export async function getUnreadCount(forceRefresh = false): Promise<number> {
       return unreadCountCache.count;
     }
 
+    console.log('[NOTIFICATION SERVICE] Querying unread count for user:', session.user.id);
     const { count, error } = await supabase
       .from('notifications')
       .select('id', { count: 'exact', head: true })
@@ -92,6 +97,8 @@ export async function getUnreadCount(forceRefresh = false): Promise<number> {
       console.error('[NOTIFICATION SERVICE] Error getting unread count:', error);
       return unreadCountCache.count; // Return cached value on error
     }
+
+    console.log('[NOTIFICATION SERVICE] Unread count:', count);
 
     // Update cache
     unreadCountCache = {
