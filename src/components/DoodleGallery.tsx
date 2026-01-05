@@ -167,9 +167,11 @@ export function DoodleGallery({
   return (
     <>
       <div className={cn('grid gap-4', columnClasses[columns], className)}>
-        {doodles.map((doodle) => {
+        {doodles.map((doodle, index) => {
           const isOwn = doodle.user_id === user?.id;
           const shouldBlur = preferences?.blur_doodles && !isOwn && !revealedDoodles.has(doodle.id);
+          // Load first row of images eagerly (based on column count)
+          const isPriority = index < columns;
 
           return (
             <Card
@@ -198,6 +200,7 @@ export function DoodleGallery({
                     src={doodle.image_url}
                     alt={doodle.caption || doodle.prompt_title}
                     className="w-full h-full"
+                    priority={isPriority}
                   />
                 )}
 

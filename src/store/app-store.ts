@@ -1624,20 +1624,27 @@ if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')
         const { user } = get();
         const doodles = getStoredDoodles();
 
+        // Sort by created_at descending (newest first)
+        const sortNewestFirst = (arr: typeof doodles) =>
+          arr.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
         if (userId) {
           const filtered = doodles.filter(d => d.user_id === userId);
           if (onlyPublic && userId !== user?.id) {
-            return filtered.filter(d => d.is_public);
+            return sortNewestFirst(filtered.filter(d => d.is_public));
           }
-          return filtered;
+          return sortNewestFirst(filtered);
         }
 
-        return doodles.filter(d => d.is_public);
+        return sortNewestFirst(doodles.filter(d => d.is_public));
       },
 
       getPromptDoodles: (promptId: string) => {
         const doodles = getStoredDoodles();
-        return doodles.filter(d => d.prompt_id === promptId && d.is_public);
+        // Sort by created_at descending (newest first)
+        return doodles
+          .filter(d => d.prompt_id === promptId && d.is_public)
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       },
 
       deleteDoodle: (doodleId: string) => {

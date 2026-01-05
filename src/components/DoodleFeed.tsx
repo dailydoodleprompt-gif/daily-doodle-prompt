@@ -197,6 +197,7 @@ export function DoodleFeed({ prompts, className, onUserClick, onPromptClick, onA
                       onAuthRequired={onAuthRequired}
                       shouldBlur={preferences?.blur_doodles && (item.data as Doodle).user_id !== user?.id && !revealedDoodles.has((item.data as Doodle).id)}
                       onReveal={() => handleRevealDoodle((item.data as Doodle).id)}
+                      priority={index < 3}
                     />
                   )}
                 </div>
@@ -304,9 +305,10 @@ interface DoodleFeedItemProps {
   onAuthRequired?: () => void;
   shouldBlur?: boolean;
   onReveal?: () => void;
+  priority?: boolean; // Load image eagerly for above-the-fold items
 }
 
-function DoodleFeedItem({ doodle, onUserClick, onPromptClick, isAdmin, onDeleteClick, onReportClick, onAuthRequired, shouldBlur, onReveal }: DoodleFeedItemProps) {
+function DoodleFeedItem({ doodle, onUserClick, onPromptClick, isAdmin, onDeleteClick, onReportClick, onAuthRequired, shouldBlur, onReveal, priority }: DoodleFeedItemProps) {
   const user = useUser();
   const isOwn = doodle.user_id === user?.id;
   const username = doodle.user_username || 'Artist';
@@ -407,6 +409,7 @@ function DoodleFeedItem({ doodle, onUserClick, onPromptClick, isAdmin, onDeleteC
                 src={doodle.image_url}
                 alt={doodle.caption || doodle.prompt_title}
                 className="w-full"
+                priority={priority}
               />
             )}
           </button>

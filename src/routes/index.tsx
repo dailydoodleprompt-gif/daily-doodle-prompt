@@ -85,7 +85,50 @@ function App() {
       const cleanUrl = `${protocol}//${host}${pathname}`;
       window.history.replaceState({}, '', cleanUrl);
     }
+
+    // Handle initial hash-based route
+    const hash = window.location.hash.replace('#', '');
+    if (hash) {
+      if (hash.startsWith('artist/')) {
+        const artistId = hash.replace('artist/', '');
+        setViewingArtistId(artistId);
+      } else if (['prompt', 'archive', 'bookmarks', 'profile', 'settings', 'pricing', 'admin', 'notifications', 'prompt-ideas'].includes(hash)) {
+        setCurrentView(hash);
+      }
+    }
   }, []);
+
+  // Handle browser back/forward navigation
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      const state = event.state;
+      if (state) {
+        if (state.artistId) {
+          setViewingArtistId(state.artistId);
+        } else {
+          setViewingArtistId(null);
+          if (state.view) {
+            setCurrentView(state.view);
+          }
+        }
+      } else {
+        // No state means we're at the initial page
+        const hash = window.location.hash.replace('#', '');
+        if (hash.startsWith('artist/')) {
+          setViewingArtistId(hash.replace('artist/', ''));
+        } else if (hash && hash !== 'landing') {
+          setViewingArtistId(null);
+          setCurrentView(hash);
+        } else {
+          setViewingArtistId(null);
+          setCurrentView(isAuthenticated ? 'prompt' : 'landing');
+        }
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     console.log('[App] Auth effect - hasHydrated:', hasHydrated, 'currentView:', currentView, 'isAuthenticated:', isAuthenticated);
@@ -121,13 +164,20 @@ function App() {
   const displayPrompts: Prompt[] =
     sheetPrompts.length > 0 ? sheetPrompts : demoPrompts;
 
-  const handleNavigate = (view: string) => {
+  const handleNavigate = (view: string, replace = false) => {
     if (!currentView) return;
     setPreviousView(currentView);
     setCurrentView(view);
     // Clear archive prompt ID when navigating away from archive
     if (view !== 'archive') {
       setArchiveInitialPromptId(null);
+    }
+    // Update browser history for back/forward navigation
+    const newUrl = view === 'landing' ? '/' : `/#${view}`;
+    if (replace) {
+      window.history.replaceState({ view, artistId: null }, '', newUrl);
+    } else {
+      window.history.pushState({ view, artistId: null }, '', newUrl);
     }
   };
 
@@ -147,15 +197,14 @@ function App() {
   };
 
   const handleGoBack = () => {
-    if (viewingArtistId) {
-      setViewingArtistId(null);
-    } else {
-      setCurrentView(previousView);
-    }
+    // Use browser history for proper back navigation
+    window.history.back();
   };
 
   const handleViewArtist = (artistId: string) => {
     setViewingArtistId(artistId);
+    // Update browser history for back/forward navigation
+    window.history.pushState({ view: currentView, artistId }, '', `/#artist/${artistId}`);
   };
 
   const renderView = () => {
