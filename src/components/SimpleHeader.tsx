@@ -51,18 +51,25 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
 
     // Helper to load user data from session
     const loadUserFromSession = async (session: { user: { id: string; email?: string }; access_token: string }) => {
-      if (!mounted) return;
+      if (!mounted) {
+        console.log('[SimpleHeader] loadUserFromSession: component unmounted, aborting');
+        return;
+      }
 
       console.log('[SimpleHeader] Loading user from session:', session.user.email);
+      console.log('[SimpleHeader] Access token present:', !!session.access_token);
 
       try {
+        console.log('[SimpleHeader] Fetching /api/me...');
         const response = await fetch('/api/me', {
           headers: { Authorization: `Bearer ${session.access_token}` },
         });
 
+        console.log('[SimpleHeader] /api/me response status:', response.status);
+
         if (response.ok && mounted) {
           const data = await response.json();
-          console.log('[SimpleHeader] User data received:', data.email);
+          console.log('[SimpleHeader] User data received:', data.email, 'is_premium:', data.is_premium);
 
           setUser({
             id: data.id,
@@ -76,6 +83,7 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
             created_at: data.created_at || new Date().toISOString(),
             updated_at: data.updated_at || new Date().toISOString(),
           });
+          console.log('[SimpleHeader] setUser called successfully');
 
           if (data.viewed_badges && Array.isArray(data.viewed_badges)) {
             setViewedBadges(data.viewed_badges);
@@ -83,11 +91,13 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
 
           try {
             await loadUserData(data.id);
+            console.log('[SimpleHeader] loadUserData completed');
           } catch (loadErr) {
             console.warn('[SimpleHeader] loadUserData failed:', loadErr);
           }
         } else if (mounted) {
-          console.warn('[SimpleHeader] /api/me failed, clearing user');
+          const errorText = await response.text();
+          console.warn('[SimpleHeader] /api/me failed:', response.status, errorText);
           clearUserData();
         }
       } catch (err) {
@@ -135,46 +145,58 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
           break;
 
         case 'SIGNED_IN':
-          console.log('[SimpleHeader] SIGNED_IN event');
+          console.log('[SimpleHeader] SIGNED_IN event, session:', session?.user?.email || 'no session');
           if (session) {
-            // Check if this is a new user signup
-            const welcomeEmailKey = `welcome_email_sent_${session.user.id}`;
-            const alreadySent = localStorage.getItem(welcomeEmailKey);
+            console.log('[SimpleHeader] SIGNED_IN: Have session, calling loadUserFromSession...');
+            try {
+              // Check if this is a new user signup (fire and forget - don't block login)
+              const welcomeEmailKey = `welcome_email_sent_${session.user.id}`;
+              const alreadySent = localStorage.getItem(welcomeEmailKey);
 
-            if (!alreadySent) {
-              try {
-                const { data: profile } = await supabase
-                  .from('profiles')
-                  .select('created_at')
-                  .eq('id', session.user.id)
-                  .single();
+              if (!alreadySent) {
+                // Do welcome email check in background - don't block login
+                (async () => {
+                  try {
+                    const { data: profile } = await supabase
+                      .from('profiles')
+                      .select('created_at')
+                      .eq('id', session.user.id)
+                      .single();
 
-                if (profile?.created_at) {
-                  const createdAt = new Date(profile.created_at);
-                  const now = new Date();
-                  const secondsSinceCreation = (now.getTime() - createdAt.getTime()) / 1000;
+                    if (profile?.created_at) {
+                      const createdAt = new Date(profile.created_at);
+                      const now = new Date();
+                      const secondsSinceCreation = (now.getTime() - createdAt.getTime()) / 1000;
 
-                  if (secondsSinceCreation < 60) {
-                    console.log('[Auth] New user detected, sending welcome email');
-                    localStorage.setItem(welcomeEmailKey, 'true');
+                      if (secondsSinceCreation < 60) {
+                        console.log('[Auth] New user detected, sending welcome email');
+                        localStorage.setItem(welcomeEmailKey, 'true');
 
-                    fetch('/api/email/welcome', {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${session.access_token}`,
-                      },
-                    }).catch(err => {
-                      console.error('[Auth] Failed to send welcome email:', err);
-                    });
+                        fetch('/api/email/welcome', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${session.access_token}`,
+                          },
+                        }).catch(err => {
+                          console.error('[Auth] Failed to send welcome email:', err);
+                        });
+                      }
+                    }
+                  } catch (err) {
+                    console.warn('[Auth] Error checking user profile:', err);
                   }
-                }
-              } catch (err) {
-                console.warn('[Auth] Error checking user profile:', err);
+                })();
               }
-            }
 
-            await loadUserFromSession(session);
+              // Load user data immediately - don't wait for welcome email check
+              await loadUserFromSession(session);
+              console.log('[SimpleHeader] SIGNED_IN: loadUserFromSession completed');
+            } catch (err) {
+              console.error('[SimpleHeader] SIGNED_IN: Error loading user:', err);
+            }
+          } else {
+            console.warn('[SimpleHeader] SIGNED_IN: No session object!');
           }
           break;
 
