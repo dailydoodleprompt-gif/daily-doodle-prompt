@@ -456,6 +456,11 @@ interface AppState {
   currentView: string;
   feedDataLoaded: boolean; // True when follows/doodles have been loaded from Supabase
 
+  // Tutorial state
+  tutorialActive: boolean;
+  tutorialStep: number;
+  tutorialCompleted: boolean;
+
   // User actions (NO AUTH - managed by Supabase)
   setUser: (user: User | null) => void;
   loadUserData: (userId: string) => Promise<void>;
@@ -464,6 +469,14 @@ interface AppState {
   updatePreferences: (prefs: Partial<UserPreferences>) => void;
   completeOnboarding: () => void;
   purchaseLifetimeAccess: () => void;
+
+  // Tutorial actions
+  startTutorial: () => void;
+  nextTutorialStep: () => void;
+  previousTutorialStep: () => void;
+  skipTutorial: () => void;
+  completeTutorial: () => void;
+  resetTutorial: () => void;
   updateAvatar: (avatarType: AvatarType, avatarIcon?: AvatarIconType) => Promise<void>;
 
   // Title actions
@@ -577,6 +590,11 @@ export const useAppStore = create<AppState>()(
       showOnboarding: false,
       currentView: 'landing',
       feedDataLoaded: false,
+
+      // Tutorial initial state
+      tutorialActive: false,
+      tutorialStep: 0,
+      tutorialCompleted: false,
 
       // User management (replaces auth)
       setUser: (user) => set({ user }),
@@ -847,6 +865,9 @@ export const useAppStore = create<AppState>()(
           showOnboarding: false,
           currentView: 'landing',
           feedDataLoaded: false,
+          tutorialActive: false,
+          tutorialStep: 0,
+          tutorialCompleted: false,
         });
 
         // NUCLEAR: Clear all localStorage to prevent stale state
@@ -920,6 +941,48 @@ export const useAppStore = create<AppState>()(
             get().awardBadge('creative_spark');
           }
         }, 300);
+      },
+
+      // Tutorial actions
+      startTutorial: () => {
+        set({
+          tutorialActive: true,
+          tutorialStep: 0,
+        });
+      },
+
+      nextTutorialStep: () => {
+        const { tutorialStep } = get();
+        set({ tutorialStep: tutorialStep + 1 });
+      },
+
+      previousTutorialStep: () => {
+        const { tutorialStep } = get();
+        set({ tutorialStep: Math.max(0, tutorialStep - 1) });
+      },
+
+      skipTutorial: () => {
+        set({
+          tutorialActive: false,
+          tutorialStep: 0,
+          tutorialCompleted: true,
+        });
+      },
+
+      completeTutorial: () => {
+        set({
+          tutorialActive: false,
+          tutorialStep: 0,
+          tutorialCompleted: true,
+        });
+      },
+
+      resetTutorial: () => {
+        set({
+          tutorialActive: false,
+          tutorialStep: 0,
+          tutorialCompleted: false,
+        });
       },
 
       purchaseLifetimeAccess: () => {
@@ -2438,6 +2501,7 @@ if (newStreak >= 100 && !badges.some(b => b.badge_type === 'creative_supernova')
         userStats: state.userStats,
         showOnboarding: state.showOnboarding,
         currentView: state.currentView,
+        tutorialCompleted: state.tutorialCompleted,
       }),
       onRehydrateStorage: () => {
         console.log('[AppStore] Starting hydration...');

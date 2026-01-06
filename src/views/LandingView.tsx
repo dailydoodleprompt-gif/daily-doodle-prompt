@@ -1,11 +1,10 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
-  Flame,
-  Trophy,
-  Target,
-  ChevronRight,
+  CalendarCheck,
+  Users,
   Sparkles,
+  ChevronRight,
 } from 'lucide-react';
 
 interface LandingViewProps {
@@ -19,22 +18,22 @@ interface LandingViewProps {
 export function LandingView({ onGetStarted, onSignUp }: LandingViewProps) {
   const features = [
     {
-      icon: Flame,
-      title: 'Track Your Streak',
+      icon: CalendarCheck,
+      title: 'Build Your Creative Habit',
       description:
-        'Build consistency with daily prompts and watch your streak grow!',
+        'A fresh prompt every day keeps your creative muscles flexed and growing.',
     },
     {
-      icon: Trophy,
-      title: 'Earn Badges',
+      icon: Users,
+      title: 'Join a Creative Community',
       description:
-        'Unlock achievements at 7-day and 30-day milestones!',
+        'Share your doodles, follow other artists, and get inspired by what others create.',
     },
     {
-      icon: Target,
-      title: 'All Skill Levels',
+      icon: Sparkles,
+      title: 'Get Inspired Daily',
       description:
-        'From beginner to advanced, there\'s a prompt for everyone!',
+        'Artist-curated prompts designed to spark ideas, no matter your skill level.',
     },
   ];
 
@@ -82,15 +81,15 @@ export function LandingView({ onGetStarted, onSignUp }: LandingViewProps) {
           <h2 className="text-2xl md:text-3xl font-bold text-center mb-12 text-black dark:text-[#f5f2ed]">
             Why Artists Love Daily Doodle Prompt
           </h2>
-          <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-6 md:gap-8 max-w-4xl mx-auto">
             {features.map((feature, index) => (
               <Card key={index} className="text-center bg-[#fffcf6] dark:bg-[#2a2522] border-none shadow-none">
-                <CardContent className="p-6">
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 bg-[#fcedd7] dark:bg-[#453d38]">
-                    <feature.icon className="w-6 h-6 text-[#F17313]" />
+                <CardContent className="p-6 md:p-8">
+                  <div className="w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-[#fcedd7] dark:bg-[#453d38]">
+                    <feature.icon className="w-7 h-7 md:w-8 md:h-8 text-[#F17313]" />
                   </div>
-                  <h3 className="font-bold mb-2 text-black dark:text-[#f5f2ed]">{feature.title}</h3>
-                  <p className="text-sm text-black dark:text-[#a39e98]">
+                  <h3 className="font-bold text-lg mb-2 text-black dark:text-[#f5f2ed]">{feature.title}</h3>
+                  <p className="text-sm md:text-base text-black dark:text-[#a39e98]">
                     {feature.description}
                   </p>
                 </CardContent>
