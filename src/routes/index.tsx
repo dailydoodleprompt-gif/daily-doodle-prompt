@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useOpenSheetPrompts } from '@/hooks/use-opensheet-prompts';
 import { useAppStore, useIsAuthenticated, useUser, useHasHydrated } from '@/store/app-store';
@@ -9,6 +9,7 @@ import { OnboardingDialog } from '@/components/OnboardingDialog';
 import { ForgotPasswordDialog } from '@/components/ForgotPasswordDialog';
 import { BadgeUnlockPopup } from '@/components/BadgeUnlockPopup';
 import { UsernameSetupDialog } from '@/components/UsernameSetupDialog';
+import { TutorialOverlay, type TutorialStep } from '@/components/TutorialOverlay';
 import { LandingView } from '@/views/LandingView';
 import { PromptView } from '@/views/PromptView';
 import { ArchiveView } from '@/views/ArchiveView';
@@ -60,6 +61,83 @@ function App() {
 
   const showOnboarding = useAppStore((state) => state.showOnboarding);
   const needsUsernameSetup = isAuthenticated && user?.needs_username_setup;
+
+  // Tutorial state
+  const tutorialActive = useAppStore((state) => state.tutorialActive);
+  const tutorialStep = useAppStore((state) => state.tutorialStep);
+  const tutorialCompleted = useAppStore((state) => state.tutorialCompleted);
+  const startTutorial = useAppStore((state) => state.startTutorial);
+  const nextTutorialStep = useAppStore((state) => state.nextTutorialStep);
+  const previousTutorialStep = useAppStore((state) => state.previousTutorialStep);
+  const skipTutorial = useAppStore((state) => state.skipTutorial);
+  const completeTutorial = useAppStore((state) => state.completeTutorial);
+
+  // Mobile menu state for tutorial
+  const [forceMobileMenuOpen, setForceMobileMenuOpen] = useState<boolean | undefined>(undefined);
+
+  // Define tutorial steps
+  const tutorialSteps: TutorialStep[] = [
+    {
+      id: 'welcome',
+      targetSelector: '[data-tutorial="nav-prompt"]',
+      mobileTargetSelector: '[data-tutorial="mobile-menu-toggle"]',
+      title: "Today's Prompt",
+      content: "Start here! This is where you'll find your daily drawing challenge. A new prompt appears every day to spark your creativity.",
+      position: 'bottom',
+      mobilePosition: 'bottom',
+      requiresView: 'prompt',
+    },
+    {
+      id: 'archive',
+      targetSelector: '[data-tutorial="nav-archive"]',
+      mobileTargetSelector: '[data-tutorial="mobile-nav-archive"]',
+      title: 'Explore the Archive',
+      content: 'Browse past prompts and see what the community has created. Premium members get full access to the entire archive!',
+      position: 'bottom',
+      mobilePosition: 'bottom',
+      requiresView: 'prompt',
+      beforeShow: () => {
+        // On mobile, open the menu
+        if (window.innerWidth < 768) {
+          setForceMobileMenuOpen(true);
+        }
+      },
+    },
+    {
+      id: 'profile',
+      targetSelector: '[data-tutorial="profile-menu"]',
+      mobileTargetSelector: '[data-tutorial="profile-menu"]',
+      title: 'Your Profile',
+      content: "Access your profile, badges, settings, and more from this menu. It's your creative home base!",
+      position: 'bottom',
+      mobilePosition: 'bottom',
+      requiresView: 'prompt',
+      beforeShow: () => {
+        // Close mobile menu
+        setForceMobileMenuOpen(false);
+      },
+    },
+  ];
+
+  // Auto-start tutorial for new users after onboarding
+  useEffect(() => {
+    if (isAuthenticated && !tutorialCompleted && !tutorialActive && !showOnboarding && !needsUsernameSetup && currentView === 'prompt') {
+      // Small delay to let the UI settle
+      const timer = setTimeout(() => {
+        startTutorial();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthenticated, tutorialCompleted, tutorialActive, showOnboarding, needsUsernameSetup, currentView, startTutorial]);
+
+  // Handle tutorial navigation - stable reference using direct state setters
+  const handleTutorialNavigate = useCallback((view: string) => {
+    if (!currentView) return;
+    setPreviousView(currentView);
+    setCurrentView(view);
+    const newUrl = view === 'landing' ? '/' : `/#${view}`;
+    window.history.replaceState({ view, artistId: null }, '', newUrl);
+  }, [currentView]);
 
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -345,7 +423,17 @@ function App() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {showNavigation && (
-        <SimpleHeader currentView={currentView} onNavigate={handleNavigate} onLoginClick={handleLogin} />
+        <SimpleHeader
+          currentView={currentView}
+          onNavigate={handleNavigate}
+          onLoginClick={handleLogin}
+          forceMobileMenuOpen={forceMobileMenuOpen}
+          onMobileMenuChange={(isOpen) => {
+            // Only update if not being controlled by tutorial
+            if (forceMobileMenuOpen === undefined) return;
+            setForceMobileMenuOpen(isOpen);
+          }}
+        />
       )}
 
       <main className="flex-1">{renderView()}</main>
@@ -379,6 +467,19 @@ function App() {
       />
 
       <BadgeUnlockPopup />
+
+      {/* Tutorial Overlay */}
+      <TutorialOverlay
+        steps={tutorialSteps}
+        isActive={tutorialActive}
+        currentStep={tutorialStep}
+        onNext={nextTutorialStep}
+        onPrevious={previousTutorialStep}
+        onSkip={skipTutorial}
+        onComplete={completeTutorial}
+        currentView={currentView}
+        onNavigate={handleTutorialNavigate}
+      />
     </div>
   );
 }

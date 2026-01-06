@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/select';
 import { useAppStore, usePreferences, useUser } from '@/store/app-store';
 import { TitleSelector } from '@/components/TitleSelector';
-import { Bell, Sun, Mail, HelpCircle, FileText, Shield, ArrowLeft, Key, Loader2, CheckCircle2, AlertCircle, User, EyeOff } from 'lucide-react';
+import { Bell, Sun, Mail, HelpCircle, FileText, Shield, ArrowLeft, Key, Loader2, CheckCircle2, AlertCircle, User, EyeOff, RotateCcw } from 'lucide-react';
 import { type UserPreferences } from '@/types';
 import { supabase } from '@/sdk/core/supabase';
 
@@ -61,6 +61,8 @@ export function SettingsView({ onBack, onForgotPassword, onUpgrade }: SettingsVi
   const user = useUser();
   const updatePreferences = useAppStore((state) => state.updatePreferences);
   const clearUserData = useAppStore((state) => state.clearUserData);
+  const resetTutorial = useAppStore((state) => state.resetTutorial);
+  const startTutorial = useAppStore((state) => state.startTutorial);
 
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
@@ -666,6 +668,18 @@ export function SettingsView({ onBack, onForgotPassword, onUpgrade }: SettingsVi
           <Button variant="ghost" className="w-full justify-start gap-2">
             <HelpCircle className="h-4 w-4" />
             Help & Support
+          </Button>
+          <Button
+            variant="ghost"
+            className="w-full justify-start gap-2"
+            onClick={() => {
+              resetTutorial();
+              startTutorial();
+              onBack();
+            }}
+          >
+            <RotateCcw className="h-4 w-4" />
+            Restart Tutorial
           </Button>
           <Button variant="ghost" className="w-full justify-start gap-2">
             <Shield className="h-4 w-4" />

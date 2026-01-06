@@ -30,11 +30,26 @@ interface SimpleHeaderProps {
   currentView: string;
   onNavigate: (view: string) => void;
   onLoginClick: () => void;
+  onMobileMenuChange?: (isOpen: boolean) => void;
+  forceMobileMenuOpen?: boolean;
 }
 
-export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHeaderProps) {
+export function SimpleHeader({ currentView, onNavigate, onLoginClick, onMobileMenuChange, forceMobileMenuOpen }: SimpleHeaderProps) {
   // NO loading state - we trust hydrated state immediately
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Allow parent to force mobile menu open (for tutorial)
+  useEffect(() => {
+    if (forceMobileMenuOpen !== undefined) {
+      setMobileMenuOpen(forceMobileMenuOpen);
+    }
+  }, [forceMobileMenuOpen]);
+
+  // Notify parent when mobile menu changes
+  const handleMobileMenuToggle = (open: boolean) => {
+    setMobileMenuOpen(open);
+    onMobileMenuChange?.(open);
+  };
 
   // Get user from app store
   const user = useAppStore((state) => state.user);
@@ -300,6 +315,7 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
               size="sm"
               onClick={() => handleNav(item.id)}
               className="gap-2"
+              data-tutorial={`nav-${item.id}`}
             >
               <item.icon className="h-4 w-4" />
               {item.label}
@@ -328,7 +344,7 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
           {isAuthenticated ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0" data-tutorial="profile-menu">
                   <div className="relative h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white shadow-md">
                     <span className="text-sm font-semibold">
                       {user?.username?.[0]?.toUpperCase() || 'U'}
@@ -409,7 +425,8 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
             variant="ghost"
             size="icon"
             className="md:hidden"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            onClick={() => handleMobileMenuToggle(!mobileMenuOpen)}
+            data-tutorial="mobile-menu-toggle"
           >
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
@@ -418,7 +435,7 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t bg-background">
+        <div className="md:hidden border-t bg-background" data-tutorial="mobile-menu">
           <nav className="container py-4 flex flex-col gap-2">
             {navItems.map((item) => (
               <Button
@@ -426,6 +443,7 @@ export function SimpleHeader({ currentView, onNavigate, onLoginClick }: SimpleHe
                 variant={currentView === item.id ? 'secondary' : 'ghost'}
                 className="w-full justify-start gap-2"
                 onClick={() => handleNav(item.id)}
+                data-tutorial={`mobile-nav-${item.id}`}
               >
                 <item.icon className="h-4 w-4" />
                 {item.label}
